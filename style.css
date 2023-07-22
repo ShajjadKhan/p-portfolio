@@ -16,9 +16,16 @@
 
 
 /* header style */
+
+.header{
+    background-color: #FFF8F3;
+    
+}
+
 nav{display: flex;
 justify-content: space-between;
 align-items: center;
+margin: 30px 30px 30px 150px;
 }
 
 .nav-title{
@@ -36,5 +43,14 @@ nav ul{
 }
 nav ul li{margin: 50px;}
 
+.banner{
+    padding: 30px 30px 30px 150px;
+    display: flex;
+    align-items: center;
+}
 
+.banner-content{
+    width: 50%;
+}
+.profile-pic{width: 500px;}
 /* header style */
