@@ -18,6 +18,7 @@
 /* header style */
 nav{display: flex;
 justify-content: space-between;
+align-items: center;
 }
 
 .nav-title{
@@ -30,6 +31,7 @@ justify-content: space-between;
 nav ul{
     list-style: none;
     display: flex;
+    align-items: center;
     
 }
 nav ul li{margin: 50px;}
