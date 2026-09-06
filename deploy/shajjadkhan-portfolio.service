@@ -1,0 +1,19 @@
+[Unit]
+Description=Shajjad Khan Portfolio and FastTrack Tools
+After=network.target
+
+[Service]
+Type=simple
+User=shajjad
+Group=shajjad
+WorkingDirectory=/home/shajjad/p-portfolio
+Environment=PYTHONUNBUFFERED=1
+EnvironmentFile=-/etc/shajjadkhan-portfolio.env
+ExecStart=/home/shajjad/p-portfolio/venv/bin/gunicorn --workers 2 --bind 127.0.0.1:9191 --access-logfile - --error-logfile - app:app
+Restart=on-failure
+RestartSec=5
+PrivateTmp=true
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target
