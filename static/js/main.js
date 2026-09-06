@@ -1,6 +1,6 @@
 /**
  * Shajjad Khan — Official Portfolio JavaScript
- * Domain: www.shajjadkhan.com | Port: 9191
+ * Domain: www.shajjadkhan.com
  */
 
 document.addEventListener('DOMContentLoaded', () => {
