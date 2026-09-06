@@ -40,24 +40,36 @@
 
             <nav class="nav-links" id="nav-links">
                 <a href="#flagship" class="nav-link"><i class="bi bi-stars text-emerald"></i> TawreedFlow</a>
-                <a href="#projects" class="nav-link">Projects</a>
+                <a href="#projects" class="nav-link"><i class="bi bi-grid-fill"></i> Projects</a>
                 <a href="#tools" class="nav-link"><span class="badge-tools-pill">32+</span> Tools Hub</a>
-                <a href="#about" class="nav-link">About</a>
-                <a href="#stack" class="nav-link">Architecture & Stack</a>
-                <a href="#contact" class="nav-link">Contact</a>
+                <a href="#about" class="nav-link"><i class="bi bi-person-fill"></i> About</a>
+                <a href="#stack" class="nav-link"><i class="bi bi-layers-fill"></i> Architecture &amp; Stack</a>
+                <a href="#contact" class="nav-link"><i class="bi bi-envelope-fill"></i> Contact</a>
+                <div class="mobile-drawer-actions">
+                    <a href="{{ tools_url }}" target="_blank" rel="noopener" class="btn btn-cyan-block">
+                        <i class="bi bi-tools"></i>
+                        <span>Launch 32+ Tools Platform</span>
+                    </a>
+                    <a href="#contact" class="btn btn-emerald-block">
+                        <i class="bi bi-chat-text-fill"></i>
+                        <span>Direct Inquiries</span>
+                    </a>
+                </div>
             </nav>
 
             <div class="nav-actions">
-                <a href="{{ tools_url }}" target="_blank" rel="noopener" class="btn btn-outline-sm d-none d-md-inline-flex" title="Open 32+ FastTrack Tools">
+                <a href="{{ tools_url }}" target="_blank" rel="noopener" class="btn btn-outline-sm desktop-nav-btn" title="Open 32+ FastTrack Tools">
                     <i class="bi bi-tools text-emerald"></i>
                     <span>FastTrack Tools</span>
                 </a>
-                <a href="#contact" class="btn btn-emerald-sm">
+                <a href="#contact" class="btn btn-emerald-sm desktop-nav-btn">
                     <span>Let's Talk</span>
                     <i class="bi bi-arrow-right-short"></i>
                 </a>
                 <button type="button" class="mobile-menu-btn" id="mobile-menu-toggle" aria-label="Toggle navigation">
-                    <i class="bi bi-list" id="menu-icon"></i>
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                    <span class="bar"></span>
                 </button>
             </div>
         </div>
@@ -70,7 +82,9 @@
             <div class="container hero-content">
                 <div class="status-badge">
                     <span class="pulse-beacon"></span>
-                    <span class="status-text">Available for High-Impact Advisory & Technical Leadership</span>
+                    <span class="status-text" id="portfolio-live-clock">Active in Riyadh &bull; 00:00 UTC</span>
+                    <span class="status-sep">&bull;</span>
+                    <span class="status-sub">Available for Advisory & Leadership</span>
                 </div>
 
                 <h1 class="hero-title">
@@ -185,6 +199,18 @@
                                     <p>
                                         Engineered with strict tenant isolation supporting multi-property hotel chains: Master Admins, Directors, Purchasing Receivers, Department Heads, and external Supplier Portals (Owners, Admins, Field Drivers).
                                     </p>
+                                </div>
+                            </div>
+
+                            <!-- Interactive Specs Switcher (From shajjadkhan.com) -->
+                            <div class="interactive-specs-card">
+                                <div class="specs-tab-nav">
+                                    <button type="button" class="spec-tab-btn active" data-spec="overview">Overview</button>
+                                    <button type="button" class="spec-tab-btn" data-spec="architecture">Architecture</button>
+                                    <button type="button" class="spec-tab-btn" data-spec="impact">Regional Impact</button>
+                                </div>
+                                <div id="spec-detail-box" class="spec-detail-content">
+                                    Centralizes purchase requisitions, multi-tier approval matrices (Chef &rarr; Purchasing &rarr; GM/Finance), and automated vendor dispatching to streamline hotel engineering and operational procurement across the Gulf region.
                                 </div>
                             </div>
                         </div>
@@ -576,7 +602,27 @@
 
                             <div class="contact-methods">
                                 <div class="method-item">
-                                    <div class="method-icon"><i class="bi bi-globe2 text-emerald"></i></div>
+                                    <div class="method-icon"><i class="bi bi-envelope-check text-emerald"></i></div>
+                                    <div>
+                                        <div class="method-label">Direct Email</div>
+                                        <div class="method-value">
+                                            <a href="mailto:shajjadkhan.me@hotmail.com" class="link-emerald">shajjadkhan.me@hotmail.com</a>
+                                        </div>
+                                        <div class="direct-email-btns">
+                                            <a href="mailto:shajjadkhan.me@hotmail.com" class="btn btn-emerald-xs"><i class="bi bi-envelope-fill"></i> Send Email</a>
+                                            <button type="button" class="btn btn-outline-xs" id="copy-email-btn" onclick="copyPortfolioEmail()"><i class="bi bi-clipboard"></i> Copy Email</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="method-item">
+                                    <div class="method-icon"><i class="bi bi-geo-alt-fill text-gold"></i></div>
+                                    <div>
+                                        <div class="method-label">Operating Base</div>
+                                        <div class="method-value">Riyadh, Saudi Arabia &bull; Active</div>
+                                    </div>
+                                </div>
+                                <div class="method-item">
+                                    <div class="method-icon"><i class="bi bi-globe2 text-cyan"></i></div>
                                     <div>
                                         <div class="method-label">Personal Domain</div>
                                         <div class="method-value">www.shajjadkhan.com</div>

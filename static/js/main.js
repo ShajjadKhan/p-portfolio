@@ -7,20 +7,28 @@ document.addEventListener('DOMContentLoaded', () => {
     // 1. Mobile Navigation Toggle
     const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
     const navLinks = document.getElementById('nav-links');
-    const menuIcon = document.getElementById('menu-icon');
 
     if (mobileMenuToggle && navLinks) {
-        mobileMenuToggle.addEventListener('click', () => {
+        mobileMenuToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
             const isOpen = navLinks.classList.toggle('active');
-            menuIcon.className = isOpen ? 'bi bi-x-lg' : 'bi bi-list';
+            mobileMenuToggle.classList.toggle('open', isOpen);
         });
 
-        // Close mobile menu when a nav link is clicked
-        navLinks.querySelectorAll('.nav-link').forEach(link => {
+        // Close mobile menu when a nav link or drawer button is clicked
+        navLinks.querySelectorAll('a').forEach(link => {
             link.addEventListener('click', () => {
                 navLinks.classList.remove('active');
-                if (menuIcon) menuIcon.className = 'bi bi-list';
+                mobileMenuToggle.classList.remove('open');
             });
+        });
+
+        // Close when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!navLinks.contains(e.target) && !mobileMenuToggle.contains(e.target)) {
+                navLinks.classList.remove('active');
+                mobileMenuToggle.classList.remove('open');
+            }
         });
     }
 
@@ -163,4 +171,57 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     }
+
+    // 5. Live Riyadh / UTC Clock (Parity with shajjadkhan.com)
+    function updateLiveClock() {
+        const now = new Date();
+        const utcHours = String(now.getUTCHours()).padStart(2, '0');
+        const utcMinutes = String(now.getUTCMinutes()).padStart(2, '0');
+        const clockEl = document.getElementById('portfolio-live-clock');
+        if (clockEl) {
+            clockEl.textContent = `Active in Riyadh • ${utcHours}:${utcMinutes} UTC`;
+        }
+    }
+    updateLiveClock();
+    setInterval(updateLiveClock, 30000);
+
+    // 6. Interactive TawreedFlow Specs Switcher (Parity with shajjadkhan.com)
+    const specBtns = document.querySelectorAll('.spec-tab-btn');
+    const specDetailBox = document.getElementById('spec-detail-box');
+    const specsData = {
+        overview: "Centralizes purchase requisitions, multi-tier approval matrices (Chef → Purchasing → GM/Finance), and automated vendor dispatching to streamline hotel engineering and operational procurement across the Gulf region.",
+        architecture: "Engineered on Python / Django 6.0 with strict multi-tenant schemas, Redis caching, Celery async dispatch daemons, and MariaDB/PostgreSQL transaction isolation.",
+        impact: "Eliminating multi-day requisition delays and procurement leakage across GCC luxury hotels, automating delivery reconciliation and invoice audit trails."
+    };
+
+    if (specBtns.length && specDetailBox) {
+        specBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                specBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const key = btn.getAttribute('data-spec');
+                if (specsData[key]) {
+                    specDetailBox.textContent = specsData[key];
+                }
+            });
+        });
+    }
 });
+
+// Global copy email helper
+function copyPortfolioEmail() {
+    const email = 'shajjadkhan.me@hotmail.com';
+    navigator.clipboard.writeText(email).then(() => {
+        const btn = document.getElementById('copy-email-btn');
+        if (btn) {
+            const original = btn.innerHTML;
+            btn.innerHTML = '<i class="bi bi-check2"></i> <span>Copied!</span>';
+            btn.style.color = '#10b981';
+            setTimeout(() => {
+                btn.innerHTML = original;
+                btn.style.color = '';
+            }, 2500);
+        }
+    });
+}
+
