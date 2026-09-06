@@ -4,4 +4,5 @@ __pycache__/
 *$py.class
 *.log
 contacts.db
+.portfolio-test-deps/
 .DS_Store

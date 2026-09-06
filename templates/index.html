@@ -26,6 +26,7 @@
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/tawreedflow-favicon.png') }}">
 </head>
 <body>
+    <a class="skip-link" href="#main-content">Skip to main content</a>
 
     <!-- Executive Sticky Navigation Header -->
     <header class="navbar-fixed" id="navbar">
@@ -88,7 +89,7 @@
                     <span>Let's Talk</span>
                     <i class="bi bi-arrow-right"></i>
                 </a>
-                <button type="button" class="mobile-menu-btn" id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
+                <button type="button" class="mobile-menu-btn" id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-controls="nav-links" aria-expanded="false">
                     <span class="bar bar-top"></span>
                     <span class="bar bar-mid"></span>
                     <span class="bar bar-bot"></span>
@@ -97,14 +98,14 @@
         </div>
     </header>
 
-    <main>
+    <main id="main-content" tabindex="-1">
         <!-- Hero Section -->
         <section class="hero-section" id="hero">
             <div class="hero-bg-glow"></div>
             <div class="container hero-content">
                 <div class="status-badge">
                     <span class="pulse-beacon"></span>
-                    <span class="status-text" id="portfolio-live-clock">Active in Riyadh &bull; 00:00 UTC</span>
+                    <span class="status-text" id="portfolio-live-clock">Active in Riyadh &bull; 00:00 AST</span>
                     <span class="status-sep">&bull;</span>
                     <span class="status-sub">Available for Advisory & Leadership</span>
                 </div>

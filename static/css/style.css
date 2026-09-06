@@ -43,6 +43,31 @@
     padding: 0;
 }
 
+:focus-visible {
+    outline: 3px solid var(--cyan);
+    outline-offset: 3px;
+}
+
+.skip-link {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    z-index: 10001;
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #020617;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    text-decoration: none;
+    transform: translateY(-150%);
+    transition: transform 0.18s ease;
+}
+
+.skip-link:focus {
+    transform: translateY(0);
+}
+
 html {
     scroll-behavior: smooth;
     color-scheme: dark;

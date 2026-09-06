@@ -161,14 +161,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-    // 5. Live Riyadh / UTC Clock (Parity with shajjadkhan.com)
+    // 5. Live Riyadh clock. Saudi Arabia uses Arabia Standard Time (UTC+3).
     function updateLiveClock() {
         const now = new Date();
-        const utcHours = String(now.getUTCHours()).padStart(2, '0');
-        const utcMinutes = String(now.getUTCMinutes()).padStart(2, '0');
+        const timeParts = new Intl.DateTimeFormat('en-GB', {
+            timeZone: 'Asia/Riyadh',
+            hour: '2-digit',
+            minute: '2-digit',
+            hourCycle: 'h23'
+        }).formatToParts(now);
+        const time = timeParts
+            .filter(part => part.type === 'hour' || part.type === 'minute')
+            .map(part => part.value)
+            .join(':');
         const clockEl = document.getElementById('portfolio-live-clock');
         if (clockEl) {
-            clockEl.textContent = `Active in Riyadh • ${utcHours}:${utcMinutes} UTC`;
+            clockEl.textContent = `Active in Riyadh • ${time} AST`;
         }
     }
     updateLiveClock();
