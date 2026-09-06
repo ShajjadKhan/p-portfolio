@@ -20,7 +20,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='tools/css/tools.css') }}?v=2.2">
 
     <!-- External Client-Side Libraries -->
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js" defer></script>
+    <script src="{{ url_for('static', filename='tools/js/vendor/qrcode.min.js') }}?v=1.5.1" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" defer></script>
     <script>
