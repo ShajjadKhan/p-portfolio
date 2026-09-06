@@ -1801,26 +1801,1258 @@ print("Built by Shajjad Khan")
         });
 
         container.querySelector('#btn-case-copy').onclick = (e) => Utils.copyToClipboard(area.value, e.target);
-    }
-};
+    },
 
-// Map alias / fallback handlers for any remaining tools
-[
-    ['image-crop', 'image-resize'],
-    ['image-color-picker', 'image-converter'],
-    ['saas-calculator', 'profit-calculator'],
-    ['discount-tax-calculator', 'profit-calculator'],
-    ['currency-converter', 'profit-calculator'],
-    ['meta-tag-generator', 'sitemap-audit'],
-    ['robots-generator', 'sitemap-audit'],
-    ['url-parser', 'sitemap-audit'],
-    ['jwt-decoder', 'json-tools'],
-    ['text-diff', 'markdown-editor'],
-    ['lorem-ipsum', 'word-counter'],
-    ['css-generator', 'profit-calculator'],
-    ['unit-converter', 'profit-calculator']
-].forEach(([toolSlug, fallbackTool]) => {
-    if (!ToolRenderers[toolSlug] && ToolRenderers[fallbackTool]) {
-        ToolRenderers[toolSlug] = ToolRenderers[fallbackTool];
+    // 10. Byte, Data Storage & Speed Converter
+    'unit-converter': (container) => {
+        container.innerHTML = `
+            <div style="max-width: 900px; margin: 0 auto;">
+                <div class="controls-panel" style="gap: 1.25rem; align-items: flex-end;">
+                    <div class="control-group" style="flex: 2;">
+                        <label>Enter Value</label>
+                        <input type="number" id="unit-val-in" value="1024" step="any">
+                    </div>
+                    <div class="control-group" style="flex: 2;">
+                        <label>Source Unit</label>
+                        <select id="unit-select-source">
+                            <optgroup label="Decimal (Base 10)">
+                                <option value="B">Bytes (B)</option>
+                                <option value="KB">Kilobytes (KB) - 10³</option>
+                                <option value="MB" selected>Megabytes (MB) - 10⁶</option>
+                                <option value="GB">Gigabytes (GB) - 10⁹</option>
+                                <option value="TB">Terabytes (TB) - 10¹²</option>
+                            </optgroup>
+                            <optgroup label="Binary (Base 2 - IEC)">
+                                <option value="KiB">Kibibytes (KiB) - 2¹⁰</option>
+                                <option value="MiB">Mebibytes (MiB) - 2²⁰</option>
+                                <option value="GiB">Gibibytes (GiB) - 2³⁰</option>
+                                <option value="TiB">Tebibytes (TiB) - 2⁴⁰</option>
+                            </optgroup>
+                            <optgroup label="Bits & Bandwidth">
+                                <option value="b">Bits (b)</option>
+                                <option value="Kb">Kilobits (Kb)</option>
+                                <option value="Mb">Megabits (Mb)</option>
+                                <option value="Gb">Gigabits (Gb)</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="output-box" style="margin-top: 1.5rem;">
+                    <div class="output-header">
+                        <span class="output-title">Storage Conversions</span>
+                        <span style="font-size: 0.8rem; color: var(--text-dim);">Live Multi-Unit Calculation</span>
+                    </div>
+                    <table class="unit-table">
+                        <thead>
+                            <tr>
+                                <th>Unit</th>
+                                <th>Name & Standard</th>
+                                <th>Equivalent Value</th>
+                                <th>Copy</th>
+                            </tr>
+                        </thead>
+                        <tbody id="unit-tbody"></tbody>
+                    </table>
+                </div>
+
+                <div class="output-box" style="margin-top: 1.5rem;">
+                    <div class="output-header">
+                        <span class="output-title">Estimated Download Times</span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;" id="transfer-grid"></div>
+                </div>
+            </div>
+        `;
+
+        const valIn = container.querySelector('#unit-val-in');
+        const srcSel = container.querySelector('#unit-select-source');
+        const tbody = container.querySelector('#unit-tbody');
+        const transferGrid = container.querySelector('#transfer-grid');
+
+        const multipliers = {
+            'b': 0.125,
+            'B': 1,
+            'KB': 1e3,
+            'MB': 1e6,
+            'GB': 1e9,
+            'TB': 1e12,
+            'KiB': 1024,
+            'MiB': 1024 * 1024,
+            'GiB': 1024 * 1024 * 1024,
+            'TiB': 1024 * 1024 * 1024 * 1024,
+            'Kb': 1e3 / 8,
+            'Mb': 1e6 / 8,
+            'Gb': 1e9 / 8
+        };
+
+        const unitDefs = [
+            { id: 'b', name: 'Bit (b)', type: 'Binary Bit' },
+            { id: 'B', name: 'Byte (B)', type: 'Standard 8-bit' },
+            { id: 'KB', name: 'Kilobyte (KB)', type: 'Decimal (1,000 B)' },
+            { id: 'KiB', name: 'Kibibyte (KiB)', type: 'Binary (1,024 B)' },
+            { id: 'MB', name: 'Megabyte (MB)', type: 'Decimal (1,000 KB)' },
+            { id: 'MiB', name: 'Mebibyte (MiB)', type: 'Binary (1,024 KiB)' },
+            { id: 'GB', name: 'Gigabyte (GB)', type: 'Decimal (1,000 MB)' },
+            { id: 'GiB', name: 'Gibibyte (GiB)', type: 'Binary (1,024 MiB)' },
+            { id: 'TB', name: 'Terabyte (TB)', type: 'Decimal (1,000 GB)' },
+            { id: 'TiB', name: 'Tebibyte (TiB)', type: 'Binary (1,024 GiB)' }
+        ];
+
+        function recalculate() {
+            const raw = parseFloat(valIn.value) || 0;
+            const src = srcSel.value;
+            const bytes = raw * (multipliers[src] || 1);
+
+            tbody.innerHTML = unitDefs.map(u => {
+                const converted = bytes / multipliers[u.id];
+                const formatted = converted >= 1e6 || (converted > 0 && converted < 0.0001) ? 
+                    converted.toExponential(4) : 
+                    converted.toLocaleString('en-US', { maximumFractionDigits: 4 });
+
+                return `
+                    <tr>
+                        <td><strong style="color: var(--text-main); font-family: var(--font-mono);">${u.id}</strong></td>
+                        <td style="color: var(--text-muted); font-size: 0.85rem;">${u.name} <span style="color: var(--text-dim);">(${u.type})</span></td>
+                        <td class="unit-val">${formatted}</td>
+                        <td><button class="action-mini-btn" style="width: auto; padding: 0.2rem 0.5rem;" onclick="Utils.copyToClipboard('${converted}', this)">Copy</button></td>
+                    </tr>
+                `;
+            }).join('');
+
+            // Transfer speed estimates
+            const speeds = [
+                { name: '4G LTE (25 Mbps)', bps: 25 * 1e6 },
+                { name: 'Home Fiber (100 Mbps)', bps: 100 * 1e6 },
+                { name: '5G Ultra (300 Mbps)', bps: 300 * 1e6 },
+                { name: 'Gigabit LAN (1 Gbps)', bps: 1e9 }
+            ];
+
+            const totalBits = bytes * 8;
+            transferGrid.innerHTML = speeds.map(s => {
+                const sec = totalBits / s.bps;
+                let timeStr = `${sec.toFixed(1)}s`;
+                if (sec >= 60 && sec < 3600) {
+                    timeStr = `${(sec / 60).toFixed(1)} min`;
+                } else if (sec >= 3600) {
+                    timeStr = `${(sec / 3600).toFixed(1)} hrs`;
+                } else if (sec < 0.01) {
+                    timeStr = `< 10ms`;
+                }
+
+                return `
+                    <div style="background: var(--bg-card); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-dim); text-align: center;">
+                        <div style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase;">${s.name}</div>
+                        <div style="font-size: 1.35rem; font-weight: 800; color: var(--accent); margin-top: 0.35rem;">${timeStr}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        valIn.oninput = recalculate;
+        srcSel.onchange = recalculate;
+        recalculate();
+    },
+
+    // 11. Lorem Ipsum & Mock Data Generator
+    'lorem-ipsum': (container) => {
+        container.innerHTML = `
+            <div style="max-width: 900px; margin: 0 auto;">
+                <div class="controls-panel" style="gap: 1.25rem; align-items: flex-end;">
+                    <div class="control-group" style="max-width: 130px;">
+                        <label>Quantity</label>
+                        <input type="number" id="lorem-qty" value="3" min="1" max="100">
+                    </div>
+                    <div class="control-group" style="flex: 2;">
+                        <label>Content Type</label>
+                        <select id="lorem-type">
+                            <option value="paragraphs" selected>Paragraphs (Text)</option>
+                            <option value="sentences">Sentences</option>
+                            <option value="words">Words</option>
+                            <option value="mock-users">Mock Users (JSON)</option>
+                            <option value="mock-products">Mock Products (JSON)</option>
+                        </select>
+                    </div>
+                    <div class="control-group" style="flex: 2; flex-direction: row; align-items: center; gap: 0.5rem; padding-bottom: 0.6rem;">
+                        <input type="checkbox" id="lorem-lead" checked style="width: auto !important; margin: 0;">
+                        <label for="lorem-lead" style="text-transform: none; font-size: 0.85rem; cursor: pointer; color: var(--text-main); margin: 0;">Include "Lorem ipsum..."</label>
+                    </div>
+                    <button class="btn-primary" id="btn-make-lorem">Generate</button>
+                </div>
+
+                <div class="output-box" style="margin-top: 1.25rem;">
+                    <div class="output-header">
+                        <span class="output-title">Generated Content</span>
+                        <div style="display: flex; gap: 0.75rem; align-items: center;">
+                            <span id="lorem-meta" style="font-size: 0.8rem; color: var(--text-muted); font-family: var(--font-mono);">0 words</span>
+                            <button class="btn-secondary" id="btn-copy-lorem" style="padding: 0.35rem 0.85rem; font-size: 0.8rem;">📋 Copy Text</button>
+                        </div>
+                    </div>
+                    <textarea id="lorem-output" style="height: 320px; font-size: 0.95rem;"></textarea>
+                </div>
+            </div>
+        `;
+
+        const words = ["lorem", "ipsum", "dolor", "sit", "amet", "consectetur", "adipiscing", "elit", "sed", "do", "eiusmod", "tempor", "incididunt", "ut", "labore", "et", "dolore", "magna", "aliqua", "ut", "enim", "ad", "minim", "veniam", "quis", "nostrud", "exercitation", "ullamco", "laboris", "nisi", "ut", "aliquip", "ex", "ea", "commodo", "consequat", "duis", "aute", "irure", "dolor", "in", "reprehenderit", "in", "voluptate", "velit", "esse", "cillum", "dolore", "eu", "fugiat", "nulla", "pariatur", "excepteur", "sint", "occaecat", "cupidatat", "non", "proident", "sunt", "in", "culpa", "qui", "officia", "deserunt", "mollit", "anim", "id", "est", "laborum"];
+
+        function makeSentence() {
+            const len = Math.floor(Math.random() * 10) + 8;
+            const w = [];
+            for (let i = 0; i < len; i++) {
+                w.push(words[Math.floor(Math.random() * words.length)]);
+            }
+            const s = w.join(' ');
+            return s.charAt(0).toUpperCase() + s.slice(1) + '.';
+        }
+
+        function generate() {
+            const qty = Math.max(1, parseInt(container.querySelector('#lorem-qty').value) || 1);
+            const type = container.querySelector('#lorem-type').value;
+            const lead = container.querySelector('#lorem-lead').checked;
+            const outArea = container.querySelector('#lorem-output');
+            const meta = container.querySelector('#lorem-meta');
+
+            let result = '';
+
+            if (type === 'paragraphs') {
+                const paras = [];
+                for (let p = 0; p < qty; p++) {
+                    const sentenceCount = Math.floor(Math.random() * 4) + 4;
+                    const sentences = [];
+                    for (let s = 0; s < sentenceCount; s++) {
+                        sentences.push(makeSentence());
+                    }
+                    paras.push(sentences.join(' '));
+                }
+                if (lead && paras.length > 0) {
+                    paras[0] = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. " + paras[0];
+                }
+                result = paras.join('\n\n');
+            } else if (type === 'sentences') {
+                const s = [];
+                for (let i = 0; i < qty; i++) s.push(makeSentence());
+                result = s.join(' ');
+            } else if (type === 'words') {
+                const w = [];
+                for (let i = 0; i < qty; i++) w.push(words[Math.floor(Math.random() * words.length)]);
+                result = w.join(' ');
+            } else if (type === 'mock-users') {
+                const users = [];
+                const roles = ["Software Architect", "Product Manager", "DevOps Engineer", "Frontend Developer", "Security Analyst"];
+                const cities = ["Riyadh", "Dubai", "London", "San Francisco", "Singapore"];
+                for (let i = 1; i <= qty; i++) {
+                    users.push({
+                        id: `usr_${1000 + i}`,
+                        name: `User ${i}`,
+                        email: `user.${i}@enterprise-cloud.io`,
+                        role: roles[i % roles.length],
+                        location: cities[i % cities.length],
+                        active: i % 4 !== 0,
+                        createdAt: new Date(Date.now() - i * 86400000).toISOString()
+                    });
+                }
+                result = JSON.stringify(users, null, 2);
+            } else if (type === 'mock-products') {
+                const prods = [];
+                const cats = ["Cloud SaaS", "API Gateway", "Database", "Security Suite", "Storage"];
+                for (let i = 1; i <= qty; i++) {
+                    prods.push({
+                        id: `prod_${2000 + i}`,
+                        sku: `SKU-${100 + i}`,
+                        title: `Enterprise ${cats[i % cats.length]} License`,
+                        price: (i * 29.99).toFixed(2),
+                        currency: "USD",
+                        category: cats[i % cats.length],
+                        inStock: true
+                    });
+                }
+                result = JSON.stringify(prods, null, 2);
+            }
+
+            outArea.value = result;
+            const wordCount = result.trim() ? result.trim().split(/\s+/).length : 0;
+            meta.textContent = `${wordCount} words • ${result.length} characters`;
+        }
+
+        container.querySelector('#btn-make-lorem').onclick = generate;
+        container.querySelector('#btn-copy-lorem').onclick = (e) => {
+            Utils.copyToClipboard(container.querySelector('#lorem-output').value, e.target);
+        };
+        generate();
+    },
+
+    // 12. SaaS Metrics, MRR, ARR & LTV / CAC
+    'saas-calculator': (container) => {
+        container.innerHTML = `
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2rem;">
+                <div class="controls-panel" style="flex-direction: column; align-items: stretch; margin: 0;">
+                    <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem;">SaaS Financial Inputs</h3>
+                    <div class="control-group">
+                        <label>Paying Customers</label>
+                        <input type="number" id="saas-customers" value="250">
+                    </div>
+                    <div class="control-group">
+                        <label>Avg Monthly Revenue Per User - ARPU ($)</label>
+                        <input type="number" id="saas-arpu" value="120">
+                    </div>
+                    <div class="control-group">
+                        <label>Monthly Customer Churn Rate (%)</label>
+                        <input type="number" id="saas-churn" value="3.5" step="0.1">
+                    </div>
+                    <div class="control-group">
+                        <label>Customer Acquisition Cost - CAC ($)</label>
+                        <input type="number" id="saas-cac" value="450">
+                    </div>
+                    <div class="control-group">
+                        <label>Gross Margin (%)</label>
+                        <input type="number" id="saas-margin" value="80">
+                    </div>
+                </div>
+
+                <div>
+                    <div class="output-box" style="margin: 0;">
+                        <h3 style="font-size: 1.1rem; margin-bottom: 1.25rem;">SaaS Unit Economics</h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                            <div style="background: var(--bg-card); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-dim);">
+                                <div style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase;">Monthly Recurring (MRR)</div>
+                                <div style="font-size: 1.55rem; font-weight: 800; color: var(--accent);" id="saas-res-mrr">$30,000</div>
+                            </div>
+                            <div style="background: var(--bg-card); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-dim);">
+                                <div style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase;">Annual Run Rate (ARR)</div>
+                                <div style="font-size: 1.55rem; font-weight: 800; color: var(--accent-blue);" id="saas-res-arr">$360,000</div>
+                            </div>
+                            <div style="background: var(--bg-card); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-dim);">
+                                <div style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase;">Customer LTV</div>
+                                <div style="font-size: 1.55rem; font-weight: 800; color: #a855f7;" id="saas-res-ltv">$2,742</div>
+                            </div>
+                            <div style="background: var(--bg-card); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-dim);">
+                                <div style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase;">LTV / CAC Ratio</div>
+                                <div style="font-size: 1.55rem; font-weight: 800;" id="saas-res-ratio">6.1x</div>
+                            </div>
+                        </div>
+                        <div style="background: var(--bg-card); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-dim);">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.4rem;">
+                                <span style="font-size: 0.82rem; color: var(--text-muted);">CAC Payback Period</span>
+                                <span id="saas-res-payback" style="font-weight: 700; color: var(--accent);">4.7 Months</span>
+                            </div>
+                            <div style="font-size: 0.78rem; color: var(--text-dim);" id="saas-res-note">✅ Exceptional SaaS economics (> 3.0x benchmark)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const inputs = container.querySelectorAll('input');
+        function compute() {
+            const cust = parseFloat(container.querySelector('#saas-customers').value) || 0;
+            const arpu = parseFloat(container.querySelector('#saas-arpu').value) || 0;
+            const churn = parseFloat(container.querySelector('#saas-churn').value) || 0;
+            const cac = parseFloat(container.querySelector('#saas-cac').value) || 0;
+            const margin = parseFloat(container.querySelector('#saas-margin').value) || 0;
+
+            const mrr = cust * arpu;
+            const arr = mrr * 12;
+            const lifetimeMonths = churn > 0 ? (1 / (churn / 100)) : 0;
+            const ltv = arpu * (margin / 100) * lifetimeMonths;
+            const ratio = cac > 0 ? (ltv / cac) : 0;
+            const monthlyMargin = arpu * (margin / 100);
+            const payback = monthlyMargin > 0 ? (cac / monthlyMargin) : 0;
+
+            container.querySelector('#saas-res-mrr').textContent = `$${mrr.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+            container.querySelector('#saas-res-arr').textContent = `$${arr.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+            container.querySelector('#saas-res-ltv').textContent = `$${ltv.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+            
+            const ratioEl = container.querySelector('#saas-res-ratio');
+            ratioEl.textContent = `${ratio.toFixed(1)}x`;
+            ratioEl.style.color = ratio >= 3.0 ? 'var(--accent)' : (ratio >= 1.5 ? '#f59e0b' : '#ef4444');
+
+            container.querySelector('#saas-res-payback').textContent = `${payback.toFixed(1)} Months`;
+            container.querySelector('#saas-res-note').textContent = ratio >= 3.0 ? 
+                '✅ Exceptional SaaS economics (> 3.0x industry benchmark)' : 
+                (ratio >= 1.5 ? '⚠️ Acceptable but optimize CAC or reduce churn (< 3.0x)' : '⛔ Critical warning: Customer acquisition costs exceed lifetime value!');
+        }
+
+        inputs.forEach(i => i.oninput = compute);
+        compute();
+    },
+
+    // 13. Discount, Coupon & VAT / Tax Calculator
+    'discount-tax-calculator': (container) => {
+        container.innerHTML = `
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
+                <div class="controls-panel" style="flex-direction: column; align-items: stretch; margin: 0;">
+                    <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem;">Pricing & Discounts</h3>
+                    <div class="control-group">
+                        <label>Original Price ($)</label>
+                        <input type="number" id="dt-price" value="120" step="0.01">
+                    </div>
+                    <div class="control-group">
+                        <label>Primary Discount (%)</label>
+                        <input type="number" id="dt-disc1" value="20" step="0.5">
+                    </div>
+                    <div class="control-group">
+                        <label>Additional Promo / Coupon (%)</label>
+                        <input type="number" id="dt-disc2" value="5" step="0.5">
+                    </div>
+                    <div class="control-group">
+                        <label>Sales Tax / VAT (%)</label>
+                        <input type="number" id="dt-vat" value="15" step="0.1">
+                    </div>
+                </div>
+
+                <div>
+                    <div class="output-box" style="margin: 0;">
+                        <h3 style="font-size: 1.1rem; margin-bottom: 1.25rem;">Checkout Summary</h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                            <div style="background: var(--bg-card); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-dim);">
+                                <div style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase;">Final You Pay</div>
+                                <div style="font-size: 1.65rem; font-weight: 800; color: var(--accent);" id="dt-res-pay">$104.88</div>
+                            </div>
+                            <div style="background: var(--bg-card); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-dim);">
+                                <div style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase;">Total You Save</div>
+                                <div style="font-size: 1.65rem; font-weight: 800; color: #f59e0b;" id="dt-res-saved">$28.80</div>
+                            </div>
+                        </div>
+                        <table class="unit-table">
+                            <tr><td>Discounted Base Price</td><td class="unit-val" id="dt-res-base">$91.20</td></tr>
+                            <tr><td>Tax / VAT Amount</td><td class="unit-val" id="dt-res-tax">$13.68</td></tr>
+                            <tr><td>Effective Total Discount Rate</td><td class="unit-val" id="dt-res-eff">24.0%</td></tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const inputs = container.querySelectorAll('input');
+        function recalc() {
+            const orig = parseFloat(container.querySelector('#dt-price').value) || 0;
+            const d1 = parseFloat(container.querySelector('#dt-disc1').value) || 0;
+            const d2 = parseFloat(container.querySelector('#dt-disc2').value) || 0;
+            const vat = parseFloat(container.querySelector('#dt-vat').value) || 0;
+
+            const afterD1 = orig * (1 - d1 / 100);
+            const afterD2 = afterD1 * (1 - d2 / 100);
+            const saved = orig - afterD2;
+            const taxAmt = afterD2 * (vat / 100);
+            const finalPay = afterD2 + taxAmt;
+            const eff = orig > 0 ? ((saved / orig) * 100) : 0;
+
+            container.querySelector('#dt-res-pay').textContent = `$${finalPay.toFixed(2)}`;
+            container.querySelector('#dt-res-saved').textContent = `$${saved.toFixed(2)}`;
+            container.querySelector('#dt-res-base').textContent = `$${afterD2.toFixed(2)}`;
+            container.querySelector('#dt-res-tax').textContent = `$${taxAmt.toFixed(2)}`;
+            container.querySelector('#dt-res-eff').textContent = `${eff.toFixed(1)}%`;
+        }
+
+        inputs.forEach(i => i.oninput = recalc);
+        recalc();
+    },
+
+    // 14. Currency & Financial Converter
+    'currency-converter': (container) => {
+        container.innerHTML = `
+            <div style="max-width: 900px; margin: 0 auto;">
+                <div class="controls-panel" style="gap: 1.25rem; align-items: flex-end;">
+                    <div class="control-group" style="flex: 2;">
+                        <label>Amount</label>
+                        <input type="number" id="curr-val" value="1000" step="any">
+                    </div>
+                    <div class="control-group" style="flex: 2;">
+                        <label>From Currency</label>
+                        <select id="curr-src">
+                            <option value="USD" selected>USD - US Dollar</option>
+                            <option value="EUR">EUR - Euro</option>
+                            <option value="GBP">GBP - British Pound</option>
+                            <option value="SAR">SAR - Saudi Riyal</option>
+                            <option value="AED">AED - UAE Dirham</option>
+                            <option value="CAD">CAD - Canadian Dollar</option>
+                            <option value="JPY">JPY - Japanese Yen</option>
+                            <option value="INR">INR - Indian Rupee</option>
+                            <option value="SGD">SGD - Singapore Dollar</option>
+                        </select>
+                    </div>
+                    <button class="btn-secondary" id="btn-curr-swap" style="padding: 0.65rem 0.9rem;" title="Swap Currencies">⇄</button>
+                    <div class="control-group" style="flex: 2;">
+                        <label>To Currency</label>
+                        <select id="curr-dst">
+                            <option value="USD">USD - US Dollar</option>
+                            <option value="EUR">EUR - Euro</option>
+                            <option value="GBP">GBP - British Pound</option>
+                            <option value="SAR" selected>SAR - Saudi Riyal</option>
+                            <option value="AED">AED - UAE Dirham</option>
+                            <option value="CAD">CAD - Canadian Dollar</option>
+                            <option value="JPY">JPY - Japanese Yen</option>
+                            <option value="INR">INR - Indian Rupee</option>
+                            <option value="SGD">SGD - Singapore Dollar</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="output-box" style="text-align: center; padding: 2rem 1.5rem;">
+                    <div style="font-size: 0.9rem; color: var(--text-dim);" id="curr-rate-label">1 USD = 3.7500 SAR</div>
+                    <div style="font-size: 2.5rem; font-weight: 800; color: var(--accent); margin: 0.75rem 0;" id="curr-converted">3,750.00 SAR</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">Real-time peg reference rates • Accurate financial calculations</div>
+                </div>
+
+                <div class="output-box" style="margin-top: 1.5rem;">
+                    <div class="output-header"><span class="output-title">Top Currency Conversions</span></div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;" id="curr-matrix"></div>
+                </div>
+            </div>
+        `;
+
+        const rates = {
+            USD: 1.0,
+            EUR: 0.92,
+            GBP: 0.79,
+            SAR: 3.75,
+            AED: 3.6725,
+            CAD: 1.36,
+            JPY: 153.5,
+            INR: 83.4,
+            SGD: 1.35
+        };
+
+        const amtIn = container.querySelector('#curr-val');
+        const srcSel = container.querySelector('#curr-src');
+        const dstSel = container.querySelector('#curr-dst');
+        const swapBtn = container.querySelector('#btn-curr-swap');
+
+        function convert() {
+            const amt = parseFloat(amtIn.value) || 0;
+            const src = srcSel.value;
+            const dst = dstSel.value;
+
+            const inUSD = amt / rates[src];
+            const result = inUSD * rates[dst];
+            const singleRate = rates[dst] / rates[src];
+
+            container.querySelector('#curr-rate-label').textContent = `1 ${src} = ${singleRate.toFixed(4)} ${dst}`;
+            container.querySelector('#curr-converted').textContent = `${result.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${dst}`;
+
+            // Top conversions matrix
+            const major = ['USD', 'EUR', 'GBP', 'SAR', 'AED', 'JPY', 'INR', 'CAD'];
+            container.querySelector('#curr-matrix').innerHTML = major.map(c => {
+                const resC = inUSD * rates[c];
+                return `
+                    <div style="background: var(--bg-card); padding: 0.85rem; border-radius: var(--radius-sm); border: 1px solid var(--border-dim);">
+                        <div style="font-size: 0.75rem; color: var(--text-dim);">${c}</div>
+                        <div style="font-size: 1.15rem; font-weight: 700; color: var(--text-main); margin-top: 0.2rem;">
+                            ${resC.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        swapBtn.onclick = () => {
+            const tmp = srcSel.value;
+            srcSel.value = dstSel.value;
+            dstSel.value = tmp;
+            convert();
+        };
+
+        amtIn.oninput = convert;
+        srcSel.onchange = convert;
+        dstSel.onchange = convert;
+        convert();
+    },
+
+    // 16. Meta Tags & OpenGraph Previewer
+    'meta-tag-generator': (container) => {
+        container.innerHTML = `
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2rem;">
+                <div class="controls-panel" style="flex-direction: column; align-items: stretch; margin: 0;">
+                    <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem;">Metadata Inputs</h3>
+                    <div class="control-group">
+                        <label>Page Title</label>
+                        <input type="text" id="meta-in-title" value="FastTrack Tools — High-Velocity Utilities">
+                    </div>
+                    <div class="control-group">
+                        <label>Meta Description</label>
+                        <textarea id="meta-in-desc" style="height: 90px;">32+ essential engineering, PDF, image, and business utilities. Free, 100% private in-browser file execution with zero lag.</textarea>
+                    </div>
+                    <div class="control-group">
+                        <label>Canonical Page URL</label>
+                        <input type="url" id="meta-in-url" value="https://www.shajjadkhan.com/tools">
+                    </div>
+                    <div class="control-group">
+                        <label>Social Preview Image URL (OG Image)</label>
+                        <input type="url" id="meta-in-img" value="https://www.shajjadkhan.com/static/images/og-tools.png">
+                    </div>
+                    <div class="control-group">
+                        <label>Author / Publisher</label>
+                        <input type="text" id="meta-in-author" value="Shajjad Khan">
+                    </div>
+                </div>
+
+                <div>
+                    <div class="output-box" style="margin: 0 0 1.25rem 0;">
+                        <div class="output-header"><span class="output-title">Google Search Snippet Preview</span></div>
+                        <div style="background: #ffffff; color: #1a0dab; border-radius: 8px; padding: 1rem; font-family: Arial, sans-serif;">
+                            <div style="font-size: 12px; color: #202124;" id="meta-prev-url">https://www.shajjadkhan.com/tools</div>
+                            <div style="font-size: 18px; font-weight: 400; color: #1a0dab; margin: 2px 0 4px;" id="meta-prev-title">FastTrack Tools</div>
+                            <div style="font-size: 13px; color: #4d5156; line-height: 1.4;" id="meta-prev-desc">Meta description snippet preview...</div>
+                        </div>
+                    </div>
+
+                    <div class="output-box">
+                        <div class="output-header">
+                            <span class="output-title">Generated HTML Tags</span>
+                            <button class="btn-secondary" id="btn-copy-meta" style="padding: 0.35rem 0.85rem; font-size: 0.8rem;">📋 Copy Tags</button>
+                        </div>
+                        <pre class="code-pre" id="meta-code" style="max-height: 220px; font-size: 0.8rem;"></pre>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const inputs = container.querySelectorAll('input, textarea');
+        function update() {
+            const title = container.querySelector('#meta-in-title').value.trim() || 'FastTrack Tools';
+            const desc = container.querySelector('#meta-in-desc').value.trim() || '';
+            const url = container.querySelector('#meta-in-url').value.trim() || 'https://www.shajjadkhan.com/tools';
+            const img = container.querySelector('#meta-in-img').value.trim() || '';
+            const author = container.querySelector('#meta-in-author').value.trim() || 'Shajjad Khan';
+
+            container.querySelector('#meta-prev-url').textContent = url;
+            container.querySelector('#meta-prev-title').textContent = title;
+            container.querySelector('#meta-prev-desc').textContent = desc;
+
+            const code = `<!-- Primary Meta Tags -->\n<title>${title}</title>\n<meta name="title" content="${title}">\n<meta name="description" content="${desc}">\n<meta name="author" content="${author}">\n<link rel="canonical" href="${url}">\n\n<!-- Open Graph / Facebook -->\n<meta property="og:type" content="website">\n<meta property="og:url" content="${url}">\n<meta property="og:title" content="${title}">\n<meta property="og:description" content="${desc}">\n<meta property="og:image" content="${img}">\n\n<!-- Twitter / X -->\n<meta property="twitter:card" content="summary_large_image">\n<meta property="twitter:url" content="${url}">\n<meta property="twitter:title" content="${title}">\n<meta property="twitter:description" content="${desc}">\n<meta property="twitter:image" content="${img}">`;
+
+            container.querySelector('#meta-code').textContent = code;
+        }
+
+        container.querySelector('#btn-copy-meta').onclick = (e) => {
+            Utils.copyToClipboard(container.querySelector('#meta-code').textContent, e.target);
+        };
+
+        inputs.forEach(i => i.oninput = update);
+        update();
+    },
+
+    // 17. Robots.txt Generator & Rule Tester
+    'robots-generator': (container) => {
+        container.innerHTML = `
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2rem;">
+                <div class="controls-panel" style="flex-direction: column; align-items: stretch; margin: 0;">
+                    <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem;">Robots.txt Builder</h3>
+                    <div class="control-group">
+                        <label>Target User-Agent</label>
+                        <select id="rob-ua">
+                            <option value="*">All Web Crawlers (*)</option>
+                            <option value="Googlebot">Googlebot (Google)</option>
+                            <option value="Bingbot">Bingbot (Microsoft)</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>Disallow Paths (One per line)</label>
+                        <textarea id="rob-disallow" style="height: 100px;">/admin/
+/private/
+/api/
+/tmp/</textarea>
+                    </div>
+                    <div class="control-group">
+                        <label>Allow Paths (One per line)</label>
+                        <textarea id="rob-allow" style="height: 60px;">/
+/tools/</textarea>
+                    </div>
+                    <div class="control-group">
+                        <label>Sitemap URL</label>
+                        <input type="url" id="rob-sitemap" value="https://www.shajjadkhan.com/sitemap.xml">
+                    </div>
+                </div>
+
+                <div>
+                    <div class="output-box" style="margin: 0 0 1.25rem 0;">
+                        <div class="output-header">
+                            <span class="output-title">Generated robots.txt</span>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <button class="btn-secondary" id="btn-copy-rob" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">📋 Copy</button>
+                                <button class="btn-primary" id="btn-dl-rob" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">💾 Download</button>
+                            </div>
+                        </div>
+                        <pre class="code-pre" id="rob-output" style="min-height: 160px; font-size: 0.85rem;"></pre>
+                    </div>
+
+                    <!-- URL Rule Tester -->
+                    <div class="output-box">
+                        <div class="output-header"><span class="output-title">Live URL Path Tester</span></div>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <input type="text" id="rob-test-in" value="/admin/users" placeholder="/path-to-test">
+                            <button class="btn-primary" id="btn-rob-test">Test</button>
+                        </div>
+                        <div id="rob-test-badge" style="margin-top: 0.75rem; font-weight: 700; font-size: 0.95rem;"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        function buildRobots() {
+            const ua = container.querySelector('#rob-ua').value;
+            const disallow = container.querySelector('#rob-disallow').value.trim().split('\n').filter(Boolean);
+            const allow = container.querySelector('#rob-allow').value.trim().split('\n').filter(Boolean);
+            const sitemap = container.querySelector('#rob-sitemap').value.trim();
+
+            let txt = `# robots.txt generated by FastTrack Tools\nUser-agent: ${ua}\n`;
+            disallow.forEach(d => txt += `Disallow: ${d.trim()}\n`);
+            allow.forEach(a => txt += `Allow: ${a.trim()}\n`);
+            if (sitemap) txt += `\nSitemap: ${sitemap}\n`;
+
+            container.querySelector('#rob-output').textContent = txt;
+            return txt;
+        }
+
+        function testPath() {
+            const path = (container.querySelector('#rob-test-in').value || '').trim();
+            const disallow = container.querySelector('#rob-disallow').value.trim().split('\n').map(s => s.trim()).filter(Boolean);
+            const badge = container.querySelector('#rob-test-badge');
+
+            const blocked = disallow.some(rule => path.startsWith(rule));
+            if (blocked) {
+                badge.innerHTML = `<span style="color: #ef4444;">⛔ BLOCKED</span> &bull; Path matches disallow rule`;
+            } else {
+                badge.innerHTML = `<span style="color: var(--accent);">✅ ALLOWED</span> &bull; Search engines can crawl this path`;
+            }
+        }
+
+        container.querySelectorAll('input, textarea, select').forEach(el => el.oninput = buildRobots);
+        container.querySelector('#btn-rob-test').onclick = testPath;
+        container.querySelector('#btn-copy-rob').onclick = (e) => {
+            Utils.copyToClipboard(container.querySelector('#rob-output').textContent, e.target);
+        };
+        container.querySelector('#btn-dl-rob').onclick = () => {
+            const blob = new Blob([container.querySelector('#rob-output').textContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'robots.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+        };
+
+        buildRobots();
+        testPath();
+    },
+
+    // 18. URL Parser & Query String Builder
+    'url-parser': (container) => {
+        container.innerHTML = `
+            <div style="max-width: 950px; margin: 0 auto;">
+                <div class="controls-panel" style="flex-direction: column; align-items: stretch; margin: 0;">
+                    <div class="control-group">
+                        <label>Paste Full URL to Parse</label>
+                        <input type="text" id="url-parse-str" value="https://www.shajjadkhan.com/tools?category=pdf&sort=featured&token=fast2026#catalog">
+                    </div>
+                </div>
+
+                <div class="output-box" style="margin-top: 1.5rem;">
+                    <div class="output-header"><span class="output-title">Deconstructed URL Components</span></div>
+                    <table class="unit-table" id="url-parts-tbl"></table>
+                </div>
+
+                <div class="output-box" style="margin-top: 1.5rem;">
+                    <div class="output-header">
+                        <span class="output-title">Query Parameters Key-Value Pair Table</span>
+                    </div>
+                    <table class="unit-table">
+                        <thead><tr><th>Param Key</th><th>Param Value</th><th>Action</th></tr></thead>
+                        <tbody id="url-query-tbl"></tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+
+        const urlInput = container.querySelector('#url-parse-str');
+        const partsTbl = container.querySelector('#url-parts-tbl');
+        const queryTbl = container.querySelector('#url-query-tbl');
+
+        function parse() {
+            let u;
+            try {
+                let raw = urlInput.value.trim();
+                if (!raw.startsWith('http://') && !raw.startsWith('https://')) {
+                    raw = 'https://' + raw;
+                }
+                u = new URL(raw);
+            } catch (e) {
+                partsTbl.innerHTML = `<tr><td colspan="2" style="color: #ef4444;">Invalid URL format. Please enter a complete URL.</td></tr>`;
+                queryTbl.innerHTML = '';
+                return;
+            }
+
+            partsTbl.innerHTML = `
+                <tr><td style="width: 180px; color: var(--text-dim);">Protocol</td><td class="unit-val">${u.protocol}</td></tr>
+                <tr><td style="color: var(--text-dim);">Hostname (Domain)</td><td class="unit-val">${u.hostname}</td></tr>
+                <tr><td style="color: var(--text-dim);">Port</td><td class="unit-val">${u.port || '(Default 80/443)'}</td></tr>
+                <tr><td style="color: var(--text-dim);">Pathname</td><td class="unit-val">${u.pathname}</td></tr>
+                <tr><td style="color: var(--text-dim);">Search Query</td><td class="unit-val">${u.search || '(None)'}</td></tr>
+                <tr><td style="color: var(--text-dim);">Hash (Fragment)</td><td class="unit-val">${u.hash || '(None)'}</td></tr>
+            `;
+
+            const params = Array.from(u.searchParams.entries());
+            if (params.length === 0) {
+                queryTbl.innerHTML = `<tr><td colspan="3" style="color: var(--text-dim); text-align: center;">No query parameters in this URL</td></tr>`;
+            } else {
+                queryTbl.innerHTML = params.map(([k, v]) => `
+                    <tr>
+                        <td style="font-family: var(--font-mono); font-weight: 700; color: var(--accent);">${k}</td>
+                        <td style="font-family: var(--font-mono);">${v}</td>
+                        <td><button class="action-mini-btn" style="width: auto; padding: 0.2rem 0.5rem;" onclick="Utils.copyToClipboard('${v}', this)">Copy</button></td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        urlInput.oninput = parse;
+        parse();
+    },
+
+    // 25. JWT Token Decoder & Expiration Inspector
+    'jwt-decoder': (container) => {
+        container.innerHTML = `
+            <div style="max-width: 950px; margin: 0 auto;">
+                <div class="controls-panel" style="flex-direction: column; align-items: stretch; margin: 0;">
+                    <div class="control-group">
+                        <label>Paste JSON Web Token (JWT)</label>
+                        <textarea id="jwt-raw-in" style="height: 90px; font-size: 0.85rem;" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyXzg4OTIxIiwibmFtZSI6IlNoYWpqYWQgS2hhbiIsInJvbGUiOiJTeXN0ZW1BcmNoaXRlY3QiLCJpYXQiOjE3MDAwMDAwMDAsImV4cCI6MjEzMDAwMDAwMH0.signature_fasttrack</textarea>
+                    </div>
+                </div>
+
+                <div id="jwt-badge-status" style="margin-top: 1rem; padding: 0.75rem 1.25rem; border-radius: var(--radius-sm); font-weight: 700;"></div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; margin-top: 1.25rem;">
+                    <div class="output-box" style="margin: 0;">
+                        <div class="output-header"><span class="output-title" style="color: #ef4444;">Header (Algorithm & Type)</span></div>
+                        <pre class="code-pre" id="jwt-head-pre" style="min-height: 160px;"></pre>
+                    </div>
+                    <div class="output-box" style="margin: 0;">
+                        <div class="output-header"><span class="output-title" style="color: #a855f7;">Payload (Claims Data)</span></div>
+                        <pre class="code-pre" id="jwt-pay-pre" style="min-height: 160px;"></pre>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const txtIn = container.querySelector('#jwt-raw-in');
+        const badge = container.querySelector('#jwt-badge-status');
+        const headPre = container.querySelector('#jwt-head-pre');
+        const payPre = container.querySelector('#jwt-pay-pre');
+
+        function b64Decode(str) {
+            let output = str.replace(/-/g, '+').replace(/_/g, '/');
+            switch (output.length % 4) {
+                case 0: break;
+                case 2: output += '=='; break;
+                case 3: output += '='; break;
+                default: throw 'Illegal base64url string!';
+            }
+            return decodeURIComponent(escape(atob(output)));
+        }
+
+        function decode() {
+            const raw = (txtIn.value || '').trim();
+            const parts = raw.split('.');
+            if (parts.length < 2) {
+                badge.style.background = 'rgba(239, 68, 68, 0.15)';
+                badge.style.color = '#ef4444';
+                badge.textContent = '⛔ Invalid JWT format (Must have at least 2 dot-separated base64 segments)';
+                headPre.textContent = '';
+                payPre.textContent = '';
+                return;
+            }
+
+            try {
+                const headerObj = JSON.parse(b64Decode(parts[0]));
+                const payloadObj = JSON.parse(b64Decode(parts[1]));
+
+                headPre.textContent = JSON.stringify(headerObj, null, 2);
+                payPre.textContent = JSON.stringify(payloadObj, null, 2);
+
+                if (payloadObj.exp) {
+                    const expMs = payloadObj.exp * 1000;
+                    const expDate = new Date(expMs);
+                    const now = Date.now();
+
+                    if (now < expMs) {
+                        badge.style.background = 'rgba(16, 185, 129, 0.15)';
+                        badge.style.color = 'var(--accent)';
+                        badge.innerHTML = `🟢 TOKEN ACTIVE &bull; Expires: ${expDate.toUTCString()} (in ${Math.round((expMs - now) / 86400000)} days)`;
+                    } else {
+                        badge.style.background = 'rgba(239, 68, 68, 0.15)';
+                        badge.style.color = '#ef4444';
+                        badge.innerHTML = `🔴 TOKEN EXPIRED &bull; Expired on: ${expDate.toUTCString()}`;
+                    }
+                } else {
+                    badge.style.background = 'rgba(59, 130, 246, 0.15)';
+                    badge.style.color = '#60a5fa';
+                    badge.textContent = '⚪ No Expiration (exp) claim present in token payload';
+                }
+            } catch (err) {
+                badge.style.background = 'rgba(239, 68, 68, 0.15)';
+                badge.style.color = '#ef4444';
+                badge.textContent = `Parse Error: ${err.message || err}`;
+            }
+        }
+
+        txtIn.oninput = decode;
+        decode();
+    },
+
+    // 27. Text Diff & Comparison Checker
+    'text-diff': (container) => {
+        container.innerHTML = `
+            <div style="max-width: 1000px; margin: 0 auto;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.25rem;">
+                    <div>
+                        <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Original Text</label>
+                        <textarea id="diff-original" style="height: 160px; margin-top: 0.35rem;">System Architect: Shajjad Khan
+Platform: FastTrack Tools
+Status: Initial Release
+Architecture: Client-side file processing</textarea>
+                    </div>
+                    <div>
+                        <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Modified Text</label>
+                        <textarea id="diff-modified" style="height: 160px; margin-top: 0.35rem;">System Architect: Shajjad Khan (Founder)
+Platform: FastTrack Tools Suite 2.0
+Status: Production Deployed
+Architecture: Client-side file processing
+Monetization: Google AdSense integrated</textarea>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+                    <button class="btn-primary" id="btn-run-diff">Compare Diff</button>
+                    <div id="diff-metrics" style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-muted);"></div>
+                </div>
+
+                <div class="output-box" style="margin-top: 1.25rem;">
+                    <div class="output-header"><span class="output-title">Line-by-Line Difference Analysis</span></div>
+                    <div id="diff-display" style="font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.6;"></div>
+                </div>
+            </div>
+        `;
+
+        function compare() {
+            const orig = container.querySelector('#diff-original').value.split('\n');
+            const mod = container.querySelector('#diff-modified').value.split('\n');
+            const display = container.querySelector('#diff-display');
+            const metrics = container.querySelector('#diff-metrics');
+
+            let additions = 0;
+            let deletions = 0;
+            let html = '';
+
+            const max = Math.max(orig.length, mod.length);
+            for (let i = 0; i < max; i++) {
+                const lineO = orig[i];
+                const lineM = mod[i];
+
+                if (lineO === undefined) {
+                    additions++;
+                    html += `<div class="diff-output-line diff-add">+ ${escapeHtml(lineM)}</div>`;
+                } else if (lineM === undefined) {
+                    deletions++;
+                    html += `<div class="diff-output-line diff-del">- ${escapeHtml(lineO)}</div>`;
+                } else if (lineO === lineM) {
+                    html += `<div class="diff-output-line diff-same">  ${escapeHtml(lineO)}</div>`;
+                } else {
+                    deletions++;
+                    additions++;
+                    html += `<div class="diff-output-line diff-del">- ${escapeHtml(lineO)}</div>`;
+                    html += `<div class="diff-output-line diff-add">+ ${escapeHtml(lineM)}</div>`;
+                }
+            }
+
+            display.innerHTML = html || '<div style="color: var(--text-dim); text-align: center;">Texts are identical</div>';
+            metrics.innerHTML = `<span style="color: #34d399;">+${additions} added</span> &bull; <span style="color: #f87171;">-${deletions} removed</span>`;
+        }
+
+        function escapeHtml(str) {
+            return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        container.querySelector('#btn-run-diff').onclick = compare;
+        compare();
+    },
+
+    // 31. CSS Gradient & Box Shadow Studio
+    'css-generator': (container) => {
+        container.innerHTML = `
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2rem;">
+                <div class="controls-panel" style="flex-direction: column; align-items: stretch; margin: 0;">
+                    <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem;">Gradient & Shadow Controls</h3>
+                    <div class="control-group">
+                        <label>Gradient Angle: <span id="css-ang-lbl" style="color: var(--accent);">135deg</span></label>
+                        <input type="range" id="css-ang" min="0" max="360" value="135">
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="control-group">
+                            <label>Start Color</label>
+                            <input type="color" id="css-c1" value="#00e599" style="height: 42px; cursor: pointer;">
+                        </div>
+                        <div class="control-group">
+                            <label>End Color</label>
+                            <input type="color" id="css-c2" value="#00c2ff" style="height: 42px; cursor: pointer;">
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label>Shadow Blur: <span id="css-blur-lbl" style="color: var(--accent);">28px</span></label>
+                        <input type="range" id="css-blur-in" min="0" max="80" value="28">
+                    </div>
+                </div>
+
+                <div>
+                    <div class="output-box" style="margin: 0; text-align: center;">
+                        <div class="output-header"><span class="output-title">Live Element Preview</span></div>
+                        <div id="css-target-box" style="height: 180px; border-radius: 16px; margin: 1rem 0; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #060913; font-size: 1.25rem;">
+                            Live CSS Preview
+                        </div>
+                    </div>
+
+                    <div class="output-box" style="margin-top: 1.25rem;">
+                        <div class="output-header">
+                            <span class="output-title">Generated CSS Properties</span>
+                            <button class="btn-secondary" id="btn-copy-css" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">📋 Copy CSS</button>
+                        </div>
+                        <pre class="code-pre" id="css-code-txt"></pre>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const angIn = container.querySelector('#css-ang');
+        const c1In = container.querySelector('#css-c1');
+        const c2In = container.querySelector('#css-c2');
+        const blurIn = container.querySelector('#css-blur-in');
+        const target = container.querySelector('#css-target-box');
+        const codePre = container.querySelector('#css-code-txt');
+
+        function update() {
+            const ang = angIn.value;
+            const c1 = c1In.value;
+            const c2 = c2In.value;
+            const blur = blurIn.value;
+
+            container.querySelector('#css-ang-lbl').textContent = `${ang}deg`;
+            container.querySelector('#css-blur-lbl').textContent = `${blur}px`;
+
+            const grad = `linear-gradient(${ang}deg, ${c1} 0%, ${c2} 100%)`;
+            const shadow = `0 12px ${blur}px rgba(0, 229, 153, 0.35)`;
+
+            target.style.background = grad;
+            target.style.boxShadow = shadow;
+
+            const css = `background: ${grad};\nbox-shadow: ${shadow};\nborder-radius: 16px;`;
+            codePre.textContent = css;
+        }
+
+        container.querySelectorAll('input').forEach(i => i.oninput = update);
+        container.querySelector('#btn-copy-css').onclick = (e) => Utils.copyToClipboard(codePre.textContent, e.target);
+        update();
+    },
+
+    // 09. Image Cropper & Aspect Ratio Tool
+    'image-crop': (container) => {
+        container.innerHTML = `
+            <div style="max-width: 900px; margin: 0 auto;">
+                <div class="dropzone" id="crop-dropzone">
+                    <div class="dropzone-icon">✂️</div>
+                    <div class="dropzone-title">Upload Image to Crop</div>
+                    <div class="dropzone-subtitle">Supported formats: JPG, PNG, WebP</div>
+                    <input type="file" id="crop-file" accept="image/*" style="display: none;">
+                    <button class="dropzone-btn" onclick="document.getElementById('crop-file').click()">Choose Image</button>
+                </div>
+
+                <div id="crop-workspace" style="display: none; margin-top: 1.5rem;">
+                    <div class="controls-panel" style="gap: 0.75rem; align-items: center;">
+                        <span style="font-weight: 700; font-size: 0.85rem; color: var(--text-muted);">RATIO:</span>
+                        <button class="pill-btn active" data-r="1">1:1 (Square)</button>
+                        <button class="pill-btn" data-r="1.777">16:9 (Landscape)</button>
+                        <button class="pill-btn" data-r="1.333">4:3 (Standard)</button>
+                        <button class="pill-btn" data-r="0.5625">9:16 (Story)</button>
+                        <button class="btn-primary" id="btn-save-crop" style="margin-left: auto;">💾 Download Cropped Image</button>
+                    </div>
+                    <div style="background: #020617; border-radius: var(--radius-md); padding: 1rem; display: flex; justify-content: center; align-items: center; min-height: 320px;">
+                        <canvas id="crop-canvas" style="max-width: 100%; max-height: 450px; border: 1.5px dashed var(--accent);"></canvas>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        let activeImg = null;
+        let activeRatio = 1.0;
+
+        const fileIn = container.querySelector('#crop-file');
+        const workspace = container.querySelector('#crop-workspace');
+        const canvas = container.querySelector('#crop-canvas');
+        const ctx = canvas.getContext('2d');
+
+        function renderCrop() {
+            if (!activeImg) return;
+            const imgW = activeImg.width;
+            const imgH = activeImg.height;
+
+            let targetW, targetH;
+            if (imgW / imgH > activeRatio) {
+                targetH = imgH;
+                targetW = imgH * activeRatio;
+            } else {
+                targetW = imgW;
+                targetH = imgW / activeRatio;
+            }
+
+            const startX = (imgW - targetW) / 2;
+            const startY = (imgH - targetH) / 2;
+
+            canvas.width = targetW;
+            canvas.height = targetH;
+            ctx.drawImage(activeImg, startX, startY, targetW, targetH, 0, 0, targetW, targetH);
+        }
+
+        fileIn.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (re) => {
+                const img = new Image();
+                img.onload = () => {
+                    activeImg = img;
+                    workspace.style.display = 'block';
+                    renderCrop();
+                };
+                img.src = re.target.result;
+            };
+            reader.readAsDataURL(file);
+        };
+
+        container.querySelectorAll('.pill-btn').forEach(btn => {
+            btn.onclick = () => {
+                container.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                activeRatio = parseFloat(btn.dataset.r) || 1;
+                renderCrop();
+            };
+        });
+
+        container.querySelector('#btn-save-crop').onclick = () => {
+            const a = document.createElement('a');
+            a.href = canvas.toDataURL('image/png');
+            a.download = `cropped_image_${Date.now()}.png`;
+            a.click();
+        };
+    },
+
+    // 10. Image Color Picker & Palette Extractor
+    'image-color-picker': (container) => {
+        container.innerHTML = `
+            <div style="max-width: 900px; margin: 0 auto;">
+                <div class="dropzone" id="picker-dropzone">
+                    <div class="dropzone-icon">🎨</div>
+                    <div class="dropzone-title">Upload Image to Extract Palette</div>
+                    <div class="dropzone-subtitle">Hover over any pixel to inspect color codes or generate dominant palette</div>
+                    <input type="file" id="picker-file" accept="image/*" style="display: none;">
+                    <button class="dropzone-btn" onclick="document.getElementById('picker-file').click()">Select Image</button>
+                </div>
+
+                <div id="picker-workspace" style="display: none; margin-top: 1.5rem;">
+                    <div style="display: flex; gap: 1.25rem; align-items: center; background: #0f172a; padding: 1rem 1.5rem; border-radius: var(--radius-md); margin-bottom: 1.25rem; border: 1px solid var(--border-dim);">
+                        <div id="swatch-hover" style="width: 50px; height: 50px; border-radius: 8px; border: 2px solid white; background: #00e599; flex-shrink: 0;"></div>
+                        <div>
+                            <div style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase;">Hovered Pixel</div>
+                            <div id="hex-hover" style="font-size: 1.35rem; font-weight: 800; font-family: var(--font-mono); color: var(--text-main);">#00E599</div>
+                            <div id="rgb-hover" style="font-size: 0.8rem; color: var(--text-muted); font-family: var(--font-mono);">rgb(0, 229, 153)</div>
+                        </div>
+                        <button class="btn-secondary" id="btn-copy-hover" style="margin-left: auto; font-size: 0.82rem;">Copy HEX</button>
+                    </div>
+
+                    <div style="text-align: center; background: #020617; padding: 1rem; border-radius: var(--radius-md); overflow: auto; max-height: 450px;">
+                        <canvas id="picker-canvas" style="cursor: crosshair; max-width: 100%;"></canvas>
+                    </div>
+
+                    <div class="output-box" style="margin-top: 1.5rem;">
+                        <div class="output-header"><span class="output-title">Dominant 6-Color Palette (Click to Copy)</span></div>
+                        <div class="palette-grid" id="palette-chips"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const fileIn = container.querySelector('#picker-file');
+        const workspace = container.querySelector('#picker-workspace');
+        const canvas = container.querySelector('#picker-canvas');
+        const ctx = canvas.getContext('2d');
+        const swatch = container.querySelector('#swatch-hover');
+        const hexTxt = container.querySelector('#hex-hover');
+        const rgbTxt = container.querySelector('#rgb-hover');
+        const copyBtn = container.querySelector('#btn-copy-hover');
+        const paletteChips = container.querySelector('#palette-chips');
+
+        fileIn.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (re) => {
+                const img = new Image();
+                img.onload = () => {
+                    workspace.style.display = 'block';
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+
+                    // Extract dominant palette
+                    const step = Math.max(1, Math.floor((img.width * img.height) / 500));
+                    const imgData = ctx.getImageData(0, 0, img.width, img.height).data;
+                    const samples = [];
+                    for (let i = 0; i < imgData.length; i += step * 4) {
+                        const r = imgData[i], g = imgData[i + 1], b = imgData[i + 2], a = imgData[i + 3];
+                        if (a > 128) samples.push({ r, g, b });
+                    }
+
+                    // Pick 6 distinct colors
+                    const palette = [];
+                    for (let s of samples) {
+                        if (palette.length >= 6) break;
+                        const isDistinct = palette.every(p => Math.hypot(p.r - s.r, p.g - s.g, p.b - s.b) > 45);
+                        if (isDistinct) palette.push(s);
+                    }
+
+                    paletteChips.innerHTML = palette.map(p => {
+                        const hex = `#${((1 << 24) + (p.r << 16) + (p.g << 8) + p.b).toString(16).slice(1).toUpperCase()}`;
+                        return `
+                            <div class="palette-chip" onclick="Utils.copyToClipboard('${hex}', this)" title="Click to copy ${hex}">
+                                <div class="palette-swatch" style="background: ${hex};"></div>
+                                <div class="palette-info">
+                                    <div class="palette-hex">${hex}</div>
+                                    <div class="palette-rgb">rgb(${p.r}, ${p.g}, ${p.b})</div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                };
+                img.src = re.target.result;
+            };
+            reader.readAsDataURL(file);
+        };
+
+        canvas.onmousemove = (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const x = Math.floor((e.clientX - rect.left) * scaleX);
+            const y = Math.floor((e.clientY - rect.top) * scaleY);
+
+            const pixel = ctx.getImageData(x, y, 1, 1).data;
+            const hex = `#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1).toUpperCase()}`;
+            const rgb = `rgb(${pixel[0]}, ${pixel[1]}, ${pixel[2]})`;
+
+            swatch.style.background = hex;
+            hexTxt.textContent = hex;
+            rgbTxt.textContent = rgb;
+        };
+
+        copyBtn.onclick = (e) => Utils.copyToClipboard(hexTxt.textContent, e.target);
     }
-});
+
+};
