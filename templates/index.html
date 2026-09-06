@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shajjad Khan — Founder, Product Architect & Systems Engineer</title>
+    <meta name="description" content="Official portfolio of Shajjad Khan (www.shajjadkhan.com). Founder of TawreedFlow (Enterprise B2B Procurement SaaS for GCC Hospitality), BlockTree Spatial Matrix, and Distributed Telecom Automation Systems.">
+    <meta name="keywords" content="Shajjad Khan, TawreedFlow, B2B SaaS, GCC Procurement, Hotel Software, BlockTree, Python, Django, Systems Architect, Telecom Automation, MikroTik">
+    <meta name="author" content="Shajjad Khan">
+    <link rel="canonical" href="https://www.shajjadkhan.com/">
+
+    <!-- Open Graph / Social Media -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://www.shajjadkhan.com/">
+    <meta property="og:title" content="Shajjad Khan — Founder, Product Architect & Systems Engineer">
+    <meta property="og:description" content="Founder of TawreedFlow (GCC Enterprise Hospitality SaaS), BlockTree, and high-performance telecom & network systems.">
+    <meta property="og:image" content="{{ url_for('static', filename='images/tawreedflow-logo.png') }}">
+
+    <!-- Google Fonts & Bootstrap Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=1.0">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/tawreedflow-favicon.png') }}">
+</head>
+<body>
+
+    <!-- Sticky Navigation Header -->
+    <header class="navbar-fixed" id="navbar">
+        <div class="nav-container">
+            <a href="#hero" class="brand-logo">
+                <div class="logo-mark">SK</div>
+                <div class="logo-text">
+                    <span class="logo-name">Shajjad Khan</span>
+                    <span class="logo-sub">Founder & Systems Architect</span>
+                </div>
+            </a>
+
+            <nav class="nav-links" id="nav-links">
+                <a href="#flagship" class="nav-link"><i class="bi bi-stars text-emerald"></i> TawreedFlow</a>
+                <a href="#projects" class="nav-link">Projects</a>
+                <a href="#about" class="nav-link">About</a>
+                <a href="#stack" class="nav-link">Architecture & Stack</a>
+                <a href="#contact" class="nav-link">Contact</a>
+            </nav>
+
+            <div class="nav-actions">
+                <a href="#contact" class="btn btn-emerald-sm">
+                    <span>Let's Talk</span>
+                    <i class="bi bi-arrow-right-short"></i>
+                </a>
+                <button type="button" class="mobile-menu-btn" id="mobile-menu-toggle" aria-label="Toggle navigation">
+                    <i class="bi bi-list" id="menu-icon"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+        <section class="hero-section" id="hero">
+            <div class="hero-bg-glow"></div>
+            <div class="container hero-content">
+                <div class="status-badge">
+                    <span class="pulse-beacon"></span>
+                    <span class="status-text">Available for High-Impact Advisory & Technical Leadership</span>
+                </div>
+
+                <h1 class="hero-title">
+                    Architecting Resilient <span class="gradient-text-emerald">B2B SaaS</span> &amp; Distributed <span class="gradient-text-cyan">Systems</span>.
+                </h1>
+
+                <p class="hero-description">
+                    I'm <strong>Shajjad Khan</strong>, a hands-on Founder and Systems Architect. I design, build, and deploy production platforms that eliminate mission-critical operational bottlenecks — from multi-tenant GCC enterprise procurement to real-time spatial discourse graphs and automated telecom infrastructure.
+                </p>
+
+                <div class="hero-cta-group">
+                    <a href="#flagship" class="btn btn-emerald-lg">
+                        <i class="bi bi-rocket-takeoff-fill"></i>
+                        <span>Explore TawreedFlow Case Study</span>
+                    </a>
+                    <a href="#projects" class="btn btn-outline-lg">
+                        <i class="bi bi-grid-fill"></i>
+                        <span>View Project Portfolio</span>
+                    </a>
+                    <a href="https://github.com/ShajjadKhan" target="_blank" rel="noopener" class="btn btn-subtle-lg">
+                        <i class="bi bi-github"></i>
+                        <span>GitHub</span>
+                    </a>
+                </div>
+
+                <!-- Live Metrics Strip -->
+                <div class="metrics-strip">
+                    <div class="metric-card">
+                        <div class="metric-value gradient-text-emerald">10+</div>
+                        <div class="metric-label">Production Platforms Deployed</div>
+                        <div class="metric-detail">SaaS, Telecom, & Internal Ops</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value gradient-text-gold">Enterprise</div>
+                        <div class="metric-label">GCC Hospitality Focus</div>
+                        <div class="metric-detail">Multi-tenant, Marriott Network Integration</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value gradient-text-cyan">Full-Stack</div>
+                        <div class="metric-label">Linux Kernel to Frontends</div>
+                        <div class="metric-detail">Security, Databases, & Reactive UI</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value gradient-text-emerald">99.9%</div>
+                        <div class="metric-label">Mission-Critical Reliability</div>
+                        <div class="metric-detail">Automated Daemons & Monitoring</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Featured Flagship Section: TawreedFlow -->
+        <section class="section flagship-section" id="flagship">
+            <div class="container">
+                <div class="section-badge text-emerald"><i class="bi bi-award-fill"></i> FEATURED FLAGSHIP PRODUCT</div>
+                <h2 class="section-title">TawreedFlow <span class="arabic-sub">توريد</span></h2>
+                <p class="section-subtitle">
+                    The modern multi-tenant procurement and supply chain SaaS purpose-built for luxury hotels and enterprise hospitality across the GCC (Saudi Arabia, UAE, Qatar).
+                </p>
+
+                <div class="flagship-card">
+                    <div class="flagship-header">
+                        <div class="flagship-brand">
+                            <img src="{{ url_for('static', filename='images/tawreedflow-logo.png') }}" alt="TawreedFlow Logo" class="flagship-logo-img">
+                            <div>
+                                <h3 class="flagship-heading">TawreedFlow Enterprise</h3>
+                                <div class="flagship-tags">
+                                    <span class="tag tag-emerald">Live Production SaaS</span>
+                                    <span class="tag tag-gold">GCC Hospitality</span>
+                                    <span class="tag tag-cyan">Multi-Tenant Architecture</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flagship-actions">
+                            <a href="https://tawreedflow.com" target="_blank" rel="noopener" class="btn btn-emerald-sm">
+                                <span>Visit tawreedflow.com</span>
+                                <i class="bi bi-box-arrow-up-right"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="flagship-grid">
+                        <div class="flagship-column">
+                            <div class="feature-block">
+                                <div class="feature-icon bg-emerald-light"><i class="bi bi-exclamation-triangle-fill text-emerald"></i></div>
+                                <div>
+                                    <h4>The Industry Challenge</h4>
+                                    <p>
+                                        Hospitality properties in the GCC process millions in monthly food, beverage, engineering, and operational requisitions. Traditional operations relied on chaotic, un-audited WhatsApp chats and fragmented spreadsheets, resulting in lost quotes, procurement leakage, and lack of compliance with financial controls.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="feature-block">
+                                <div class="feature-icon bg-emerald-light"><i class="bi bi-cpu-fill text-emerald"></i></div>
+                                <div>
+                                    <h4>The Architectural Solution</h4>
+                                    <p>
+                                        TawreedFlow creates a single source of truth across the entire procurement lifecycle. Requisitions flow seamlessly through Department Heads, Purchasing Coordinators, and Financial Directors. Automated RFQs dispatch directly to vetted suppliers, enabling instant quotation comparison with item substitute flags and purchase order delivery verification.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="feature-block">
+                                <div class="feature-icon bg-emerald-light"><i class="bi bi-diagram-3-fill text-emerald"></i></div>
+                                <div>
+                                    <h4>Enterprise Role-Based Access</h4>
+                                    <p>
+                                        Engineered with strict tenant isolation supporting multi-property hotel chains: Master Admins, Directors, Purchasing Receivers, Department Heads, and external Supplier Portals (Owners, Admins, Field Drivers).
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flagship-column">
+                            <div class="spec-panel">
+                                <div class="spec-panel-header">
+                                    <span class="spec-title"><i class="bi bi-terminal-fill text-emerald"></i> Engineering & Tech Stack</span>
+                                    <span class="badge-status-live">PROD ACTIVE</span>
+                                </div>
+                                
+                                <div class="spec-list">
+                                    <div class="spec-item">
+                                        <span class="spec-key">Core Framework</span>
+                                        <span class="spec-val">Python / Django 6.0 Enterprise Multi-Tenant</span>
+                                    </div>
+                                    <div class="spec-item">
+                                        <span class="spec-key">Databases & Cache</span>
+                                        <span class="spec-val">PostgreSQL / MySQL + Redis Key-Value Store</span>
+                                    </div>
+                                    <div class="spec-item">
+                                        <span class="spec-key">Asynchronous Workers</span>
+                                        <span class="spec-val">Celery Queues & Scheduled Dispatch Daemons</span>
+                                    </div>
+                                    <div class="spec-item">
+                                        <span class="spec-key">Real-time Telemetry</span>
+                                        <span class="spec-val">VAPID WebPush Notifications + WhatsApp Cloud API</span>
+                                    </div>
+                                    <div class="spec-item">
+                                        <span class="spec-key">Infrastructure</span>
+                                        <span class="spec-val">Debian / Nginx / Systemd Zero-Downtime Pipeline</span>
+                                    </div>
+                                    <div class="spec-item">
+                                        <span class="spec-key">Live Production URL</span>
+                                        <span class="spec-val"><a href="https://tawreedflow.com" target="_blank" rel="noopener" class="link-emerald">tawreedflow.com</a></span>
+                                    </div>
+                                </div>
+
+                                <div class="quote-box">
+                                    <i class="bi bi-quote quote-icon text-emerald"></i>
+                                    <p class="quote-text">
+                                        "Designed and built from the ground up by solo founder Shajjad Khan, transforming enterprise hospitality purchasing across GCC hotels."
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Projects Portfolio Section -->
+        <section class="section projects-section" id="projects">
+            <div class="container">
+                <div class="section-badge text-cyan"><i class="bi bi-layers-fill"></i> ENGINEERING SHOWCASE</div>
+                <h2 class="section-title">Selected Systems &amp; Platforms</h2>
+                <p class="section-subtitle">
+                    A collection of production platforms, distributed systems, and real-time architectures built by Shajjad Khan.
+                </p>
+
+                <div class="projects-grid">
+                    <!-- Project 1: BlockTree Matrix -->
+                    <div class="project-card">
+                        <div class="project-header">
+                            <div class="project-badge bg-cyan-subtle text-cyan"><i class="bi bi-diagram-3-fill"></i> SPATIAL GRAPH</div>
+                            <span class="project-year">2026</span>
+                        </div>
+                        <h3 class="project-title">BlockTree Editorial Matrix</h3>
+                        <p class="project-summary">
+                            A spatial newsletter and branching discourse platform featuring a 2D canvas navigation matrix, 360° virtual joystick physics, verified author registration, and a Microsoft Word-style rich typography studio with live side-by-side Markdown preview.
+                        </p>
+                        <ul class="project-highlights">
+                            <li>Dynamic 2D radial collision physics preventing sibling overlap.</li>
+                            <li>Multi-tier security: Pre-driver regex SQLi filters, PBKDF2 dummy hashing, and RFC 6238 TOTP 2FA.</li>
+                            <li>Real-time spatial keyword search and content moderation suite.</li>
+                        </ul>
+                        <div class="project-tech-stack">
+                            <span class="tech-pill">Python</span>
+                            <span class="tech-pill">Flask</span>
+                            <span class="tech-pill">SQLite WAL</span>
+                            <span class="tech-pill">HTML5 Canvas</span>
+                            <span class="tech-pill">Panzoom</span>
+                        </div>
+                    </div>
+
+                    <!-- Project 2: ISP Telecom & Radius Billing Engine -->
+                    <div class="project-card">
+                        <div class="project-header">
+                            <div class="project-badge bg-gold-subtle text-gold"><i class="bi bi-hdd-network-fill"></i> TELECOM / NETWORKING</div>
+                            <span class="project-year">Production</span>
+                        </div>
+                        <h3 class="project-title">ISP Telecom Billing & MikroTik Automation</h3>
+                        <p class="project-summary">
+                            High-throughput subscriber management, automated bandwidth provisioning, and radius accounting platform built for regional internet service providers.
+                        </p>
+                        <ul class="project-highlights">
+                            <li>Real-time RouterOS API automation for dynamic queue shaping and user disconnects.</li>
+                            <li>Automated WhatsApp payment reminders and automated gateway invoice dispatch.</li>
+                            <li>Captive portal hotspot redirects for overdue payment resolution.</li>
+                        </ul>
+                        <div class="project-tech-stack">
+                            <span class="tech-pill">Python</span>
+                            <span class="tech-pill">PHP</span>
+                            <span class="tech-pill">MySQL</span>
+                            <span class="tech-pill">MikroTik API</span>
+                            <span class="tech-pill">FreeRADIUS</span>
+                        </div>
+                    </div>
+
+                    <!-- Project 3: GenieACS / CWMP TR-069 Fleet Management -->
+                    <div class="project-card">
+                        <div class="project-header">
+                            <div class="project-badge bg-emerald-subtle text-emerald"><i class="bi bi-router-fill"></i> IOT & HARDWARE</div>
+                            <span class="project-year">Production</span>
+                        </div>
+                        <h3 class="project-title">GenieACS TR-069 Fleet Management</h3>
+                        <p class="project-summary">
+                            Carrier-grade auto-configuration server (ACS) orchestrating remote provisioning, firmware upgrades, and real-time telemetry across thousands of subscriber CPE routers and GPON ONUs.
+                        </p>
+                        <ul class="project-highlights">
+                            <li>Zero-touch provisioning profiles triggered upon customer fiber activation.</li>
+                            <li>Real-time Wi-Fi diagnostic telemetry, signal power analysis, and fault detection.</li>
+                            <li>Automated mass firmware patch deployment with safety rollback thresholds.</li>
+                        </ul>
+                        <div class="project-tech-stack">
+                            <span class="tech-pill">GenieACS</span>
+                            <span class="tech-pill">Node.js</span>
+                            <span class="tech-pill">MongoDB</span>
+                            <span class="tech-pill">TR-069 CWMP</span>
+                            <span class="tech-pill">Debian Linux</span>
+                        </div>
+                    </div>
+
+                    <!-- Project 4: Enterprise HR & Payroll SaaS -->
+                    <div class="project-card">
+                        <div class="project-header">
+                            <div class="project-badge bg-cyan-subtle text-cyan"><i class="bi bi-people-fill"></i> OPERATIONS SAAS</div>
+                            <span class="project-year">Production</span>
+                        </div>
+                        <h3 class="project-title">Enterprise HR &amp; Automated Payroll System</h3>
+                        <p class="project-summary">
+                            End-to-end human resource management suite providing multi-branch employee records, biometric attendance synchronization, multi-tier leave approval hierarchies, and automated payroll pay slip calculation.
+                        </p>
+                        <ul class="project-highlights">
+                            <li>Automated salary computation factoring overtime, deductions, and tax compliance.</li>
+                            <li>Biometric clock-in telemetry ingestion with shift scheduling algorithms.</li>
+                            <li>Role-based self-service employee portal and departmental audit logging.</li>
+                        </ul>
+                        <div class="project-tech-stack">
+                            <span class="tech-pill">Python</span>
+                            <span class="tech-pill">Django</span>
+                            <span class="tech-pill">PostgreSQL</span>
+                            <span class="tech-pill">TailwindCSS</span>
+                            <span class="tech-pill">REST APIs</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- About Me & Philosophy Section -->
+        <section class="section about-section" id="about">
+            <div class="container">
+                <div class="about-card">
+                    <div class="about-grid">
+                        <div class="about-text-column">
+                            <div class="section-badge text-gold"><i class="bi bi-person-badge-fill"></i> PHILOSOPHY & BACKGROUND</div>
+                            <h2 class="section-title">Architecting with Founder Mindset</h2>
+                            <p class="about-lead">
+                                I don't just write code — I build self-sustaining software businesses, analyze operational unit economics, and engineer the underlying infrastructure to withstand real-world scale.
+                            </p>
+                            
+                            <div class="principles-grid">
+                                <div class="principle-item">
+                                    <div class="principle-num text-emerald">01</div>
+                                    <div>
+                                        <h4>Business Context First</h4>
+                                        <p>Every architectural decision connects directly to operational efficiency, user satisfaction, and tangible ROI.</p>
+                                    </div>
+                                </div>
+                                <div class="principle-item">
+                                    <div class="principle-num text-cyan">02</div>
+                                    <div>
+                                        <h4>Security from the Ground Up</h4>
+                                        <p>Defense-in-depth engineering: strict pre-driver input validation, constant-time cryptography, persistent lockout systems, and tamper-resistant clients.</p>
+                                    </div>
+                                </div>
+                                <div class="principle-item">
+                                    <div class="principle-num text-gold">03</div>
+                                    <div>
+                                        <h4>Full-Lifecycle Ownership</h4>
+                                        <p>From listening to end users on hotel floors and network operations centers to designing schemas, writing APIs, building responsive UIs, and maintaining Linux system daemons.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="about-stats-column">
+                            <div class="profile-card">
+                                <div class="avatar-wrap">
+                                    <div class="avatar-ring"></div>
+                                    <img src="{{ url_for('static', filename='images/developer.png') }}" alt="Shajjad Khan" class="avatar-img">
+                                </div>
+                                <h3 class="profile-name">Shajjad Khan</h3>
+                                <p class="profile-role">Solo Founder &amp; Systems Engineer</p>
+                                <p class="profile-loc"><i class="bi bi-geo-alt-fill text-emerald"></i> GCC &amp; Global</p>
+
+                                <div class="profile-bio-box">
+                                    <p>
+                                        Specializing in Enterprise B2B SaaS, High-Throughput Network Automation, and Mission-Critical Web Applications.
+                                    </p>
+                                </div>
+
+                                <div class="profile-links">
+                                    <a href="https://github.com/ShajjadKhan" target="_blank" rel="noopener" class="profile-btn"><i class="bi bi-github"></i> GitHub</a>
+                                    <a href="https://tawreedflow.com" target="_blank" rel="noopener" class="profile-btn"><i class="bi bi-globe"></i> TawreedFlow</a>
+                                    <a href="#contact" class="profile-btn"><i class="bi bi-envelope-fill"></i> Contact</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Technical Competencies & Skills Section -->
+        <section class="section stack-section" id="stack">
+            <div class="container">
+                <div class="section-badge text-emerald"><i class="bi bi-tools"></i> TECHNICAL ARSENAL</div>
+                <h2 class="section-title">Core Competencies &amp; Technologies</h2>
+                <p class="section-subtitle">
+                    The battle-tested technologies and architectural methodologies powering my production deployments.
+                </p>
+
+                <div class="stack-grid">
+                    <div class="stack-category-card">
+                        <div class="category-header">
+                            <i class="bi bi-code-slash text-emerald fs-4"></i>
+                            <h3>Backend &amp; Languages</h3>
+                        </div>
+                        <ul class="skills-list">
+                            <li><i class="bi bi-check-circle-fill text-emerald"></i> <strong>Python</strong> (Django 6, Flask, FastAPI)</li>
+                            <li><i class="bi bi-check-circle-fill text-emerald"></i> <strong>JavaScript / TypeScript</strong> (Node.js, ES6+)</li>
+                            <li><i class="bi bi-check-circle-fill text-emerald"></i> <strong>SQL</strong> (PostgreSQL, MySQL, SQLite WAL)</li>
+                            <li><i class="bi bi-check-circle-fill text-emerald"></i> <strong>PHP</strong> &amp; Bash/Shell Scripting</li>
+                            <li><i class="bi bi-check-circle-fill text-emerald"></i> <strong>REST APIs &amp; WebSockets</strong></li>
+                        </ul>
+                    </div>
+
+                    <div class="stack-category-card">
+                        <div class="category-header">
+                            <i class="bi bi-server text-cyan fs-4"></i>
+                            <h3>Infrastructure &amp; DevOps</h3>
+                        </div>
+                        <ul class="skills-list">
+                            <li><i class="bi bi-check-circle-fill text-cyan"></i> <strong>Linux System Administration</strong> (Debian/Ubuntu)</li>
+                            <li><i class="bi bi-check-circle-fill text-cyan"></i> <strong>Nginx Reverse Proxy &amp; SSL</strong></li>
+                            <li><i class="bi bi-check-circle-fill text-cyan"></i> <strong>Systemd Daemons &amp; Service Management</strong></li>
+                            <li><i class="bi bi-check-circle-fill text-cyan"></i> <strong>Celery &amp; Redis</strong> Background Workers</li>
+                            <li><i class="bi bi-check-circle-fill text-cyan"></i> <strong>Docker &amp; Git CI/CD</strong> Workflows</li>
+                        </ul>
+                    </div>
+
+                    <div class="stack-category-card">
+                        <div class="category-header">
+                            <i class="bi bi-hdd-network text-gold fs-4"></i>
+                            <h3>Telecom &amp; Networking</h3>
+                        </div>
+                        <ul class="skills-list">
+                            <li><i class="bi bi-check-circle-fill text-gold"></i> <strong>MikroTik RouterOS API</strong> Automation</li>
+                            <li><i class="bi bi-check-circle-fill text-gold"></i> <strong>FreeRADIUS &amp; AAA</strong> Accounting</li>
+                            <li><i class="bi bi-check-circle-fill text-gold"></i> <strong>GenieACS CWMP (TR-069)</strong> Device Fleet</li>
+                            <li><i class="bi bi-check-circle-fill text-gold"></i> <strong>Tailscale Mesh</strong> &amp; WireGuard VPN</li>
+                            <li><i class="bi bi-check-circle-fill text-gold"></i> <strong>Bandwidth Shaper Queues &amp; Hotspots</strong></li>
+                        </ul>
+                    </div>
+
+                    <div class="stack-category-card">
+                        <div class="category-header">
+                            <i class="bi bi-shield-check text-emerald fs-4"></i>
+                            <h3>Security &amp; Architecture</h3>
+                        </div>
+                        <ul class="skills-list">
+                            <li><i class="bi bi-check-circle-fill text-emerald"></i> <strong>Pre-Driver Regex SQLi Shields</strong></li>
+                            <li><i class="bi bi-check-circle-fill text-emerald"></i> <strong>Timing Defense</strong> (PBKDF2 Dummy Equalizers)</li>
+                            <li><i class="bi bi-check-circle-fill text-emerald"></i> <strong>RFC 6238 TOTP 2FA</strong> Multi-Factor Auth</li>
+                            <li><i class="bi bi-check-circle-fill text-emerald"></i> <strong>Honeypot Bot Traps &amp; Rate Limiting</strong></li>
+                            <li><i class="bi bi-check-circle-fill text-emerald"></i> <strong>Multi-Tenant Schema &amp; Data Isolation</strong></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Interactive Contact Section -->
+        <section class="section contact-section" id="contact">
+            <div class="container">
+                <div class="contact-card">
+                    <div class="contact-grid">
+                        <div class="contact-info">
+                            <div class="section-badge text-emerald"><i class="bi bi-chat-dots-fill"></i> GET IN TOUCH</div>
+                            <h2 class="section-title">Let's Discuss Your Next High-Impact Initiative</h2>
+                            <p class="contact-description">
+                                Whether you're looking to architect a scalable B2B SaaS platform, automate complex network operations, or evaluate strategic technical advisory, I'd welcome the conversation.
+                            </p>
+
+                            <div class="contact-methods">
+                                <div class="method-item">
+                                    <div class="method-icon"><i class="bi bi-globe2 text-emerald"></i></div>
+                                    <div>
+                                        <div class="method-label">Personal Domain</div>
+                                        <div class="method-value">www.shajjadkhan.com</div>
+                                    </div>
+                                </div>
+                                <div class="method-item">
+                                    <div class="method-icon"><i class="bi bi-building text-gold"></i></div>
+                                    <div>
+                                        <div class="method-label">Enterprise Venture</div>
+                                        <div class="method-value"><a href="https://tawreedflow.com" target="_blank" rel="noopener" class="link-gold">tawreedflow.com</a></div>
+                                    </div>
+                                </div>
+                                <div class="method-item">
+                                    <div class="method-icon"><i class="bi bi-github text-cyan"></i></div>
+                                    <div>
+                                        <div class="method-label">Source Code &amp; Repositories</div>
+                                        <div class="method-value"><a href="https://github.com/ShajjadKhan" target="_blank" rel="noopener" class="link-cyan">github.com/ShajjadKhan</a></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="contact-form-column">
+                            <form id="contact-form" class="cyber-form" onsubmit="return false;">
+                                <h3 class="form-heading"><i class="bi bi-envelope-paper-fill text-emerald"></i> Send Direct Inquiry</h3>
+                                
+                                <div id="form-alert" class="alert-box d-none"></div>
+
+                                <div class="form-row">
+                                    <div class="input-field">
+                                        <label for="contact-name">Your Name *</label>
+                                        <input type="text" id="contact-name" name="name" placeholder="e.g. Sultan Al-Otaibi" required maxlength="80">
+                                    </div>
+                                    <div class="input-field">
+                                        <label for="contact-email">Email Address *</label>
+                                        <input type="email" id="contact-email" name="email" placeholder="name@company.com" required maxlength="100">
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="input-field">
+                                        <label for="contact-company">Organization / Company</label>
+                                        <input type="text" id="contact-company" name="company" placeholder="e.g. Hospitality Group, Tech Corp" maxlength="100">
+                                    </div>
+                                    <div class="input-field">
+                                        <label for="contact-project-type">Subject / Project Scope</label>
+                                        <select id="contact-project-type" name="project_type">
+                                            <option value="TawreedFlow Inquiry">TawreedFlow SaaS Inquiry</option>
+                                            <option value="Enterprise SaaS Development">Enterprise SaaS Architecture</option>
+                                            <option value="Telecom & Network Automation">Telecom & Network Automation</option>
+                                            <option value="Technical Advisory / Fractional CTO">Technical Advisory / Consulting</option>
+                                            <option value="General Collaboration">General Inquiries</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="input-field">
+                                    <label for="contact-message">Message &amp; Project Overview *</label>
+                                    <textarea id="contact-message" name="message" rows="5" placeholder="Describe your operational bottleneck, timeline, or scope of inquiry..." required maxlength="3000"></textarea>
+                                </div>
+
+                                <button type="submit" id="contact-submit-btn" class="btn btn-emerald-block">
+                                    <i class="bi bi-send-fill"></i>
+                                    <span>Transmit Message</span>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="portfolio-footer">
+        <div class="container footer-content">
+            <div class="footer-left">
+                <div class="footer-brand">
+                    <span class="logo-mark sm">SK</span>
+                    <strong>Shajjad Khan</strong>
+                </div>
+                <p class="footer-copy">
+                    &copy; {{ year }} Shajjad Khan. All rights reserved. Registered domain: <strong>www.shajjadkhan.com</strong>.
+                </p>
+            </div>
+
+            <div class="footer-right">
+                <div class="system-status-indicator">
+                    <span class="status-dot"></span>
+                    <span>Systems Operational &bull; Port 9191 Daemon Active</span>
+                </div>
+                <div class="footer-links">
+                    <a href="https://github.com/ShajjadKhan" target="_blank" rel="noopener"><i class="bi bi-github"></i> GitHub</a>
+                    <a href="https://tawreedflow.com" target="_blank" rel="noopener"><i class="bi bi-shield-check"></i> TawreedFlow</a>
+                    <a href="#hero"><i class="bi bi-arrow-up"></i> Top</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}?v=1.0"></script>
+</body>
+</html>
