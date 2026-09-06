@@ -1,0 +1,69 @@
+{% extends "tools/base.html" %}
+
+{% block content %}
+<section class="tools-direct-view">
+    <div class="tools-direct-container">
+        <!-- Compact Command & Search Bar -->
+        <div class="command-bar-wrapper">
+            <div class="search-box-direct">
+                <span class="search-icon-direct">🔍</span>
+                <input 
+                    type="text" 
+                    id="main-search-input" 
+                    placeholder="Search tools directly... (e.g. 'jpg to pdf', 'sitemap', 'qr', 'profit', 'resize', 'merge')"
+                    autocomplete="off"
+                    autofocus
+                >
+                <button id="clear-search-btn" class="clear-btn" style="display: none;" title="Clear search">✕</button>
+                <div class="search-stats-badge" id="search-counter">{{ total_tools }} Tools</div>
+            </div>
+
+            <!-- Instant Category Filter Pills -->
+            <div class="category-pills-row" id="category-pills">
+                {% for cat in categories %}
+                <button 
+                    class="pill-btn {% if cat.id == 'all' %}active{% endif %}" 
+                    data-category="{{ cat.id }}"
+                >
+                    <span class="pill-icon">{{ cat.icon }}</span>
+                    <span class="pill-name">{{ cat.name }}</span>
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Direct Showing Tools Grid (Starts immediately under search & pills) -->
+        <div class="tools-grid-direct" id="toolsGrid">
+            {% for tool in tools %}
+            <a href="/tools/{{ tool.slug }}" class="tool-card-direct" data-category="{{ tool.category }}" data-slug="{{ tool.slug }}" data-keywords="{{ tool.keywords | join(' ') }} {{ tool.title }} {{ tool.short_desc }}">
+                <div class="card-head">
+                    <div class="card-icon-wrap">{{ tool.icon }}</div>
+                    <div class="card-meta">
+                        <span class="cat-chip chip-{{ tool.category }}">{{ tool.category | upper }}</span>
+                        {% if tool.badge %}
+                        <span class="feature-chip">{{ tool.badge }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-info">
+                    <h3 class="tool-name">{{ tool.title }}</h3>
+                    <p class="tool-summary">{{ tool.short_desc }}</p>
+                </div>
+                <div class="card-action">
+                    <span class="action-text">Use Tool</span>
+                    <span class="action-arrow">→</span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+
+        <!-- Empty Search Fallback State -->
+        <div class="empty-state-direct" id="emptyState" style="display: none;">
+            <div class="empty-icon">🔎</div>
+            <h3>No matching tools found</h3>
+            <p>Try searching for broader keywords like <code>pdf</code>, <code>image</code>, <code>profit</code>, or <code>dev</code>.</p>
+            <button class="reset-search-btn" onclick="resetSearch()">View All 32 Tools</button>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}FastTrack Tools | 32+ High-Velocity Utilities by Shajjad Khan{% endblock %}</title>
+    <meta name="description" content="{% block meta_desc %}Fast, private, client-side engineering, image, PDF, and business utilities. 100% private in-browser execution with zero lag.{% endblock %}">
+    <link rel="canonical" href="https://www.shajjadkhan.com/tools{% block canonical %}{% endblock %}">
+
+    <!-- Google AdSense Auto-Ads Script -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ adsense_pub_id|default('ca-pub-XXXXXXXXXXXXXXXX') }}"
+            crossorigin="anonymous"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Tools Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='tools/css/tools.css') }}?v=2.1">
+
+    <!-- External Client-Side Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" defer></script>
+    <script>
+        window.initPdfWorker = function() {
+            if (window.pdfjsLib) {
+                window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+            }
+        };
+        window.addEventListener('load', window.initPdfWorker);
+    </script>
+</head>
+<body class="theme-dark">
+    <!-- Quick Search Command Modal -->
+    <div id="command-modal" class="cmd-modal" style="display: none;">
+        <div class="cmd-modal-backdrop" onclick="toggleCommandPalette(false)"></div>
+        <div class="cmd-modal-content">
+            <div class="cmd-input-wrap">
+                <span class="cmd-icon">🔍</span>
+                <input type="text" id="cmd-search-input" placeholder="Search 32+ tools... (e.g. 'jpg to pdf', 'sitemap', 'profit', 'qr')" autocomplete="off">
+                <span class="cmd-badge">ESC</span>
+            </div>
+            <div class="cmd-results" id="cmd-results-list"></div>
+        </div>
+    </div>
+
+    <!-- Sleek Top Navigation Bar -->
+    <header class="tools-header">
+        <div class="header-container">
+            <div class="logo-group">
+                <a href="/tools" class="brand-logo">
+                    <span class="logo-symbol">⚡</span>
+                    <span class="logo-text">FastTrack<span class="brand-highlight">Tools</span></span>
+                </a>
+                <span class="version-badge">32 Suite</span>
+            </div>
+
+            <!-- Quick Header Search Trigger -->
+            <div class="header-search" onclick="toggleCommandPalette(true)">
+                <span class="search-icon">🔍</span>
+                <span class="search-placeholder">Find any tool...</span>
+                <kbd class="shortcut-key">/</kbd>
+            </div>
+
+            <nav class="nav-links">
+                <a href="/tools#pdf" class="nav-link"><span class="cat-dot pdf"></span>PDF</a>
+                <a href="/tools#image" class="nav-link"><span class="cat-dot image"></span>Images</a>
+                <a href="/tools#business" class="nav-link"><span class="cat-dot business"></span>Business</a>
+                <a href="/tools#web" class="nav-link"><span class="cat-dot web"></span>SEO & Web</a>
+                <a href="/tools#dev" class="nav-link"><span class="cat-dot dev"></span>Dev</a>
+                <a href="/" class="portfolio-back-btn">
+                    <span class="p-icon">←</span>
+                    <span>Portfolio</span>
+                </a>
+            </nav>
+
+            <button class="mobile-menu-toggle" id="mobileMenuBtn" aria-label="Toggle Navigation">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Top Non-Intrusive AdSense Leaderboard Slot -->
+    <div class="ad-banner-slot top-leaderboard-slot">
+        <div class="ad-container-box">
+            <span class="ad-policy-label">ADVERTISEMENT</span>
+            <ins class="adsbygoogle"
+                 style="display:block"
+                 data-ad-client="{{ adsense_pub_id|default('ca-pub-XXXXXXXXXXXXXXXX') }}"
+                 data-ad-slot="1001001001"
+                 data-ad-format="auto"
+                 data-full-width-responsive="true"></ins>
+            <script>
+                 (adsbygoogle = window.adsbygoogle || []).push({});
+            </script>
+            <div class="ad-fallback-card">
+                <span class="ad-pill">AD SPACE</span>
+                <span class="ad-caption">Google AdSense Leaderboard • Supporting FastTrack Tools serverless utilities.</span>
+                <a href="/tools/privacy" class="ad-info-link">Ad Choices</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Injection -->
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="tools-footer">
+        <div class="footer-container">
+            <div class="footer-col brand-col">
+                <div class="footer-logo">
+                    <span class="logo-symbol">⚡</span>
+                    <span class="logo-text">FastTrack<span class="brand-highlight">Tools</span></span>
+                </div>
+                <p class="footer-desc">
+                    High-velocity, zero-latency browser utilities engineered by <a href="/" class="founder-link">Shajjad Khan</a>. Client-side execution with zero external data logging.
+                </p>
+            </div>
+            <div class="footer-col">
+                <h4>Tool Categories</h4>
+                <ul>
+                    <li><a href="/tools#pdf">PDF Documents Suite</a></li>
+                    <li><a href="/tools#image">Image & Media Processing</a></li>
+                    <li><a href="/tools#business">Business & Profit Calculators</a></li>
+                    <li><a href="/tools#web">SEO & Web Diagnostics</a></li>
+                    <li><a href="/tools#dev">Security & Developer Utilities</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Monetization & Legal</h4>
+                <ul>
+                    <li><a href="/tools/privacy">Privacy Policy (GDPR / CCPA)</a></li>
+                    <li><a href="/tools/terms">Terms of Service</a></li>
+                    <li><a href="/ads.txt">AdSense ads.txt Record</a></li>
+                    <li><a href="/" target="_blank">Founder Portfolio (Ad-Free)</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <div class="footer-bottom-container">
+                <p>&copy; {{ current_year }} FastTrack Tools by <a href="/">Shajjad Khan</a>. All utilities free & privacy-protected.</p>
+                <div class="footer-badge">🔒 100% Client-Side Memory Processing</div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Tools Scripts -->
+    <script src="{{ url_for('static', filename='tools/js/tools-engine.js') }}?v=2.1"></script>
+    <script src="{{ url_for('static', filename='tools/js/tools-ui.js') }}?v=2.1"></script>
+</body>
+</html>

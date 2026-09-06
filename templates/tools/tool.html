@@ -1,0 +1,122 @@
+{% extends "tools/base.html" %}
+
+{% block title %}{{ tool.title }} | FastTrack Tools{% endblock %}
+{% block meta_desc %}{{ tool.detailed_desc }}{% endblock %}
+{% block canonical %}/{{ tool.slug }}{% endblock %}
+
+{% block content %}
+<div class="tool-page-wrapper">
+    <!-- Breadcrumb & Top Bar -->
+    <div class="tool-page-nav">
+        <div class="breadcrumbs">
+            <a href="/tools">⚡ FastTrack Tools</a>
+            <span class="bc-sep">/</span>
+            <a href="/tools#{{ tool.category }}" class="bc-cat">{{ tool.category | upper }}</a>
+            <span class="bc-sep">/</span>
+            <span class="bc-current">{{ tool.title }}</span>
+        </div>
+        <div class="tool-quick-actions">
+            <a href="/tools" class="back-link">← All 32 Tools</a>
+        </div>
+    </div>
+
+    <!-- Tool Header Card -->
+    <div class="tool-header-card">
+        <div class="tool-icon-large">{{ tool.icon }}</div>
+        <div class="tool-header-content">
+            <div class="tool-title-row">
+                <h1 class="tool-main-title">{{ tool.title }}</h1>
+                {% if tool.badge %}
+                <span class="tool-page-badge">{{ tool.badge }}</span>
+                {% endif %}
+                <span class="privacy-tag">
+                    <span class="lock-icon">🔒</span> Client-Side Private
+                </span>
+            </div>
+            <p class="tool-main-desc">{{ tool.detailed_desc }}</p>
+        </div>
+    </div>
+
+    <!-- Active Tool Workspace Area -->
+    <div class="tool-workspace" id="toolWorkspace" data-tool-id="{{ tool.id }}" data-tool-slug="{{ tool.slug }}">
+        <!-- Injected dynamically by tools-engine.js based on data-tool-id -->
+        <div class="workspace-loading" id="workspaceLoading">
+            <div class="spinner"></div>
+            <p>Initializing {{ tool.title }} workspace...</p>
+        </div>
+    </div>
+
+    <!-- Dedicated Tool Workspace AdSense Slot -->
+    <div class="ad-banner-slot tool-workspace-ad-slot">
+        <div class="ad-container-box">
+            <span class="ad-policy-label">ADVERTISEMENT</span>
+            <ins class="adsbygoogle"
+                 style="display:block"
+                 data-ad-client="{{ adsense_pub_id|default('ca-pub-XXXXXXXXXXXXXXXX') }}"
+                 data-ad-slot="4004004004"
+                 data-ad-format="auto"
+                 data-full-width-responsive="true"></ins>
+            <script>
+                 (adsbygoogle = window.adsbygoogle || []).push({});
+            </script>
+            <div class="ad-fallback-card">
+                <span class="ad-pill">AD SPACE</span>
+                <span class="ad-caption">Google AdSense Workspace Display • Free high-performance utilities supported by non-intrusive advertising.</span>
+                <a href="/tools/privacy" class="ad-info-link">Ad Choices</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Usage Guide & Privacy Card -->
+    <div class="tool-guide-card">
+        <div class="guide-header">
+            <h3>💡 Privacy & Performance Guarantee</h3>
+        </div>
+        <div class="guide-body">
+            <div class="tips-grid">
+                <div class="tip-card">
+                    <span class="tip-icon">⚡</span>
+                    <strong>Zero File Storage</strong>
+                    <p>All processing occurs inside your device's browser memory via WebAssembly/Canvas. Files are never uploaded or retained.</p>
+                </div>
+                <div class="tip-card">
+                    <span class="tip-icon">⌨️</span>
+                    <strong>Instant Navigation</strong>
+                    <p>Press <kbd>/</kbd> anywhere to quickly search and switch between any of the 32 tools in under a second.</p>
+                </div>
+                <div class="tip-card">
+                    <span class="tip-icon">📦</span>
+                    <strong>Batch Friendly</strong>
+                    <p>Process multiple files seamlessly with simple drag-and-drop or batch selection.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Related Tools Section -->
+    <div class="related-tools-section">
+        <div class="related-header">
+            <h3>Related FastTrack Utilities</h3>
+            <a href="/tools" class="view-all-link">Explore all tools →</a>
+        </div>
+        <div class="tools-grid-direct mini-grid">
+            {% for rel in related_tools %}
+            <a href="/tools/{{ rel.slug }}" class="tool-card-direct mini-card">
+                <div class="card-head">
+                    <div class="card-icon-wrap">{{ rel.icon }}</div>
+                    <span class="cat-chip chip-{{ rel.category }}">{{ rel.category | upper }}</span>
+                </div>
+                <div class="card-info">
+                    <h4 class="tool-name">{{ rel.title }}</h4>
+                    <p class="tool-summary">{{ rel.short_desc }}</p>
+                </div>
+                <div class="card-action">
+                    <span class="action-text">Open</span>
+                    <span class="action-arrow">→</span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Shajjad Khan — Official Portfolio Application
+Shajjad Khan — Official Portfolio & FastTrack Tools Application
 Domain: www.shajjadkhan.com
 Port: 9191
 """
@@ -10,12 +10,13 @@ import sys
 import sqlite3
 import datetime
 import re
-from flask import Flask, render_template, request, jsonify, redirect
+from flask import Flask, render_template, request, jsonify, redirect, Response
+
+from tools_blueprint import tools_bp
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, 'contacts.db')
-TOOLS_URL = os.environ.get('TOOLS_URL', 'http://100.66.112.67:9292')
 
 app = Flask(
     __name__,
@@ -23,6 +24,11 @@ app = Flask(
     template_folder='templates'
 )
 app.config['SECRET_KEY'] = os.environ.get('PORTFOLIO_SECRET_KEY', 'shajjadkhan_portfolio_secure_key_2026')
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max upload
+
+# Register Modular Tools Platform at /tools
+app.register_blueprint(tools_bp, url_prefix='/tools')
+
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)
@@ -58,24 +64,28 @@ def add_security_headers(response):
     response.headers['X-Frame-Options'] = 'SAMEORIGIN'
     response.headers['X-XSS-Protection'] = '1; mode=block'
     response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
-    response.headers['Server'] = 'ShajjadKhan-Portfolio/1.0'
+    response.headers['Server'] = 'ShajjadKhan-Platform/2.0'
     return response
 
 @app.route('/')
 def home():
-    """Renders the official portfolio homepage for www.shajjadkhan.com."""
+    """Renders the official portfolio homepage for www.shajjadkhan.com (100% ad-free)."""
     return render_template(
         'index.html',
         year=datetime.datetime.now().year,
-        tools_url=TOOLS_URL
+        tools_url='/tools'
     )
 
-@app.route('/tools')
-@app.route('/tools/<path:subpath>')
-def tools_gateway(subpath=''):
-    """Seamlessly routes to the standalone FastTrack Tools service."""
-    target = f"{TOOLS_URL}/tool/{subpath}" if subpath else f"{TOOLS_URL}/"
-    return redirect(target)
+@app.route('/ads.txt')
+def ads_txt():
+    """Google AdSense root crawler authorization record."""
+    pub_id = os.environ.get('ADSENSE_PUB_ID', 'pub-XXXXXXXXXXXXXXXX').replace('ca-', '')
+    lines = [
+        f"google.com, {pub_id}, DIRECT, f08c47fec0942fa0",
+        "# FastTrack Tools - AdSense Authorization Record",
+        f"# Publisher: Shajjad Khan ({pub_id})"
+    ]
+    return Response('\n'.join(lines) + '\n', mimetype='text/plain')
 
 @app.route('/health')
 def health():
@@ -87,7 +97,7 @@ def health():
         "port": 9191,
         "owner": "Shajjad Khan",
         "tools_suite": "32 utilities active",
-        "tools_port": 9292
+        "tools_mounted_at": "/tools"
     })
 
 @app.route('/api/contact', methods=['POST'])
@@ -167,5 +177,5 @@ def sitemap():
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 9191))
-    print(f"🚀 Shajjad Khan Portfolio daemon starting on 0.0.0.0:{port}")
+    print(f"🚀 Shajjad Khan Portfolio & Tools daemon starting on 0.0.0.0:{port}")
     app.run(host='0.0.0.0', port=port, debug=False)
