@@ -41,14 +41,14 @@
             <nav class="nav-links" id="nav-links">
                 <a href="#flagship" class="nav-link"><i class="bi bi-stars text-emerald"></i> TawreedFlow</a>
                 <a href="#projects" class="nav-link"><i class="bi bi-grid-fill"></i> Projects</a>
-                <a href="#tools" class="nav-link"><span class="badge-tools-pill">32+</span> Tools Hub</a>
+                <a href="{{ tools_url }}" target="_blank" rel="noopener" class="nav-link"><i class="bi bi-tools text-cyan"></i> FastTrack Tools <i class="bi bi-box-arrow-up-right" style="font-size: 11px;"></i></a>
                 <a href="#about" class="nav-link"><i class="bi bi-person-fill"></i> About</a>
                 <a href="#stack" class="nav-link"><i class="bi bi-layers-fill"></i> Architecture &amp; Stack</a>
                 <a href="#contact" class="nav-link"><i class="bi bi-envelope-fill"></i> Contact</a>
                 <div class="mobile-drawer-actions">
                     <a href="{{ tools_url }}" target="_blank" rel="noopener" class="btn btn-cyan-block">
                         <i class="bi bi-tools"></i>
-                        <span>Launch 32+ Tools Platform</span>
+                        <span>Launch 32+ Tools Platform ↗</span>
                     </a>
                     <a href="#contact" class="btn btn-emerald-block">
                         <i class="bi bi-chat-text-fill"></i>
@@ -58,9 +58,9 @@
             </nav>
 
             <div class="nav-actions">
-                <a href="{{ tools_url }}" target="_blank" rel="noopener" class="btn btn-outline-sm desktop-nav-btn" title="Open 32+ FastTrack Tools">
+                <a href="{{ tools_url }}" target="_blank" rel="noopener" class="btn btn-outline-sm desktop-nav-btn" title="Open 32+ FastTrack Tools (Separate Site)">
                     <i class="bi bi-tools text-emerald"></i>
-                    <span>FastTrack Tools</span>
+                    <span>FastTrack Tools ↗</span>
                 </a>
                 <a href="#contact" class="btn btn-emerald-sm desktop-nav-btn">
                     <span>Let's Talk</span>
@@ -100,9 +100,9 @@
                         <i class="bi bi-rocket-takeoff-fill"></i>
                         <span>Explore TawreedFlow Case Study</span>
                     </a>
-                    <a href="#tools" class="btn btn-cyan-lg">
+                    <a href="{{ tools_url }}" target="_blank" rel="noopener" class="btn btn-cyan-lg">
                         <i class="bi bi-tools"></i>
-                        <span>32+ FastTrack Tools</span>
+                        <span>32+ FastTrack Tools ↗</span>
                     </a>
                     <a href="#projects" class="btn btn-outline-lg">
                         <i class="bi bi-grid-fill"></i>
@@ -296,13 +296,44 @@
                         </div>
                     </div>
 
-                    <!-- Project 2: ISP Telecom & Radius Billing Engine -->
+                    <!-- Project 2: FastTrack Tools Platform -->
+                    <div class="project-card">
+                        <div class="project-header">
+                            <div class="project-badge bg-cyan-subtle text-cyan"><i class="bi bi-tools"></i> UTILITY ECOSYSTEM</div>
+                            <span class="project-year">v2.0 Active</span>
+                        </div>
+                        <h3 class="project-title">FastTrack Tools Suite (32+ Utilities)</h3>
+                        <p class="project-summary">
+                            A standalone high-velocity utility platform engineered for 100% client-side data privacy. Allows users to process PDFs, compress images, calculate business margins, and audit SEO sitemaps directly in-browser with zero server lag.
+                        </p>
+                        <ul class="project-highlights">
+                            <li>100% client-side privacy: Files never leave user RAM; zero third-party cloud storage exposure.</li>
+                            <li>Comprehensive catalog: PDF merge/split, WebP/PNG conversions, QR generation, and XML sitemap telemetry.</li>
+                            <li>Independent architecture: Hosted on dedicated service infrastructure with ad-monetized sustainability.</li>
+                        </ul>
+                        <div class="project-tech-stack">
+                            <span class="tech-pill">Python</span>
+                            <span class="tech-pill">Flask</span>
+                            <span class="tech-pill">HTML5 Canvas</span>
+                            <span class="tech-pill">Web Workers</span>
+                            <span class="tech-pill">PDF.js</span>
+                            <span class="tech-pill">REST APIs</span>
+                        </div>
+                        <div style="margin-top: 18px;">
+                            <a href="{{ tools_url }}" target="_blank" rel="noopener" class="btn btn-cyan-block">
+                                <i class="bi bi-box-arrow-up-right"></i>
+                                <span>Launch FastTrack Tools (Separate Site ↗)</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Project 3: ISP Telecom & Radius Billing Engine -->
                     <div class="project-card">
                         <div class="project-header">
                             <div class="project-badge bg-gold-subtle text-gold"><i class="bi bi-hdd-network-fill"></i> TELECOM / NETWORKING</div>
                             <span class="project-year">Production</span>
                         </div>
-                        <h3 class="project-title">ISP Telecom Billing & MikroTik Automation</h3>
+                        <h3 class="project-title">ISP Telecom Billing &amp; MikroTik Automation</h3>
                         <p class="project-summary">
                             High-throughput subscriber management, automated bandwidth provisioning, and radius accounting platform built for regional internet service providers.
                         </p>
@@ -320,10 +351,10 @@
                         </div>
                     </div>
 
-                    <!-- Project 3: GenieACS / CWMP TR-069 Fleet Management -->
+                    <!-- Project 4: GenieACS / CWMP TR-069 Fleet Management -->
                     <div class="project-card">
                         <div class="project-header">
-                            <div class="project-badge bg-emerald-subtle text-emerald"><i class="bi bi-router-fill"></i> IOT & HARDWARE</div>
+                            <div class="project-badge bg-emerald-subtle text-emerald"><i class="bi bi-router-fill"></i> IOT &amp; HARDWARE</div>
                             <span class="project-year">Production</span>
                         </div>
                         <h3 class="project-title">GenieACS TR-069 Fleet Management</h3>
@@ -344,7 +375,7 @@
                         </div>
                     </div>
 
-                    <!-- Project 4: Enterprise HR & Payroll SaaS -->
+                    <!-- Project 5: Enterprise HR & Payroll SaaS -->
                     <div class="project-card">
                         <div class="project-header">
                             <div class="project-badge bg-cyan-subtle text-cyan"><i class="bi bi-people-fill"></i> OPERATIONS SAAS</div>
@@ -367,89 +398,6 @@
                             <span class="tech-pill">REST APIs</span>
                         </div>
                     </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- FastTrack Tools Suite Section -->
-        <section class="section tools-section" id="tools">
-            <div class="container">
-                <div class="section-header-row">
-                    <div>
-                        <div class="section-badge text-cyan"><i class="bi bi-tools"></i> 32+ FASTTRACK ONLINE UTILITIES</div>
-                        <h2 class="section-title">Developer & Productivity Tools Hub</h2>
-                        <p class="section-subtitle">
-                            Ultra-fast, 100% private, client-side utilities. Process PDFs, photos, graphics, code, and financial formulas directly in your browser with zero latency.
-                        </p>
-                    </div>
-                    <div class="tools-header-actions">
-                        <a href="{{ tools_url }}" target="_blank" rel="noopener" class="btn btn-emerald-sm">
-                            <span>Open Dedicated Tools Platform</span>
-                            <i class="bi bi-box-arrow-up-right"></i>
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Search & Filter Controls -->
-                <div class="tools-search-card">
-                    <div class="tools-search-input-wrap">
-                        <i class="bi bi-search tools-search-icon"></i>
-                        <input 
-                            type="text" 
-                            id="portfolio-tools-search" 
-                            placeholder="Search 32+ tools by keyword... (e.g. 'pdf arrange', 'jpg to pdf', 'photo resizer', 'compress', 'sitemap', 'profit', 'qr', 'json')"
-                            autocomplete="off"
-                        >
-                        <span class="search-counter-tag" id="portfolio-tools-counter">{{ total_tools }} Utilities Ready</span>
-                    </div>
-
-                    <!-- Category Filter Pills -->
-                    <div class="tools-category-pills" id="portfolio-category-pills">
-                        {% for cat in categories %}
-                        <button 
-                            type="button" 
-                            class="p-pill-btn {% if cat.id == 'all' %}active{% endif %}" 
-                            data-cat="{{ cat.id }}"
-                        >
-                            <span>{{ cat.icon }}</span>
-                            <span>{{ cat.name }}</span>
-                        </button>
-                        {% endfor %}
-                    </div>
-                </div>
-
-                <!-- Tools Cards Grid -->
-                <div class="portfolio-tools-grid" id="portfolioToolsGrid">
-                    {% for tool in tools %}
-                    <div class="p-tool-card" data-category="{{ tool.category }}" data-keywords="{{ tool.keywords | join(' ') }} {{ tool.title }} {{ tool.short_desc }}">
-                        <div class="p-tool-card-top">
-                            <div class="p-tool-icon">{{ tool.icon }}</div>
-                            <div class="p-tool-badges">
-                                <span class="p-tool-cat tag-{{ tool.category }}">{{ tool.category | upper }}</span>
-                                {% if tool.badge %}
-                                <span class="p-tool-feature-badge">{{ tool.badge }}</span>
-                                {% endif %}
-                            </div>
-                        </div>
-                        <div class="p-tool-card-body">
-                            <h3 class="p-tool-title">{{ tool.title }}</h3>
-                            <p class="p-tool-desc">{{ tool.short_desc }}</p>
-                        </div>
-                        <div class="p-tool-card-footer">
-                            <a href="{{ tools_url }}/tool/{{ tool.slug }}" target="_blank" rel="noopener" class="p-tool-launch-btn">
-                                <span>Launch Service</span>
-                                <i class="bi bi-arrow-right-short"></i>
-                            </a>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-
-                <!-- Empty Search State -->
-                <div class="empty-tools-state" id="portfolioToolsEmpty" style="display: none;">
-                    <div class="empty-icon"><i class="bi bi-search"></i></div>
-                    <h4>No matching tools found</h4>
-                    <p>Try searching for keywords like <code>pdf</code>, <code>image</code>, <code>resize</code>, <code>compress</code>, <code>calc</code>, or <code>qr</code>.</p>
                 </div>
             </div>
         </section>

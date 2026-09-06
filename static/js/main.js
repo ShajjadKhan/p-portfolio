@@ -114,63 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 4. Portfolio Tools Search & Category Filter
-    const toolsSearch = document.getElementById('portfolio-tools-search');
-    const toolsGrid = document.getElementById('portfolioToolsGrid');
-    const toolsEmpty = document.getElementById('portfolioToolsEmpty');
-    const toolsCounter = document.getElementById('portfolio-tools-counter');
-    const catPills = document.querySelectorAll('.p-pill-btn');
 
-    if (toolsSearch && toolsGrid) {
-        const cards = Array.from(toolsGrid.querySelectorAll('.p-tool-card'));
-        const totalTools = cards.length;
-
-        function filterPortfolioTools() {
-            const query = toolsSearch.value.trim().toLowerCase();
-            const activePill = document.querySelector('.p-pill-btn.active');
-            const selectedCat = activePill ? activePill.getAttribute('data-cat') : 'all';
-
-            let matchCount = 0;
-
-            cards.forEach(card => {
-                const cardCat = card.getAttribute('data-category');
-                const cardKeywords = (card.getAttribute('data-keywords') || '').toLowerCase();
-                const cardTitle = (card.querySelector('.p-tool-title')?.textContent || '').toLowerCase();
-                const cardDesc = (card.querySelector('.p-tool-desc')?.textContent || '').toLowerCase();
-
-                const matchesCat = (selectedCat === 'all' || cardCat === selectedCat);
-                const matchesQuery = !query ||
-                    cardTitle.includes(query) ||
-                    cardDesc.includes(query) ||
-                    cardKeywords.includes(query);
-
-                if (matchesCat && matchesQuery) {
-                    card.style.display = 'flex';
-                    matchCount++;
-                } else {
-                    card.style.display = 'none';
-                }
-            });
-
-            if (toolsCounter) {
-                toolsCounter.textContent = query || selectedCat !== 'all' ? `${matchCount} Found` : `${totalTools} Utilities Ready`;
-            }
-
-            if (toolsEmpty) {
-                toolsEmpty.style.display = matchCount === 0 ? 'block' : 'none';
-            }
-        }
-
-        toolsSearch.addEventListener('input', filterPortfolioTools);
-
-        catPills.forEach(pill => {
-            pill.addEventListener('click', () => {
-                catPills.forEach(p => p.classList.remove('active'));
-                pill.classList.add('active');
-                filterPortfolioTools();
-            });
-        });
-    }
 
     // 5. Live Riyadh / UTC Clock (Parity with shajjadkhan.com)
     function updateLiveClock() {

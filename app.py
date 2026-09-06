@@ -12,7 +12,6 @@ import datetime
 import re
 from flask import Flask, render_template, request, jsonify, redirect
 
-from tools_catalog import CATEGORIES, TOOLS
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, 'contacts.db')
@@ -68,9 +67,6 @@ def home():
     return render_template(
         'index.html',
         year=datetime.datetime.now().year,
-        tools=TOOLS,
-        categories=CATEGORIES,
-        total_tools=len(TOOLS),
         tools_url=TOOLS_URL
     )
 
