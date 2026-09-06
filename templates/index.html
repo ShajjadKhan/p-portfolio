@@ -41,12 +41,17 @@
             <nav class="nav-links" id="nav-links">
                 <a href="#flagship" class="nav-link"><i class="bi bi-stars text-emerald"></i> TawreedFlow</a>
                 <a href="#projects" class="nav-link">Projects</a>
+                <a href="#tools" class="nav-link"><span class="badge-tools-pill">32+</span> Tools Hub</a>
                 <a href="#about" class="nav-link">About</a>
                 <a href="#stack" class="nav-link">Architecture & Stack</a>
                 <a href="#contact" class="nav-link">Contact</a>
             </nav>
 
             <div class="nav-actions">
+                <a href="{{ tools_url }}" target="_blank" rel="noopener" class="btn btn-outline-sm d-none d-md-inline-flex" title="Open 32+ FastTrack Tools">
+                    <i class="bi bi-tools text-emerald"></i>
+                    <span>FastTrack Tools</span>
+                </a>
                 <a href="#contact" class="btn btn-emerald-sm">
                     <span>Let's Talk</span>
                     <i class="bi bi-arrow-right-short"></i>
@@ -81,9 +86,13 @@
                         <i class="bi bi-rocket-takeoff-fill"></i>
                         <span>Explore TawreedFlow Case Study</span>
                     </a>
+                    <a href="#tools" class="btn btn-cyan-lg">
+                        <i class="bi bi-tools"></i>
+                        <span>32+ FastTrack Tools</span>
+                    </a>
                     <a href="#projects" class="btn btn-outline-lg">
                         <i class="bi bi-grid-fill"></i>
-                        <span>View Project Portfolio</span>
+                        <span>View Portfolio</span>
                     </a>
                     <a href="https://github.com/ShajjadKhan" target="_blank" rel="noopener" class="btn btn-subtle-lg">
                         <i class="bi bi-github"></i>
@@ -332,6 +341,89 @@
                             <span class="tech-pill">REST APIs</span>
                         </div>
                     </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FastTrack Tools Suite Section -->
+        <section class="section tools-section" id="tools">
+            <div class="container">
+                <div class="section-header-row">
+                    <div>
+                        <div class="section-badge text-cyan"><i class="bi bi-tools"></i> 32+ FASTTRACK ONLINE UTILITIES</div>
+                        <h2 class="section-title">Developer & Productivity Tools Hub</h2>
+                        <p class="section-subtitle">
+                            Ultra-fast, 100% private, client-side utilities. Process PDFs, photos, graphics, code, and financial formulas directly in your browser with zero latency.
+                        </p>
+                    </div>
+                    <div class="tools-header-actions">
+                        <a href="{{ tools_url }}" target="_blank" rel="noopener" class="btn btn-emerald-sm">
+                            <span>Open Dedicated Tools Platform</span>
+                            <i class="bi bi-box-arrow-up-right"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Search & Filter Controls -->
+                <div class="tools-search-card">
+                    <div class="tools-search-input-wrap">
+                        <i class="bi bi-search tools-search-icon"></i>
+                        <input 
+                            type="text" 
+                            id="portfolio-tools-search" 
+                            placeholder="Search 32+ tools by keyword... (e.g. 'pdf arrange', 'jpg to pdf', 'photo resizer', 'compress', 'sitemap', 'profit', 'qr', 'json')"
+                            autocomplete="off"
+                        >
+                        <span class="search-counter-tag" id="portfolio-tools-counter">{{ total_tools }} Utilities Ready</span>
+                    </div>
+
+                    <!-- Category Filter Pills -->
+                    <div class="tools-category-pills" id="portfolio-category-pills">
+                        {% for cat in categories %}
+                        <button 
+                            type="button" 
+                            class="p-pill-btn {% if cat.id == 'all' %}active{% endif %}" 
+                            data-cat="{{ cat.id }}"
+                        >
+                            <span>{{ cat.icon }}</span>
+                            <span>{{ cat.name }}</span>
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Tools Cards Grid -->
+                <div class="portfolio-tools-grid" id="portfolioToolsGrid">
+                    {% for tool in tools %}
+                    <div class="p-tool-card" data-category="{{ tool.category }}" data-keywords="{{ tool.keywords | join(' ') }} {{ tool.title }} {{ tool.short_desc }}">
+                        <div class="p-tool-card-top">
+                            <div class="p-tool-icon">{{ tool.icon }}</div>
+                            <div class="p-tool-badges">
+                                <span class="p-tool-cat tag-{{ tool.category }}">{{ tool.category | upper }}</span>
+                                {% if tool.badge %}
+                                <span class="p-tool-feature-badge">{{ tool.badge }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="p-tool-card-body">
+                            <h3 class="p-tool-title">{{ tool.title }}</h3>
+                            <p class="p-tool-desc">{{ tool.short_desc }}</p>
+                        </div>
+                        <div class="p-tool-card-footer">
+                            <a href="{{ tools_url }}/tool/{{ tool.slug }}" target="_blank" rel="noopener" class="p-tool-launch-btn">
+                                <span>Launch Service</span>
+                                <i class="bi bi-arrow-right-short"></i>
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Empty Search State -->
+                <div class="empty-tools-state" id="portfolioToolsEmpty" style="display: none;">
+                    <div class="empty-icon"><i class="bi bi-search"></i></div>
+                    <h4>No matching tools found</h4>
+                    <p>Try searching for keywords like <code>pdf</code>, <code>image</code>, <code>resize</code>, <code>compress</code>, <code>calc</code>, or <code>qr</code>.</p>
                 </div>
             </div>
         </section>

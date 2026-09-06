@@ -10,10 +10,13 @@ import sys
 import sqlite3
 import datetime
 import re
-from flask import Flask, render_template, request, jsonify, send_from_directory
+from flask import Flask, render_template, request, jsonify, redirect
+
+from tools_catalog import CATEGORIES, TOOLS
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, 'contacts.db')
+TOOLS_URL = os.environ.get('TOOLS_URL', 'http://100.66.112.67:9292')
 
 app = Flask(
     __name__,
@@ -62,7 +65,21 @@ def add_security_headers(response):
 @app.route('/')
 def home():
     """Renders the official portfolio homepage for www.shajjadkhan.com."""
-    return render_template('index.html', year=datetime.datetime.now().year)
+    return render_template(
+        'index.html',
+        year=datetime.datetime.now().year,
+        tools=TOOLS,
+        categories=CATEGORIES,
+        total_tools=len(TOOLS),
+        tools_url=TOOLS_URL
+    )
+
+@app.route('/tools')
+@app.route('/tools/<path:subpath>')
+def tools_gateway(subpath=''):
+    """Seamlessly routes to the standalone FastTrack Tools service."""
+    target = f"{TOOLS_URL}/tool/{subpath}" if subpath else f"{TOOLS_URL}/"
+    return redirect(target)
 
 @app.route('/health')
 def health():
@@ -72,7 +89,9 @@ def health():
         "domain": "www.shajjadkhan.com",
         "server_time": datetime.datetime.utcnow().isoformat() + "Z",
         "port": 9191,
-        "owner": "Shajjad Khan"
+        "owner": "Shajjad Khan",
+        "tools_suite": "32 utilities active",
+        "tools_port": 9292
     })
 
 @app.route('/api/contact', methods=['POST'])
@@ -140,6 +159,12 @@ def sitemap():
     <lastmod>{datetime.date.today().isoformat()}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://www.shajjadkhan.com/tools</loc>
+    <lastmod>{datetime.date.today().isoformat()}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
   </url>
 </urlset>"""
     return xml, 200, {'Content-Type': 'application/xml'}

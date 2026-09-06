@@ -1178,6 +1178,270 @@ body {
 }
 
 /* ==========================================================================
+   TOOLS HUB SECTION IN PORTFOLIO
+   ========================================================================== */
+.badge-tools-pill {
+    background: rgba(16, 185, 129, 0.2);
+    color: var(--emerald);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 99px;
+    margin-right: 4px;
+    border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.tools-section {
+    position: relative;
+    background: linear-gradient(180deg, rgba(8, 12, 20, 0.7) 0%, rgba(13, 19, 32, 0.9) 100%);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.section-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 28px;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.tools-search-card {
+    background: rgba(15, 23, 42, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    margin-bottom: 32px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.tools-search-input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: rgba(2, 6, 23, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    padding: 4px 16px;
+    transition: var(--transition);
+    margin-bottom: 18px;
+}
+
+.tools-search-input-wrap:focus-within {
+    border-color: var(--emerald);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+}
+
+.tools-search-icon {
+    font-size: 18px;
+    color: var(--text-dim);
+    margin-right: 12px;
+}
+
+.tools-search-input-wrap input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #fff;
+    font-size: 15px;
+    padding: 12px 0;
+    font-family: var(--font-sans);
+}
+
+.tools-search-input-wrap input::placeholder {
+    color: var(--text-dim);
+}
+
+.search-counter-tag {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--emerald);
+    background: rgba(16, 185, 129, 0.1);
+    padding: 4px 10px;
+    border-radius: 99px;
+    white-space: nowrap;
+}
+
+.tools-category-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.p-pill-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(2, 6, 23, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--text-muted);
+    padding: 6px 14px;
+    border-radius: 99px;
+    font-size: 12.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.p-pill-btn:hover {
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+}
+
+.p-pill-btn.active {
+    background: rgba(16, 185, 129, 0.15);
+    border-color: var(--emerald);
+    color: var(--emerald);
+    font-weight: 600;
+}
+
+.portfolio-tools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+    gap: 20px;
+}
+
+.p-tool-card {
+    background: rgba(15, 23, 42, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: var(--radius-md);
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    transition: var(--transition);
+    position: relative;
+}
+
+.p-tool-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(16, 185, 129, 0.35);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4), 0 0 20px rgba(16, 185, 129, 0.08);
+    background: rgba(21, 32, 54, 0.85);
+}
+
+.p-tool-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 14px;
+}
+
+.p-tool-icon {
+    font-size: 26px;
+    line-height: 1;
+}
+
+.p-tool-badges {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.p-tool-cat {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.03em;
+}
+
+.p-tool-feature-badge {
+    font-size: 10px;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.06);
+    color: #cbd5e1;
+    padding: 3px 7px;
+    border-radius: 4px;
+}
+
+.p-tool-card-body {
+    flex: 1;
+    margin-bottom: 16px;
+}
+
+.p-tool-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 6px;
+    line-height: 1.35;
+}
+
+.p-tool-desc {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+.p-tool-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.p-tool-launch-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--emerald);
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: var(--transition);
+}
+
+.p-tool-launch-btn:hover {
+    color: #34d399;
+    transform: translateX(3px);
+}
+
+.empty-tools-state {
+    text-align: center;
+    padding: 60px 20px;
+    background: rgba(15, 23, 42, 0.4);
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-lg);
+    margin-top: 20px;
+}
+
+.empty-tools-state .empty-icon {
+    font-size: 36px;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+}
+
+.empty-tools-state h4 {
+    font-size: 18px;
+    margin-bottom: 6px;
+    color: #fff;
+}
+
+.empty-tools-state p {
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+.empty-tools-state code {
+    background: rgba(255, 255, 255, 0.08);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--emerald);
+}
+
+.tag-pdf { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+.tag-image { background: rgba(139, 92, 246, 0.15); color: #c084fc; }
+.tag-business { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+.tag-web { background: rgba(6, 182, 212, 0.15); color: #22d3ee; }
+.tag-dev { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+.tag-content { background: rgba(236, 72, 153, 0.15); color: #f472b6; }
+.tag-converters { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+
+/* ==========================================================================
    RESPONSIVE MEDIA QUERIES
    ========================================================================== */
 @media (max-width: 1024px) {
