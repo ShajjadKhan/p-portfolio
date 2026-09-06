@@ -54,6 +54,70 @@
                     <span class="action-arrow">→</span>
                 </div>
             </a>
+
+            {% if loop.index == 8 %}
+            <!-- In-Grid Native Sponsored Ad Card 1 -->
+            <div class="tool-card-direct ad-grid-card" data-category="all" data-keywords="sponsor ad advertisement partner">
+                <div class="card-head">
+                    <div class="card-icon-wrap">📢</div>
+                    <div class="card-meta">
+                        <span class="cat-chip chip-sponsored">SPONSORED</span>
+                    </div>
+                </div>
+                <div class="card-info ad-card-body">
+                    <span class="ad-policy-label">ADVERTISEMENT</span>
+                    <ins class="adsbygoogle"
+                         style="display:block"
+                         data-ad-client="{{ adsense_pub_id|default('ca-pub-XXXXXXXXXXXXXXXX') }}"
+                         data-ad-slot="3003003001"
+                         data-ad-format="rectangle"
+                         data-full-width-responsive="true"></ins>
+                    <script>
+                         (adsbygoogle = window.adsbygoogle || []).push({});
+                    </script>
+                    <div class="ad-fallback-card compact">
+                        <h4 class="tool-name" style="font-size: 0.95rem;">Featured Sponsor</h4>
+                        <p class="tool-summary">Supporting FastTrack Tools free serverless utilities.</p>
+                    </div>
+                </div>
+                <div class="card-action">
+                    <span class="action-text">Sponsored Ad</span>
+                    <span class="action-arrow">↗</span>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if loop.index == 20 %}
+            <!-- In-Grid Native Sponsored Ad Card 2 -->
+            <div class="tool-card-direct ad-grid-card" data-category="all" data-keywords="sponsor ad advertisement partner">
+                <div class="card-head">
+                    <div class="card-icon-wrap">⚡</div>
+                    <div class="card-meta">
+                        <span class="cat-chip chip-sponsored">SPONSORED</span>
+                    </div>
+                </div>
+                <div class="card-info ad-card-body">
+                    <span class="ad-policy-label">ADVERTISEMENT</span>
+                    <ins class="adsbygoogle"
+                         style="display:block"
+                         data-ad-client="{{ adsense_pub_id|default('ca-pub-XXXXXXXXXXXXXXXX') }}"
+                         data-ad-slot="3003003002"
+                         data-ad-format="rectangle"
+                         data-full-width-responsive="true"></ins>
+                    <script>
+                         (adsbygoogle = window.adsbygoogle || []).push({});
+                    </script>
+                    <div class="ad-fallback-card compact">
+                        <h4 class="tool-name" style="font-size: 0.95rem;">Cloud &amp; Developer Tools</h4>
+                        <p class="tool-summary">High-performance infrastructure &amp; web services.</p>
+                    </div>
+                </div>
+                <div class="card-action">
+                    <span class="action-text">Explore Partner</span>
+                    <span class="action-arrow">↗</span>
+                </div>
+            </div>
+            {% endif %}
             {% endfor %}
         </div>
 

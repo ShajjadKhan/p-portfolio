@@ -108,6 +108,51 @@
         {% block content %}{% endblock %}
     </main>
 
+    <!-- Bottom Full-Width Responsive AdSense Banner -->
+    <div class="ad-banner-slot bottom-leaderboard-slot">
+        <div class="ad-container-box">
+            <span class="ad-policy-label">ADVERTISEMENT</span>
+            <ins class="adsbygoogle"
+                 style="display:block"
+                 data-ad-client="{{ adsense_pub_id|default('ca-pub-XXXXXXXXXXXXXXXX') }}"
+                 data-ad-slot="2002002002"
+                 data-ad-format="auto"
+                 data-full-width-responsive="true"></ins>
+            <script>
+                 (adsbygoogle = window.adsbygoogle || []).push({});
+            </script>
+            <div class="ad-fallback-card">
+                <span class="ad-pill">AD SPACE</span>
+                <span class="ad-caption">Google AdSense Partner • Supporting FastTrack Tools high-speed browser utilities.</span>
+                <a href="/tools/privacy" class="ad-info-link">Ad Choices</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sticky Bottom Floating Anchor Ad Bar (High Viewability & RPM) -->
+    <div class="sticky-anchor-ad" id="stickyAnchorAd">
+        <div class="sticky-anchor-inner">
+            <button class="sticky-close-btn" onclick="dismissStickyAd()" title="Dismiss ad">✕</button>
+            <div class="sticky-ad-box">
+                <span class="ad-policy-label">ADVERTISEMENT</span>
+                <ins class="adsbygoogle"
+                     style="display:block"
+                     data-ad-client="{{ adsense_pub_id|default('ca-pub-XXXXXXXXXXXXXXXX') }}"
+                     data-ad-slot="6006006006"
+                     data-ad-format="horizontal"
+                     data-full-width-responsive="true"></ins>
+                <script>
+                     (adsbygoogle = window.adsbygoogle || []).push({});
+                </script>
+                <div class="ad-fallback-card compact">
+                    <span class="ad-pill">SPONSORED</span>
+                    <span class="ad-caption">FastTrack Tools Sponsored Partner • High-Performance Web Utilities</span>
+                    <a href="/tools/privacy" class="ad-info-link">Ad Info</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Footer -->
     <footer class="tools-footer">
         <div class="footer-container">

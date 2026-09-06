@@ -19,7 +19,8 @@ function initDirectSearch() {
     
     if (!searchInput || !toolsGrid) return;
 
-    const cards = Array.from(toolsGrid.querySelectorAll('.tool-card-direct'));
+    const cards = Array.from(toolsGrid.querySelectorAll('.tool-card-direct:not(.ad-grid-card)'));
+    const adCards = Array.from(toolsGrid.querySelectorAll('.ad-grid-card'));
     const totalCount = cards.length;
 
     function applyFilter() {
@@ -50,6 +51,15 @@ function initDirectSearch() {
                 visibleCount++;
             } else {
                 card.style.display = 'none';
+            }
+        });
+
+        // Hide in-grid ad cards during active search query or filtered categories to keep results ultra-focused
+        adCards.forEach(adCard => {
+            if (!query && activeCategory === 'all') {
+                adCard.style.display = 'flex';
+            } else {
+                adCard.style.display = 'none';
             }
         });
 
@@ -208,3 +218,13 @@ function initMobileNav() {
         }
     });
 }
+
+window.dismissStickyAd = function() {
+    const el = document.getElementById('stickyAnchorAd');
+    if (el) {
+        el.style.transform = 'translateY(120%)';
+        setTimeout(() => {
+            el.style.display = 'none';
+        }, 250);
+    }
+};
