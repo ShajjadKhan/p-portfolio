@@ -186,7 +186,13 @@ function initCommandPalette() {
             document.activeElement.tagName !== 'INPUT' && 
             document.activeElement.tagName !== 'TEXTAREA') {
             e.preventDefault();
-            toggleCommandPalette(true);
+            const mainSearch = document.getElementById('main-search-input');
+            if (mainSearch) {
+                mainSearch.focus();
+                mainSearch.select();
+            } else {
+                toggleCommandPalette(true);
+            }
         } else if (e.key === 'Escape') {
             toggleCommandPalette(false);
         }
