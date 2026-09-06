@@ -1177,14 +1177,19 @@ const ToolRenderers = {
                     </div>
                 </div>
 
-                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 2rem;">
-                    <div id="qrcode-box" style="padding: 1rem; background: #fff; border-radius: var(--radius-md);"></div>
+                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 2rem; min-width: 0;">
+                    <div id="qrcode-box" class="qr-preview-box">
+                        <canvas id="qrcode-canvas" aria-label="Generated QR code"></canvas>
+                    </div>
+                    <p id="qr-status" style="color: var(--text-muted); font-size: 0.82rem; margin-top: 0.85rem; text-align: center;"></p>
                     <button class="btn-primary" id="btn-download-qr" style="margin-top: 1.5rem;">📱 Download QR Code</button>
                 </div>
             </div>
         `;
 
         const qrBox = container.querySelector('#qrcode-box');
+        const qrCanvas = container.querySelector('#qrcode-canvas');
+        const qrStatus = container.querySelector('#qr-status');
         const typeSelect = container.querySelector('#qr-type');
         const urlInput = container.querySelector('#qr-url-val');
         const wifiGroup = container.querySelector('#qr-input-wifi');
@@ -1192,8 +1197,33 @@ const ToolRenderers = {
         const fgColor = container.querySelector('#qr-fg');
         const bgColor = container.querySelector('#qr-bg');
         const sizeSelect = container.querySelector('#qr-size');
+        const downloadBtn = container.querySelector('#btn-download-qr');
 
-        let qrcodeObj = null;
+        const setQrStatus = (message, isError = false) => {
+            qrStatus.textContent = message;
+            qrStatus.style.color = isError ? '#f87171' : 'var(--text-muted)';
+            downloadBtn.disabled = isError;
+            downloadBtn.style.opacity = isError ? '0.65' : '';
+            downloadBtn.style.cursor = isError ? 'not-allowed' : '';
+        };
+
+        const escapeWifiValue = (value) => value.replace(/([\\;,":])/g, '\\$1');
+
+        const waitForQrLibrary = () => new Promise((resolve, reject) => {
+            const started = Date.now();
+            const check = () => {
+                if (window.QRCode && typeof window.QRCode.toCanvas === 'function') {
+                    resolve();
+                    return;
+                }
+                if (Date.now() - started > 5000) {
+                    reject(new Error('QR code library could not be loaded. Please refresh the page and try again.'));
+                    return;
+                }
+                setTimeout(check, 120);
+            };
+            check();
+        });
 
         function getPayload() {
             const type = typeSelect.value;
@@ -1202,24 +1232,37 @@ const ToolRenderers = {
             } else if (type === 'wifi') {
                 const ssid = container.querySelector('#qr-wifi-ssid').value.trim();
                 const pass = container.querySelector('#qr-wifi-pass').value.trim();
-                return `WIFI:S:${ssid};T:WPA;P:${pass};;`;
+                return `WIFI:S:${escapeWifiValue(ssid)};T:WPA;P:${escapeWifiValue(pass)};;`;
             } else if (type === 'wa') {
                 return `https://wa.me/?text=${encodeURIComponent(urlInput.value.trim())}`;
             }
             return 'https://www.shajjadkhan.com';
         }
 
-        function updateQR() {
-            qrBox.innerHTML = '';
+        async function updateQR() {
             const size = parseInt(sizeSelect.value, 10);
-            qrcodeObj = new window.QRCode(qrBox, {
-                text: getPayload(),
-                width: size,
-                height: size,
-                colorDark: fgColor.value,
-                colorLight: bgColor.value,
-                correctLevel: window.QRCode.CorrectLevel.H
-            });
+            const payload = getPayload();
+            setQrStatus('Generating QR code...');
+            try {
+                await waitForQrLibrary();
+                await window.QRCode.toCanvas(qrCanvas, payload, {
+                    width: size,
+                    margin: 2,
+                    errorCorrectionLevel: 'H',
+                    color: {
+                        dark: fgColor.value,
+                        light: bgColor.value
+                    }
+                });
+                qrCanvas.style.width = '100%';
+                qrCanvas.style.height = 'auto';
+                qrCanvas.style.maxWidth = `${size}px`;
+                qrBox.style.background = bgColor.value;
+                setQrStatus(`${size} x ${size}px QR ready`);
+            } catch (err) {
+                console.error('QR generation failed:', err);
+                setQrStatus(err.message || 'QR code generation failed.', true);
+            }
         }
 
         typeSelect.onchange = () => {
@@ -1239,11 +1282,10 @@ const ToolRenderers = {
 
         updateQR();
 
-        container.querySelector('#btn-download-qr').onclick = () => {
-            const img = qrBox.querySelector('img') || qrBox.querySelector('canvas');
-            if (!img) return;
+        downloadBtn.onclick = () => {
+            if (downloadBtn.disabled) return;
             const a = document.createElement('a');
-            a.href = img.src || img.toDataURL();
+            a.href = qrCanvas.toDataURL('image/png');
             a.download = `qrcode_${Date.now()}.png`;
             a.click();
         };

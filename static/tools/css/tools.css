@@ -933,6 +933,22 @@ ins.adsbygoogle:has(iframe) + .ad-fallback-card {
     box-shadow: 0 6px 20px var(--accent-glow);
 }
 
+.qr-preview-box {
+    width: min(100%, 600px);
+    max-width: calc(100vw - 5rem);
+    padding: 1rem;
+    background: #fff;
+    border-radius: var(--radius-md);
+    display: flex;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.qr-preview-box canvas {
+    display: block;
+    max-width: 100%;
+}
+
 .btn-secondary {
     background: #1e293b;
     color: var(--text-main);
