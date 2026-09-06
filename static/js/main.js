@@ -4,45 +4,90 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Mobile Navigation Toggle
+    // 1. Mobile Navigation Drawer & Toggle
     const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
     const navLinks = document.getElementById('nav-links');
+
+    function closeMobileMenu() {
+        if (navLinks && mobileMenuToggle) {
+            navLinks.classList.remove('active');
+            mobileMenuToggle.classList.remove('open');
+            mobileMenuToggle.setAttribute('aria-expanded', 'false');
+            document.body.style.overflow = '';
+        }
+    }
 
     if (mobileMenuToggle && navLinks) {
         mobileMenuToggle.addEventListener('click', (e) => {
             e.stopPropagation();
             const isOpen = navLinks.classList.toggle('active');
             mobileMenuToggle.classList.toggle('open', isOpen);
+            mobileMenuToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            document.body.style.overflow = isOpen ? 'hidden' : '';
         });
 
         // Close mobile menu when a nav link or drawer button is clicked
         navLinks.querySelectorAll('a').forEach(link => {
             link.addEventListener('click', () => {
-                navLinks.classList.remove('active');
-                mobileMenuToggle.classList.remove('open');
+                closeMobileMenu();
             });
+        });
+
+        // Close on escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeMobileMenu();
+            }
         });
 
         // Close when clicking outside
         document.addEventListener('click', (e) => {
-            if (!navLinks.contains(e.target) && !mobileMenuToggle.contains(e.target)) {
-                navLinks.classList.remove('active');
-                mobileMenuToggle.classList.remove('open');
+            if (navLinks.classList.contains('active') && !navLinks.contains(e.target) && !mobileMenuToggle.contains(e.target)) {
+                closeMobileMenu();
             }
         });
     }
 
-    // 2. Navbar Background Blur on Scroll
+    // 2. Navbar Elevation on Scroll & Active Section Scroll Spy
     const navbar = document.getElementById('navbar');
-    window.addEventListener('scroll', () => {
-        if (window.scrollY > 40) {
-            navbar.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.4)';
-            navbar.style.borderBottomColor = 'rgba(255, 255, 255, 0.12)';
-        } else {
-            navbar.style.boxShadow = 'none';
-            navbar.style.borderBottomColor = 'rgba(255, 255, 255, 0.08)';
+    const sections = document.querySelectorAll('section[id]');
+    const navLinkEls = document.querySelectorAll('.nav-links .nav-link');
+
+    function updateNavbarOnScroll() {
+        const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+
+        // Toggle glass shadow
+        if (navbar) {
+            if (scrollY > 20) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
         }
-    });
+
+        // Active Section Scroll Spy
+        let currentSectionId = '';
+        sections.forEach(section => {
+            const sectionTop = section.offsetTop - 120;
+            const sectionHeight = section.offsetHeight;
+            if (scrollY >= sectionTop && scrollY < sectionTop + sectionHeight) {
+                currentSectionId = section.getAttribute('id');
+            }
+        });
+
+        if (currentSectionId) {
+            navLinkEls.forEach(link => {
+                if (link.getAttribute('href') === `#${currentSectionId}`) {
+                    link.classList.add('active');
+                } else {
+                    link.classList.remove('active');
+                }
+            });
+        }
+    }
+
+    window.addEventListener('scroll', updateNavbarOnScroll, { passive: true });
+    updateNavbarOnScroll();
 
     // 3. Contact Form AJAX Submission
     const contactForm = document.getElementById('contact-form');

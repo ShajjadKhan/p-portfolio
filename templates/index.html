@@ -22,54 +22,76 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=2.0">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/tawreedflow-favicon.png') }}">
 </head>
 <body>
 
-    <!-- Sticky Navigation Header -->
+    <!-- Executive Sticky Navigation Header -->
     <header class="navbar-fixed" id="navbar">
         <div class="nav-container">
-            <a href="#hero" class="brand-logo">
-                <div class="logo-mark">SK</div>
-                <div class="logo-text">
+            <!-- Brand Mark & Identity -->
+            <a href="#hero" class="brand-logo" aria-label="Shajjad Khan Homepage">
+                <div class="logo-mark">
+                    <span class="logo-initials">SK</span>
+                </div>
+                <div class="logo-meta">
                     <span class="logo-name">Shajjad Khan</span>
-                    <span class="logo-sub">Founder & Systems Architect</span>
+                    <span class="logo-role">
+                        <span class="status-pulse-dot"></span>
+                        <span>Systems Architect</span>
+                    </span>
                 </div>
             </a>
 
-            <nav class="nav-links" id="nav-links">
-                <a href="#flagship" class="nav-link"><i class="bi bi-stars text-emerald"></i> TawreedFlow</a>
-                <a href="#projects" class="nav-link"><i class="bi bi-grid-fill"></i> Projects</a>
-                <a href="{{ tools_url }}" target="_blank" rel="noopener" class="nav-link"><i class="bi bi-tools text-cyan"></i> FastTrack Tools <i class="bi bi-box-arrow-up-right" style="font-size: 11px;"></i></a>
-                <a href="#about" class="nav-link"><i class="bi bi-person-fill"></i> About</a>
-                <a href="#stack" class="nav-link"><i class="bi bi-layers-fill"></i> Architecture &amp; Stack</a>
-                <a href="#contact" class="nav-link"><i class="bi bi-envelope-fill"></i> Contact</a>
-                <div class="mobile-drawer-actions">
-                    <a href="{{ tools_url }}" target="_blank" rel="noopener" class="btn btn-cyan-block">
-                        <i class="bi bi-tools"></i>
-                        <span>Launch 32+ Tools Platform ↗</span>
+            <!-- Desktop Nav Links (Clean, Typographic, No Clutter) -->
+            <nav class="nav-links" id="nav-links" aria-label="Main Navigation">
+                <div class="nav-links-inner">
+                    <a href="#flagship" class="nav-link nav-link-flagship">
+                        <span>TawreedFlow</span>
+                        <span class="nav-badge-flagship">SaaS</span>
                     </a>
-                    <a href="#contact" class="btn btn-emerald-block">
-                        <i class="bi bi-chat-text-fill"></i>
-                        <span>Direct Inquiries</span>
+                    <a href="#projects" class="nav-link">Projects</a>
+                    <a href="#stack" class="nav-link">Architecture</a>
+                    <a href="#about" class="nav-link">About</a>
+                    <a href="#contact" class="nav-link">Contact</a>
+                </div>
+
+                <!-- Mobile Drawer Actions -->
+                <div class="mobile-drawer-actions">
+                    <div class="mobile-drawer-divider"></div>
+                    <a href="{{ tools_url }}" target="_blank" rel="noopener" class="btn-mobile-tools">
+                        <div class="mobile-tools-icon">
+                            <i class="bi bi-grid-3x3-gap-fill"></i>
+                        </div>
+                        <div class="mobile-tools-text">
+                            <span class="mobile-tools-title">FastTrack Tools Suite</span>
+                            <span class="mobile-tools-sub">32+ Free Developer &amp; PDF Utilities ↗</span>
+                        </div>
+                        <i class="bi bi-arrow-up-right mobile-tools-arrow"></i>
+                    </a>
+                    <a href="#contact" class="btn-mobile-contact">
+                        <i class="bi bi-chat-dots-fill"></i>
+                        <span>Start Advisory Inquiry</span>
                     </a>
                 </div>
             </nav>
 
+            <!-- Right Executive Actions -->
             <div class="nav-actions">
-                <a href="{{ tools_url }}" target="_blank" rel="noopener" class="btn btn-outline-sm desktop-nav-btn" title="Open 32+ FastTrack Tools (Separate Site)">
-                    <i class="bi bi-tools text-emerald"></i>
-                    <span>FastTrack Tools ↗</span>
+                <a href="{{ tools_url }}" target="_blank" rel="noopener" class="nav-tools-pill desktop-nav-item" title="Open 32+ FastTrack Tools (Separate Utilities Platform)">
+                    <i class="bi bi-grid-3x3-gap-fill tools-pill-icon"></i>
+                    <span class="tools-pill-label">32+ Tools</span>
+                    <i class="bi bi-arrow-up-right tools-pill-arrow"></i>
                 </a>
-                <a href="#contact" class="btn btn-emerald-sm desktop-nav-btn">
+                <a href="#contact" class="nav-cta-btn desktop-nav-item">
                     <span>Let's Talk</span>
-                    <i class="bi bi-arrow-right-short"></i>
+                    <i class="bi bi-arrow-right"></i>
                 </a>
-                <button type="button" class="mobile-menu-btn" id="mobile-menu-toggle" aria-label="Toggle navigation">
-                    <span class="bar"></span>
-                    <span class="bar"></span>
-                    <span class="bar"></span>
+                <button type="button" class="mobile-menu-btn" id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
+                    <span class="bar bar-top"></span>
+                    <span class="bar bar-mid"></span>
+                    <span class="bar bar-bot"></span>
                 </button>
             </div>
         </div>
