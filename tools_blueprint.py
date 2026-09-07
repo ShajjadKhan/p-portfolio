@@ -31,7 +31,7 @@ tools_bp = Blueprint('tools', __name__)
 @tools_bp.context_processor
 def inject_tools_vars():
     """Inject AdSense Publisher ID and metadata into tools templates."""
-    pub_id = os.environ.get('ADSENSE_PUB_ID', 'ca-pub-XXXXXXXXXXXXXXXX')
+    pub_id = os.environ.get('ADSENSE_PUB_ID', 'ca-pub-7534827047793212')
     return {
         'adsense_pub_id': pub_id,
         'adsense_slots': {

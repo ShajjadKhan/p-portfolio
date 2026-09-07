@@ -79,7 +79,7 @@ def home():
 @app.route('/ads.txt')
 def ads_txt():
     """Google AdSense root crawler authorization record."""
-    pub_id = os.environ.get('ADSENSE_PUB_ID', 'pub-XXXXXXXXXXXXXXXX').replace('ca-', '')
+    pub_id = os.environ.get('ADSENSE_PUB_ID', 'ca-pub-7534827047793212').replace('ca-', '')
     lines = [
         f"google.com, {pub_id}, DIRECT, f08c47fec0942fa0",
         "# FastTrack Tools - AdSense Authorization Record",
