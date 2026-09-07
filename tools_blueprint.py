@@ -34,6 +34,17 @@ def inject_tools_vars():
     pub_id = os.environ.get('ADSENSE_PUB_ID', 'ca-pub-XXXXXXXXXXXXXXXX')
     return {
         'adsense_pub_id': pub_id,
+        'adsense_slots': {
+            'top_leaderboard': os.environ.get('ADSENSE_SLOT_TOP_LEADERBOARD', '1001001001'),
+            'bottom_leaderboard': os.environ.get('ADSENSE_SLOT_BOTTOM_LEADERBOARD', '2002002002'),
+            'grid_primary': os.environ.get('ADSENSE_SLOT_GRID_PRIMARY', '3003003001'),
+            'grid_secondary': os.environ.get('ADSENSE_SLOT_GRID_SECONDARY', '3003003002'),
+            'workspace': os.environ.get('ADSENSE_SLOT_WORKSPACE', '4004004004'),
+            'mid_content': os.environ.get('ADSENSE_SLOT_MID_CONTENT', '5005005005'),
+            'sticky_anchor': os.environ.get('ADSENSE_SLOT_STICKY_ANCHOR', '6006006006'),
+            'side_left': os.environ.get('ADSENSE_SLOT_SIDE_LEFT', '7007007001'),
+            'side_right': os.environ.get('ADSENSE_SLOT_SIDE_RIGHT', '7007007002'),
+        },
         'current_year': datetime.utcnow().year,
         'portfolio_url': '/',
         'tools_base_url': '/tools'

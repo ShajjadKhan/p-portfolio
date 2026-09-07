@@ -82,7 +82,7 @@
             <ins class="adsbygoogle"
                  style="display:block"
                  data-ad-client="{{ adsense_pub_id|default('ca-pub-XXXXXXXXXXXXXXXX') }}"
-                 data-ad-slot="1001001001"
+                 data-ad-slot="{{ adsense_slots.top_leaderboard }}"
                  data-ad-format="auto"
                  data-full-width-responsive="true"></ins>
             <script>
@@ -96,10 +96,48 @@
         </div>
     </div>
 
-    <!-- Main Content Injection -->
-    <main class="main-content">
-        {% block content %}{% endblock %}
-    </main>
+    <!-- Main Content Injection with Desktop Ad Rails -->
+    <div class="tools-ad-shell">
+        <aside class="desktop-side-ad desktop-side-ad-left" aria-label="Left advertisement">
+            <div class="side-ad-box">
+                <span class="ad-policy-label">ADVERTISEMENT</span>
+                <ins class="adsbygoogle"
+                     style="display:inline-block;width:160px;height:600px"
+                     data-ad-client="{{ adsense_pub_id|default('ca-pub-XXXXXXXXXXXXXXXX') }}"
+                     data-ad-slot="{{ adsense_slots.side_left }}"
+                     data-full-width-responsive="false"></ins>
+                <script>
+                     (adsbygoogle = window.adsbygoogle || []).push({});
+                </script>
+                <div class="ad-fallback-card side-fallback">
+                    <span class="ad-pill">AD SPACE</span>
+                    <span class="ad-caption">FastTrack Tools sponsor</span>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            {% block content %}{% endblock %}
+        </main>
+
+        <aside class="desktop-side-ad desktop-side-ad-right" aria-label="Right advertisement">
+            <div class="side-ad-box">
+                <span class="ad-policy-label">ADVERTISEMENT</span>
+                <ins class="adsbygoogle"
+                     style="display:inline-block;width:160px;height:600px"
+                     data-ad-client="{{ adsense_pub_id|default('ca-pub-XXXXXXXXXXXXXXXX') }}"
+                     data-ad-slot="{{ adsense_slots.side_right }}"
+                     data-full-width-responsive="false"></ins>
+                <script>
+                     (adsbygoogle = window.adsbygoogle || []).push({});
+                </script>
+                <div class="ad-fallback-card side-fallback">
+                    <span class="ad-pill">AD SPACE</span>
+                    <span class="ad-caption">Hosting support</span>
+                </div>
+            </div>
+        </aside>
+    </div>
 
     <!-- Bottom Full-Width Responsive AdSense Banner -->
     <div class="ad-banner-slot bottom-leaderboard-slot">
@@ -108,7 +146,7 @@
             <ins class="adsbygoogle"
                  style="display:block"
                  data-ad-client="{{ adsense_pub_id|default('ca-pub-XXXXXXXXXXXXXXXX') }}"
-                 data-ad-slot="2002002002"
+                 data-ad-slot="{{ adsense_slots.bottom_leaderboard }}"
                  data-ad-format="auto"
                  data-full-width-responsive="true"></ins>
             <script>
@@ -131,7 +169,7 @@
                 <ins class="adsbygoogle"
                      style="display:block"
                      data-ad-client="{{ adsense_pub_id|default('ca-pub-XXXXXXXXXXXXXXXX') }}"
-                     data-ad-slot="6006006006"
+                     data-ad-slot="{{ adsense_slots.sticky_anchor }}"
                      data-ad-format="horizontal"
                      data-full-width-responsive="true"></ins>
                 <script>

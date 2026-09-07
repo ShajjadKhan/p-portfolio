@@ -395,6 +395,56 @@ ins.adsbygoogle:has(iframe) + .ad-fallback-card {
    ========================================================================== */
 .main-content {
     flex: 1;
+    min-width: 0;
+}
+
+.tools-ad-shell {
+    width: 100%;
+}
+
+.desktop-side-ad {
+    display: none;
+}
+
+.side-ad-box {
+    min-height: 600px;
+    width: 160px;
+    background: rgba(13, 19, 34, 0.5);
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-sm);
+    padding: 0.6rem;
+    position: sticky;
+    top: 96px;
+    overflow: hidden;
+}
+
+.side-ad-box .adsbygoogle {
+    width: 160px;
+    min-height: 600px;
+}
+
+.side-fallback {
+    min-height: 520px;
+    flex-direction: column;
+    gap: 0.55rem;
+    text-align: center;
+}
+
+@media (min-width: 1580px) {
+    .tools-ad-shell {
+        max-width: 1760px;
+        margin: 0 auto;
+        padding: 0 1rem;
+        display: grid;
+        grid-template-columns: 160px minmax(0, 1fr) 160px;
+        gap: 1.25rem;
+        align-items: start;
+    }
+
+    .desktop-side-ad {
+        display: block;
+        padding-top: 1rem;
+    }
 }
 
 .tools-direct-view {
