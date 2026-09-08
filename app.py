@@ -96,7 +96,7 @@ def health():
         "server_time": datetime.datetime.utcnow().isoformat() + "Z",
         "port": 9191,
         "owner": "Shajjad Khan",
-        "tools_suite": "32 utilities active",
+        "tools_suite": "47 utilities active",
         "tools_mounted_at": "/tools"
     })
 
@@ -179,3 +179,4 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 9191))
     print(f"🚀 Shajjad Khan Portfolio & Tools daemon starting on 0.0.0.0:{port}")
     app.run(host='0.0.0.0', port=port, debug=False)
+

@@ -1,5 +1,5 @@
 /**
- * tools-engine.js - Interactive Engine for 32+ Utilities
+ * tools-engine.js - Interactive Engine for 47+ Utilities
  * FastTrack Tools (https://www.shajjadkhan.com)
  */
 
@@ -2412,7 +2412,7 @@ print("Built by Shajjad Khan")
                     </div>
                     <div class="control-group">
                         <label>Meta Description</label>
-                        <textarea id="meta-in-desc" style="height: 90px;">32+ essential engineering, PDF, image, and business utilities. Free, 100% private in-browser file execution with zero lag.</textarea>
+                        <textarea id="meta-in-desc" style="height: 90px;">47+ essential engineering, PDF, image, and business utilities. Free, 100% private in-browser file execution with zero lag.</textarea>
                     </div>
                     <div class="control-group">
                         <label>Canonical Page URL</label>
@@ -3095,6 +3095,123 @@ Monetization: Google AdSense integrated</textarea>
         };
 
         copyBtn.onclick = (e) => Utils.copyToClipboard(hexTxt.textContent, e.target);
+    },
+
+    // Extra utility tools added for the expanded FastTrack suite
+    'percentage-calculator': (container) => {
+        container.innerHTML = basicToolShell('Percentage Calculator', `
+            <div class="tool-form-grid">
+                <div class="control-group"><label>Original / Base Value</label><input type="number" id="pct-base" value="100"></div>
+                <div class="control-group"><label>New / Compared Value</label><input type="number" id="pct-new" value="125"></div>
+                <div class="control-group"><label>Percent Value</label><input type="number" id="pct-percent" value="15"></div>
+            </div>
+            <div class="result-grid" id="pct-results"></div>`);
+        const out = container.querySelector('#pct-results');
+        function calc(){ const b=+container.querySelector('#pct-base').value||0,n=+container.querySelector('#pct-new').value||0,p=+container.querySelector('#pct-percent').value||0; const change=b?((n-b)/b*100):0; out.innerHTML = metricCards([
+            ['Change', `${change.toFixed(2)}%`], ['${p}% of ${b}', fmt(b*p/100)], ['${b} + ${p}%', fmt(b*(1+p/100))], ['Reverse from ${n} after ${p}%', fmt(n/(1+p/100))]
+        ]); }
+        container.querySelectorAll('input').forEach(i=>i.oninput=calc); calc();
+    },
+
+    'loan-calculator': (container) => {
+        container.innerHTML = basicToolShell('Loan EMI Calculator', `
+            <div class="tool-form-grid">
+                <div class="control-group"><label>Loan Amount</label><input type="number" id="loan-p" value="100000"></div>
+                <div class="control-group"><label>Annual Interest %</label><input type="number" id="loan-r" value="7.5" step="0.1"></div>
+                <div class="control-group"><label>Term (months)</label><input type="number" id="loan-m" value="60"></div>
+            </div><div class="result-grid" id="loan-out"></div>`);
+        const out=container.querySelector('#loan-out'); function calc(){const P=+container.querySelector('#loan-p').value||0; const r=(+container.querySelector('#loan-r').value||0)/1200; const m=+container.querySelector('#loan-m').value||1; const emi=r?P*r*Math.pow(1+r,m)/(Math.pow(1+r,m)-1):P/m; const total=emi*m; out.innerHTML=metricCards([['Monthly Payment', money(emi)],['Total Interest', money(total-P)],['Total Repayment', money(total)],['Interest Share', `${P ? ((total-P)/P*100).toFixed(1) : 0}%`]]);} container.querySelectorAll('input').forEach(i=>i.oninput=calc); calc();
+    },
+
+    'salary-converter': (container) => {
+        container.innerHTML = basicToolShell('Salary Converter', `
+            <div class="tool-form-grid"><div class="control-group"><label>Hourly Rate</label><input type="number" id="sal-hour" value="25"></div><div class="control-group"><label>Hours / Week</label><input type="number" id="sal-hours" value="40"></div><div class="control-group"><label>Weeks / Year</label><input type="number" id="sal-weeks" value="52"></div></div><div class="result-grid" id="sal-out"></div>`);
+        const out=container.querySelector('#sal-out'); function calc(){const h=+container.querySelector('#sal-hour').value||0, hw=+container.querySelector('#sal-hours').value||0, w=+container.querySelector('#sal-weeks').value||0; const annual=h*hw*w; out.innerHTML=metricCards([['Annual', money(annual)],['Monthly', money(annual/12)],['Weekly', money(h*hw)],['Daily (5 days)', money(h*hw/5)]]);} container.querySelectorAll('input').forEach(i=>i.oninput=calc); calc();
+    },
+
+    'vat-invoice-calculator': (container) => {
+        container.innerHTML = basicToolShell('VAT Invoice Line Calculator', `<div class="tool-form-grid"><div class="control-group"><label>Quantity</label><input type="number" id="vat-qty" value="5"></div><div class="control-group"><label>Unit Price</label><input type="number" id="vat-price" value="120"></div><div class="control-group"><label>Discount %</label><input type="number" id="vat-disc" value="0"></div><div class="control-group"><label>VAT %</label><input type="number" id="vat-rate" value="15"></div></div><div class="result-grid" id="vat-out"></div>`);
+        const out=container.querySelector('#vat-out'); function calc(){const q=+qs('#vat-qty').value||0, price=+qs('#vat-price').value||0, d=+qs('#vat-disc').value||0, vr=+qs('#vat-rate').value||0; const sub=q*price, disc=sub*d/100, taxable=sub-disc, vat=taxable*vr/100; out.innerHTML=metricCards([['Subtotal', money(sub)],['Discount', money(disc)],['VAT', money(vat)],['Grand Total', money(taxable+vat)]]);} const qs=s=>container.querySelector(s); container.querySelectorAll('input').forEach(i=>i.oninput=calc); calc();
+    },
+
+    'timestamp-converter': (container) => {
+        container.innerHTML = basicToolShell('Timestamp Converter', `<div class="tool-form-grid"><div class="control-group"><label>Unix Timestamp</label><input id="ts-input" value="${Math.floor(Date.now()/1000)}"></div><div class="control-group"><label>Date / Time</label><input type="datetime-local" id="date-input"></div></div><div class="controls-panel"><button class="btn-primary" id="ts-now">Use Current Time</button></div><pre class="code-pre" id="ts-out"></pre>`);
+        const ts=container.querySelector('#ts-input'), di=container.querySelector('#date-input'), out=container.querySelector('#ts-out'); function fromTs(){let v=Number(ts.value); if(String(ts.value).length>10) v=v/1000; const d=new Date(v*1000); out.textContent=`Local: ${d.toString()}\nUTC: ${d.toUTCString()}\nISO: ${d.toISOString()}\nSeconds: ${Math.floor(d.getTime()/1000)}\nMilliseconds: ${d.getTime()}`;} function fromDate(){const d=new Date(di.value); if(!isNaN(d)){ts.value=Math.floor(d.getTime()/1000); fromTs();}} ts.oninput=fromTs; di.oninput=fromDate; container.querySelector('#ts-now').onclick=()=>{ts.value=Math.floor(Date.now()/1000); fromTs();}; fromTs();
+    },
+
+    'cron-helper': (container) => {
+        container.innerHTML = basicToolShell('Cron Helper', `<div class="tool-form-grid"><div class="control-group"><label>Common Schedule</label><select id="cron-preset"><option value="*/5 * * * *|Every 5 minutes">Every 5 minutes</option><option value="0 * * * *|Every hour">Every hour</option><option value="0 9 * * *|Every day at 9:00">Every day at 9 AM</option><option value="0 9 * * 1|Every Monday at 9:00">Every Monday</option><option value="0 0 1 * *|First day of every month">Monthly</option></select></div><div class="control-group"><label>Cron Expression</label><input id="cron-exp"></div></div><pre class="code-pre" id="cron-out"></pre>`);
+        const preset=container.querySelector('#cron-preset'), exp=container.querySelector('#cron-exp'), out=container.querySelector('#cron-out'); function apply(){const [e,desc]=preset.value.split('|'); exp.value=e; out.textContent=`${e}\n${desc}\n\nFormat: minute hour day-of-month month day-of-week`; } preset.onchange=apply; exp.oninput=()=>{out.textContent=`${exp.value}\nCustom cron expression\n\nFormat: minute hour day-of-month month day-of-week`;}; apply();
+    },
+
+    'regex-tester': (container) => {
+        container.innerHTML = basicToolShell('Regex Tester', `<div class="tool-form-grid"><div class="control-group"><label>Pattern</label><input id="rx-pattern" value="\\b\\w+@\\w+\\.\\w+\\b"></div><div class="control-group"><label>Flags</label><input id="rx-flags" value="gi"></div></div><textarea id="rx-text" class="code-area" style="height:160px;">Email test@example.com or sales@company.com for details.</textarea><div class="output-box"><div class="output-header"><span class="output-title" id="rx-count">Matches</span></div><div id="rx-out"></div></div>`);
+        const pat=container.querySelector('#rx-pattern'), flags=container.querySelector('#rx-flags'), txt=container.querySelector('#rx-text'), out=container.querySelector('#rx-out'), count=container.querySelector('#rx-count'); function run(){try{const re=new RegExp(pat.value, flags.value); let m=[...txt.value.matchAll(re)]; count.textContent=`${m.length} match(es)`; out.innerHTML=m.map(x=>`<div class="result-line"><code>${escapeHtml(x[0])}</code> at index ${x.index}</div>`).join('')||'<p class="muted">No matches.</p>';}catch(e){count.textContent='Regex error'; out.textContent=e.message;}} [pat,flags,txt].forEach(i=>i.oninput=run); run();
+    },
+
+    'url-encoder': (container) => textTransformTool(container, 'URL Encoder & Slugifier', 'Enter URL text or a page title...', [
+        ['Encode URL', v => encodeURIComponent(v)], ['Decode URL', v => decodeURIComponent(v)], ['Slugify', v => v.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')]
+    ]),
+
+    'utm-builder': (container) => {
+        container.innerHTML = basicToolShell('UTM Campaign Builder', `<div class="tool-form-grid"><div class="control-group"><label>Base URL</label><input id="utm-url" value="https://example.com/page"></div><div class="control-group"><label>Source</label><input id="utm-source" value="google"></div><div class="control-group"><label>Medium</label><input id="utm-medium" value="cpc"></div><div class="control-group"><label>Campaign</label><input id="utm-campaign" value="summer_offer"></div><div class="control-group"><label>Term</label><input id="utm-term"></div><div class="control-group"><label>Content</label><input id="utm-content"></div></div><pre class="code-pre" id="utm-out"></pre><button class="btn-primary" id="utm-copy">Copy URL</button>`);
+        const out=container.querySelector('#utm-out'); function build(){try{const u=new URL(container.querySelector('#utm-url').value); ['source','medium','campaign','term','content'].forEach(k=>{const v=container.querySelector(`#utm-${k}`).value.trim(); if(v) u.searchParams.set(`utm_${k}`,v);}); out.textContent=u.toString();}catch(e){out.textContent='Enter a valid full URL.';}} container.querySelectorAll('input').forEach(i=>i.oninput=build); container.querySelector('#utm-copy').onclick=e=>Utils.copyToClipboard(out.textContent,e.target); build();
+    },
+
+    'color-converter': (container) => {
+        container.innerHTML = basicToolShell('Color Converter', `<div class="tool-form-grid"><div class="control-group"><label>Color</label><input type="color" id="col-pick" value="#00e599"></div><div class="control-group"><label>HEX</label><input id="col-hex" value="#00e599"></div></div><div id="col-preview" style="height:120px;border-radius:16px;border:1px solid var(--border-color);"></div><pre class="code-pre" id="col-out"></pre>`);
+        const pick=container.querySelector('#col-pick'), hex=container.querySelector('#col-hex'), prev=container.querySelector('#col-preview'), out=container.querySelector('#col-out'); function conv(v){v=v.replace('#',''); if(v.length===3)v=v.split('').map(c=>c+c).join(''); const n=parseInt(v,16); const r=(n>>16)&255,g=(n>>8)&255,b=n&255; const max=Math.max(r,g,b)/255,min=Math.min(r,g,b)/255,l=(max+min)/2; const d=max-min; let h=0,s=0; if(d){s=d/(1-Math.abs(2*l-1)); const rr=r/255,gg=g/255,bb=b/255; h=max===rr?((gg-bb)/d)%6:max===gg?(bb-rr)/d+2:(rr-gg)/d+4; h=Math.round(h*60); if(h<0)h+=360;} return {r,g,b,h,s:Math.round(s*100),l:Math.round(l*100)};} function update(){const c=conv(hex.value); pick.value='#'+hex.value.replace('#','').padStart(6,'0').slice(0,6); prev.style.background=pick.value; out.textContent=`HEX: ${pick.value}\nRGB: rgb(${c.r}, ${c.g}, ${c.b})\nHSL: hsl(${c.h}, ${c.s}%, ${c.l}%)`; } pick.oninput=()=>{hex.value=pick.value;update();}; hex.oninput=update; update();
+    },
+
+    'html-entity-tools': (container) => textTransformTool(container, 'HTML Entity Encoder & Decoder', 'Paste HTML or encoded text...', [
+        ['Encode HTML', v => escapeHtml(v)], ['Decode HTML', v => { const t=document.createElement('textarea'); t.innerHTML=v; return t.value; }]
+    ]),
+
+    'text-cleaner': (container) => textTransformTool(container, 'Text Cleaner', 'Paste messy copied text...', [
+        ['Trim Spaces', v => v.split('\n').map(l=>l.trim().replace(/\s+/g,' ')).join('\n').trim()], ['Remove Blank Lines', v => v.split('\n').filter(l=>l.trim()).join('\n')], ['Remove Duplicate Lines', v => [...new Set(v.split('\n'))].join('\n')], ['Tabs to Spaces', v => v.replace(/\t/g,'    ')]
+    ]),
+
+    'csv-table-converter': (container) => {
+        container.innerHTML = basicToolShell('CSV Table Converter', `<textarea id="csv-in" class="code-area" style="height:150px;">Name,Qty,Price\nCoffee,2,15\nTea,4,8</textarea><div class="controls-panel"><button class="btn-primary" id="csv-md">Markdown</button><button class="btn-secondary" id="csv-html">HTML</button></div><pre class="code-pre" id="csv-out"></pre>`);
+        const input=container.querySelector('#csv-in'), out=container.querySelector('#csv-out'); const rows=()=>input.value.trim().split(/\r?\n/).map(r=>r.split(',').map(c=>c.trim())); function md(){const r=rows(); if(!r.length)return; out.textContent='| '+r[0].join(' | ')+' |\n| '+r[0].map(()=> '---').join(' | ')+' |\n'+r.slice(1).map(x=>'| '+x.join(' | ')+' |').join('\n');} function html(){const r=rows(); out.textContent='<table>\n  <thead><tr>'+r[0].map(c=>`<th>${escapeHtml(c)}</th>`).join('')+'</tr></thead>\n  <tbody>\n'+r.slice(1).map(x=>'    <tr>'+x.map(c=>`<td>${escapeHtml(c)}</td>`).join('')+'</tr>').join('\n')+'\n  </tbody>\n</table>'; } container.querySelector('#csv-md').onclick=md; container.querySelector('#csv-html').onclick=html; input.oninput=md; md();
+    },
+
+    'random-picker': (container) => {
+        container.innerHTML = basicToolShell('Random Picker', `<textarea id="rand-list" class="code-area" style="height:150px;">Ahmed\nRayhan\nSara\nMohammed\nFatima</textarea><div class="tool-form-grid"><div class="control-group"><label>Teams</label><input type="number" id="rand-teams" value="2" min="1"></div><div class="control-group"><label>Min Number</label><input type="number" id="rand-min" value="1"></div><div class="control-group"><label>Max Number</label><input type="number" id="rand-max" value="100"></div></div><div class="controls-panel"><button class="btn-primary" id="rand-pick">Pick One</button><button class="btn-secondary" id="rand-shuffle">Shuffle</button><button class="btn-secondary" id="rand-team">Split Teams</button><button class="btn-secondary" id="rand-num">Random Number</button></div><pre class="code-pre" id="rand-out"></pre>`);
+        const list=()=>container.querySelector('#rand-list').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean); const out=container.querySelector('#rand-out'); const shuffle=a=>a.map(v=>[Math.random(),v]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]); container.querySelector('#rand-pick').onclick=()=>{const a=list(); out.textContent=a[Math.floor(Math.random()*a.length)]||'Add names first.'}; container.querySelector('#rand-shuffle').onclick=()=>out.textContent=shuffle(list()).join('\n'); container.querySelector('#rand-team').onclick=()=>{const a=shuffle(list()), n=+container.querySelector('#rand-teams').value||2; out.textContent=Array.from({length:n},(_,i)=>`Team ${i+1}: ${a.filter((_,idx)=>idx%n===i).join(', ')}`).join('\n');}; container.querySelector('#rand-num').onclick=()=>{const min=+container.querySelector('#rand-min').value||0,max=+container.querySelector('#rand-max').value||100; out.textContent=String(Math.floor(Math.random()*(max-min+1))+min);};
+    },
+
+    'date-calculator': (container) => {
+        container.innerHTML = basicToolShell('Date Calculator', `<div class="tool-form-grid"><div class="control-group"><label>Start Date</label><input type="date" id="date-a"></div><div class="control-group"><label>End Date</label><input type="date" id="date-b"></div><div class="control-group"><label>Add Days</label><input type="number" id="date-add" value="30"></div></div><div class="result-grid" id="date-out"></div>`);
+        const a=container.querySelector('#date-a'), b=container.querySelector('#date-b'), add=container.querySelector('#date-add'), out=container.querySelector('#date-out'); a.value=new Date().toISOString().slice(0,10); b.value=new Date(Date.now()+7*864e5).toISOString().slice(0,10); function calc(){const da=new Date(a.value), db=new Date(b.value); const days=Math.round((db-da)/864e5); const future=new Date(da.getTime()+(+add.value||0)*864e5); out.innerHTML=metricCards([['Days Between', String(days)],['Weeks', (days/7).toFixed(2)],['After Added Days', future.toISOString().slice(0,10)],['Start Weekday', da.toLocaleDateString(undefined,{weekday:'long'})]]);} [a,b,add].forEach(i=>i.oninput=calc); calc();
     }
 
+
 };
+
+function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]));
+}
+function money(value) { return new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD' }).format(Number.isFinite(value) ? value : 0); }
+function fmt(value) { return Number.isFinite(value) ? Number(value).toLocaleString(undefined, { maximumFractionDigits: 4 }) : '0'; }
+function metricCards(items) {
+    return items.map(([label, value]) => `<div class="metric-card"><div class="metric-label">${escapeHtml(label)}</div><div class="metric-value">${escapeHtml(value)}</div></div>`).join('');
+}
+function basicToolShell(title, body) {
+    return `<div style="max-width: 980px; margin: 0 auto;"><div class="output-box" style="margin-bottom:1rem;"><div class="output-header"><span class="output-title">${escapeHtml(title)}</span></div>${body}</div></div>`;
+}
+function textTransformTool(container, title, placeholder, actions) {
+    container.innerHTML = basicToolShell(title, `<textarea id="tt-in" class="code-area" style="height:160px;" placeholder="${escapeHtml(placeholder)}"></textarea><div class="controls-panel" id="tt-actions"></div><pre class="code-pre" id="tt-out"></pre><button class="btn-primary" id="tt-copy" style="margin-top: .75rem;">Copy Result</button>`);
+    const input = container.querySelector('#tt-in');
+    const out = container.querySelector('#tt-out');
+    const actionsBox = container.querySelector('#tt-actions');
+    actionsBox.innerHTML = actions.map(([label], i) => `<button class="${i === 0 ? 'btn-primary' : 'btn-secondary'}" data-action="${i}">${escapeHtml(label)}</button>`).join('');
+    function run(fn) { try { out.textContent = fn(input.value); } catch (e) { out.textContent = e.message; } }
+    actionsBox.querySelectorAll('button').forEach(btn => btn.onclick = () => run(actions[Number(btn.dataset.action)][1]));
+    input.oninput = () => run(actions[0][1]);
+    container.querySelector('#tt-copy').onclick = e => Utils.copyToClipboard(out.textContent, e.target);
+    input.value = placeholder.includes('URL') ? 'https://example.com/a page?q=hello world' : 'Paste <strong>text</strong> & clean it here.';
+    run(actions[0][1]);
+}
+
+
