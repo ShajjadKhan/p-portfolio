@@ -2166,39 +2166,6 @@ body {
     animation: slowOrbit 16s linear infinite reverse;
 }
 
-.floating-tech-stack {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    z-index: 1;
-}
-
-.tech-float {
-    position: absolute;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 54px;
-    height: 34px;
-    padding: 0 12px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 999px;
-    color: #e2e8f0;
-    background: rgba(2, 6, 23, 0.62);
-    box-shadow: 0 14px 40px rgba(0,0,0,.28), inset 0 1px rgba(255,255,255,.08);
-    backdrop-filter: blur(12px);
-    font: 800 12px var(--font-mono);
-    letter-spacing: .06em;
-    text-transform: uppercase;
-    animation: floatChip 7s ease-in-out infinite;
-}
-
-.chip-ai { top: 25%; right: 12%; color: #86efac; animation-delay: 0s; }
-.chip-python { top: 46%; right: 6%; color: #67e8f9; animation-delay: -1.4s; }
-.chip-django { top: 62%; right: 18%; color: #fbbf24; animation-delay: -2.6s; }
-.chip-linux { top: 32%; left: 5%; color: #c4b5fd; animation-delay: -3.8s; }
-.chip-ux { top: 70%; left: 10%; color: #f9a8d4; animation-delay: -5.2s; }
-
 .hero-content > * {
     animation: riseIn .72s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
@@ -2310,18 +2277,6 @@ body {
     100% { left: 120%; }
 }
 
-@media (max-width: 900px) {
-    .hero-orbit,
-    .tech-float {
-        opacity: .55;
-    }
-
-    .chip-linux,
-    .chip-ux {
-        display: none;
-    }
-}
-
 @media (max-width: 768px) {
     .hero-cyber-grid {
         background-size: 38px 38px;
@@ -2338,23 +2293,13 @@ body {
     .hero-orbit-two {
         display: none;
     }
-
-    .tech-float {
-        height: 30px;
-        min-width: 44px;
-        font-size: 10px;
-    }
-
-    .chip-ai { top: 20%; right: 5%; }
-    .chip-python { top: 58%; right: 3%; }
-    .chip-django { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
     .hero-section::before,
     .hero-cyber-grid,
     .hero-orbit,
-    .tech-float,
+    .play-chip,
     .hero-content > *,
     .hero-title .gradient-text-emerald,
     .hero-title .gradient-text-cyan,
@@ -2365,3 +2310,66 @@ body {
         animation: none !important;
     }
 }
+
+
+/* Playable full-page tech chips */
+.playful-tech-field {
+    position: fixed;
+    inset: 0;
+    z-index: 35;
+    pointer-events: none;
+    overflow: hidden;
+    contain: layout paint;
+}
+
+.play-chip {
+    pointer-events: auto;
+    cursor: grab;
+    opacity: .78;
+    user-select: none;
+    touch-action: none;
+    transition: transform .12s ease, box-shadow .18s ease, opacity .2s ease, border-color .18s ease;
+}
+
+.play-chip:hover,
+.play-chip:focus-visible,
+.play-chip.is-dragging {
+    opacity: 1;
+    border-color: rgba(255, 255, 255, 0.32);
+    box-shadow: 0 18px 55px rgba(34, 211, 238, 0.16), 0 14px 40px rgba(0,0,0,.36), inset 0 1px rgba(255,255,255,.12);
+    outline: none;
+}
+
+.play-chip.is-dragging {
+    cursor: grabbing;
+    animation: none !important;
+    z-index: 2;
+}
+
+.play-chip.is-dropped {
+    animation: chipDropBounce .72s cubic-bezier(.2, .9, .26, 1.1) both !important;
+}
+
+@keyframes chipDropBounce {
+    0% { transform: translate3d(var(--chip-x, 0px), var(--chip-y, 0px), 0) scale(1.06) rotate(var(--chip-rot, 0deg)); }
+    62% { transform: translate3d(var(--chip-x, 0px), calc(var(--chip-y, 0px) + 34px), 0) scale(.96) rotate(var(--chip-rot, 0deg)); }
+    82% { transform: translate3d(var(--chip-x, 0px), calc(var(--chip-y, 0px) - 10px), 0) scale(1.02) rotate(var(--chip-rot, 0deg)); }
+    100% { transform: translate3d(var(--chip-x, 0px), var(--chip-y, 0px), 0) scale(1) rotate(var(--chip-rot, 0deg)); }
+}
+
+@media (max-width: 768px) {
+    .playful-tech-field {
+        z-index: 25;
+    }
+}
+
+@media (max-width: 520px) {
+    .play-chip {
+        opacity: .72;
+    }
+}
+
+.chip-flask { top: 82%; left: 62%; color: #fdba74; animation-delay: -4.5s; }
+.chip-nginx { top: 48%; left: 3%; color: #93c5fd; animation-delay: -6.2s; }
+.chip-aiops { top: 78%; left: 86%; color: #a7f3d0; animation-delay: -7.1s; }
+

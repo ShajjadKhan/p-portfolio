@@ -203,6 +203,10 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     }
+
+
+    // 7. Playable tech chips across the landing page
+    initPlayableTechChips();
 });
 
 // Global copy email helper
@@ -222,3 +226,132 @@ function copyPortfolioEmail() {
     });
 }
 
+
+
+function initPlayableTechChips() {
+    const field = document.getElementById('playful-tech-field');
+    if (!field || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const chips = Array.from(field.querySelectorAll('.play-chip'));
+    const state = new Map();
+    const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+
+    function placeChip(chip, index) {
+        const rect = chip.getBoundingClientRect();
+        const left = parseFloat(getComputedStyle(chip).left || '0') || (40 + index * 42);
+        const top = parseFloat(getComputedStyle(chip).top || '0') || (90 + index * 38);
+        const x = clamp(left, 8, window.innerWidth - rect.width - 8);
+        const y = clamp(top, 82, window.innerHeight - rect.height - 18);
+        const item = { x, y, vx: 0, vy: 0, rot: (index % 2 ? -4 : 4), dragging: false };
+        state.set(chip, item);
+        chip.style.left = '0px';
+        chip.style.top = '0px';
+        chip.style.right = 'auto';
+        setChipTransform(chip, item);
+    }
+
+    function setChipTransform(chip, item) {
+        chip.style.setProperty('--chip-x', `${item.x}px`);
+        chip.style.setProperty('--chip-y', `${item.y}px`);
+        chip.style.setProperty('--chip-rot', `${item.rot}deg`);
+        chip.style.transform = `translate3d(${item.x}px, ${item.y}px, 0) rotate(${item.rot}deg)`;
+    }
+
+    chips.forEach(placeChip);
+
+    chips.forEach(chip => {
+        chip.addEventListener('pointerdown', event => {
+            const item = state.get(chip);
+            if (!item) return;
+            chip.setPointerCapture(event.pointerId);
+            item.dragging = true;
+            item.grabX = event.clientX - item.x;
+            item.grabY = event.clientY - item.y;
+            item.lastX = event.clientX;
+            item.lastY = event.clientY;
+            item.lastT = performance.now();
+            chip.classList.add('is-dragging');
+        });
+
+        chip.addEventListener('pointermove', event => {
+            const item = state.get(chip);
+            if (!item || !item.dragging) return;
+            const now = performance.now();
+            const dt = Math.max(16, now - item.lastT);
+            const nextX = clamp(event.clientX - item.grabX, 8, window.innerWidth - chip.offsetWidth - 8);
+            const nextY = clamp(event.clientY - item.grabY, 82, window.innerHeight - chip.offsetHeight - 18);
+            item.vx = (event.clientX - item.lastX) / dt * 16;
+            item.vy = (event.clientY - item.lastY) / dt * 16;
+            item.x = nextX;
+            item.y = nextY;
+            item.rot = clamp(item.vx * 1.6, -18, 18);
+            item.lastX = event.clientX;
+            item.lastY = event.clientY;
+            item.lastT = now;
+            setChipTransform(chip, item);
+        });
+
+        function release() {
+            const item = state.get(chip);
+            if (!item || !item.dragging) return;
+            item.dragging = false;
+            item.vy = Math.max(item.vy + 9, 11);
+            chip.classList.remove('is-dragging');
+            chip.classList.add('is-dropped');
+            setTimeout(() => chip.classList.remove('is-dropped'), 760);
+        }
+        chip.addEventListener('pointerup', release);
+        chip.addEventListener('pointercancel', release);
+
+        chip.addEventListener('click', () => {
+            const item = state.get(chip);
+            if (!item || item.dragging) return;
+            item.vx += (Math.random() - 0.5) * 8;
+            item.vy += 14 + Math.random() * 6;
+            item.rot += (Math.random() - 0.5) * 22;
+            chip.classList.add('is-dropped');
+            setTimeout(() => chip.classList.remove('is-dropped'), 760);
+        });
+    });
+
+    function physics() {
+        chips.forEach(chip => {
+            const item = state.get(chip);
+            if (!item || item.dragging) return;
+            const maxX = window.innerWidth - chip.offsetWidth - 8;
+            const maxY = window.innerHeight - chip.offsetHeight - 18;
+            item.vy += 0.28;
+            item.x += item.vx;
+            item.y += item.vy;
+            item.vx *= 0.985;
+            item.vy *= 0.992;
+            if (item.x < 8 || item.x > maxX) {
+                item.x = clamp(item.x, 8, maxX);
+                item.vx *= -0.62;
+            }
+            if (item.y > maxY) {
+                item.y = maxY;
+                item.vy *= -0.46;
+                item.vx *= 0.82;
+                if (Math.abs(item.vy) < 0.85) item.vy = 0;
+            }
+            if (item.y < 82) {
+                item.y = 82;
+                item.vy *= -0.45;
+            }
+            item.rot = clamp(item.rot + item.vx * 0.08, -22, 22);
+            setChipTransform(chip, item);
+        });
+        requestAnimationFrame(physics);
+    }
+    requestAnimationFrame(physics);
+
+    window.addEventListener('resize', () => {
+        chips.forEach(chip => {
+            const item = state.get(chip);
+            if (!item) return;
+            item.x = clamp(item.x, 8, window.innerWidth - chip.offsetWidth - 8);
+            item.y = clamp(item.y, 82, window.innerHeight - chip.offsetHeight - 18);
+            setChipTransform(chip, item);
+        });
+    });
+}
