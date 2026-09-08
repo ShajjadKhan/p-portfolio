@@ -5,6 +5,8 @@ Mounted at /tools
 
 import os
 import io
+import csv
+import zipfile
 import time
 import xml.etree.ElementTree as ET
 from urllib.parse import urlparse
@@ -286,6 +288,139 @@ def api_sitemap_audit():
         "warnings": warnings,
         "urls": urls_extracted[:100],
         "truncated": total_count > 100
+    })
+
+
+@tools_bp.route('/api/spin-wheel/template')
+def api_spin_wheel_template():
+    """Download an Excel-compatible CSV template for the spin wheel."""
+    rows = [
+        ["Name", "Department", "Property", "Group", "Phone", "Notes"],
+        ["Rayhan", "Maintenance", "Marriott Riyadh", "Team A", "+966 57 748 4238", "Seat cover request"],
+        ["Ahmed", "Purchasing", "Courtyard", "Team B", "", ""],
+        ["Sara", "Finance", "Head Office", "Team A", "", ""],
+    ]
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerows(rows)
+    data = '\ufeff' + output.getvalue()
+    return Response(
+        data,
+        mimetype='text/csv; charset=utf-8',
+        headers={'Content-Disposition': 'attachment; filename=spin-wheel-template.csv'}
+    )
+
+
+def _xlsx_cell_value(cell, shared_strings):
+    cell_type = cell.attrib.get('t')
+    value_elem = cell.find('{http://schemas.openxmlformats.org/spreadsheetml/2006/main}v')
+    inline_elem = cell.find('{http://schemas.openxmlformats.org/spreadsheetml/2006/main}is')
+    if cell_type == 'inlineStr' and inline_elem is not None:
+        texts = inline_elem.findall('.//{http://schemas.openxmlformats.org/spreadsheetml/2006/main}t')
+        return ''.join(t.text or '' for t in texts).strip()
+    if value_elem is None:
+        return ''
+    raw = value_elem.text or ''
+    if cell_type == 's':
+        try:
+            return shared_strings[int(raw)].strip()
+        except Exception:
+            return raw.strip()
+    return raw.strip()
+
+
+def _parse_xlsx_people(file_obj):
+    with zipfile.ZipFile(file_obj) as zf:
+        shared_strings = []
+        if 'xl/sharedStrings.xml' in zf.namelist():
+            ss_root = ET.fromstring(zf.read('xl/sharedStrings.xml'))
+            for si in ss_root.findall('{http://schemas.openxmlformats.org/spreadsheetml/2006/main}si'):
+                texts = si.findall('.//{http://schemas.openxmlformats.org/spreadsheetml/2006/main}t')
+                shared_strings.append(''.join(t.text or '' for t in texts))
+        sheet_name = 'xl/worksheets/sheet1.xml'
+        if sheet_name not in zf.namelist():
+            sheet_name = next((n for n in zf.namelist() if n.startswith('xl/worksheets/sheet') and n.endswith('.xml')), None)
+        if not sheet_name:
+            return []
+        root = ET.fromstring(zf.read(sheet_name))
+        rows = []
+        ns = '{http://schemas.openxmlformats.org/spreadsheetml/2006/main}'
+        for row in root.findall(f'.//{ns}row'):
+            values = []
+            last_col = 0
+            for cell in row.findall(f'{ns}c'):
+                ref = cell.attrib.get('r', '')
+                col = 0
+                for ch in ref:
+                    if ch.isalpha():
+                        col = col * 26 + (ord(ch.upper()) - 64)
+                    else:
+                        break
+                while last_col + 1 < col:
+                    values.append('')
+                    last_col += 1
+                values.append(_xlsx_cell_value(cell, shared_strings))
+                last_col = col
+            if any(v.strip() for v in values):
+                rows.append(values)
+        return rows
+
+
+def _people_from_rows(rows):
+    if not rows:
+        return []
+    header = [str(c).strip().lower() for c in rows[0]]
+    aliases = {
+        'name': ['name', 'names', 'person', 'employee', 'supplier', 'winner'],
+        'department': ['department', 'dept', 'section'],
+        'property': ['property', 'hotel', 'location', 'branch'],
+        'group': ['group', 'team', 'category', 'type', 'other'],
+        'phone': ['phone', 'mobile', 'whatsapp', 'contact'],
+        'notes': ['notes', 'note', 'remarks', 'comment'],
+    }
+    def idx(key):
+        for alias in aliases[key]:
+            if alias in header:
+                return header.index(alias)
+        return None
+    indexes = {k: idx(k) for k in aliases}
+    if indexes['name'] is None:
+        indexes['name'] = 0
+    people = []
+    for raw in rows[1:]:
+        row = list(raw) + [''] * 8
+        name = str(row[indexes['name']] if indexes['name'] is not None else '').strip()
+        if not name:
+            continue
+        person = {key: str(row[i]).strip() if i is not None and i < len(row) else '' for key, i in indexes.items()}
+        person['name'] = name
+        people.append(person)
+    return people
+
+
+@tools_bp.route('/api/spin-wheel/import', methods=['POST'])
+def api_spin_wheel_import():
+    """Import CSV/TSV/XLSX people list for the spin wheel."""
+    uploaded = request.files.get('file')
+    if not uploaded:
+        return jsonify({'status': 'error', 'message': 'Please upload a CSV or XLSX file.'}), 400
+    filename = (uploaded.filename or '').lower()
+    try:
+        if filename.endswith('.xlsx'):
+            rows = _parse_xlsx_people(uploaded.stream)
+        else:
+            raw = uploaded.stream.read().decode('utf-8-sig', errors='replace')
+            sample = raw[:2048]
+            dialect = csv.Sniffer().sniff(sample, delimiters=',;\t') if sample.strip() else csv.excel
+            rows = list(csv.reader(io.StringIO(raw), dialect))
+        people = _people_from_rows(rows)
+    except Exception as exc:
+        return jsonify({'status': 'error', 'message': f'Could not read the file: {exc}'}), 400
+    return jsonify({
+        'status': 'success',
+        'count': len(people),
+        'people': people[:1000],
+        'truncated': len(people) > 1000,
     })
 
 

@@ -1,5 +1,5 @@
 /**
- * tools-engine.js - Interactive Engine for 47+ Utilities
+ * tools-engine.js - Interactive Engine for 48+ Utilities
  * FastTrack Tools (https://www.shajjadkhan.com)
  */
 
@@ -2412,7 +2412,7 @@ print("Built by Shajjad Khan")
                     </div>
                     <div class="control-group">
                         <label>Meta Description</label>
-                        <textarea id="meta-in-desc" style="height: 90px;">47+ essential engineering, PDF, image, and business utilities. Free, 100% private in-browser file execution with zero lag.</textarea>
+                        <textarea id="meta-in-desc" style="height: 90px;">48+ essential engineering, PDF, image, and business utilities. Free, 100% private in-browser file execution with zero lag.</textarea>
                     </div>
                     <div class="control-group">
                         <label>Canonical Page URL</label>
@@ -3184,8 +3184,145 @@ Monetization: Google AdSense integrated</textarea>
     'date-calculator': (container) => {
         container.innerHTML = basicToolShell('Date Calculator', `<div class="tool-form-grid"><div class="control-group"><label>Start Date</label><input type="date" id="date-a"></div><div class="control-group"><label>End Date</label><input type="date" id="date-b"></div><div class="control-group"><label>Add Days</label><input type="number" id="date-add" value="30"></div></div><div class="result-grid" id="date-out"></div>`);
         const a=container.querySelector('#date-a'), b=container.querySelector('#date-b'), add=container.querySelector('#date-add'), out=container.querySelector('#date-out'); a.value=new Date().toISOString().slice(0,10); b.value=new Date(Date.now()+7*864e5).toISOString().slice(0,10); function calc(){const da=new Date(a.value), db=new Date(b.value); const days=Math.round((db-da)/864e5); const future=new Date(da.getTime()+(+add.value||0)*864e5); out.innerHTML=metricCards([['Days Between', String(days)],['Weeks', (days/7).toFixed(2)],['After Added Days', future.toISOString().slice(0,10)],['Start Weekday', da.toLocaleDateString(undefined,{weekday:'long'})]]);} [a,b,add].forEach(i=>i.oninput=calc); calc();
-    }
+    },
 
+    'spin-wheel-excel': (container) => {
+        container.innerHTML = basicToolShell('Excel Spin Wheel Picker', `
+            <div class="spin-import-grid">
+                <div class="spin-panel">
+                    <h3>1. Prepare list</h3>
+                    <p class="muted">Download the template, fill Name, Department, Property, Group, Phone, and Notes, then upload CSV or XLSX.</p>
+                    <div class="controls-panel">
+                        <a class="btn-primary" href="/tools/api/spin-wheel/template">Download Excel Template</a>
+                        <label class="btn-secondary" style="cursor:pointer;">Upload Excel/CSV<input type="file" id="spin-file" accept=".xlsx,.csv,.tsv,text/csv" style="display:none;"></label>
+                    </div>
+                    <textarea id="spin-manual" class="code-area" style="height:120px;" placeholder="Or add names manually, one per line..."></textarea>
+                    <button class="btn-secondary" id="spin-add-manual">Add Manual Names</button>
+                </div>
+                <div class="spin-panel">
+                    <h3>2. Filter before spin</h3>
+                    <div class="tool-form-grid">
+                        <div class="control-group"><label>Department</label><select id="spin-dept"><option value="">All</option></select></div>
+                        <div class="control-group"><label>Property</label><select id="spin-property"><option value="">All</option></select></div>
+                        <div class="control-group"><label>Group / Other</label><select id="spin-group"><option value="">All</option></select></div>
+                    </div>
+                    <div class="result-grid" id="spin-stats"></div>
+                </div>
+            </div>
+            <div class="spin-wheel-layout">
+                <div class="spin-wheel-wrap">
+                    <canvas id="spin-canvas" width="520" height="520"></canvas>
+                    <button class="btn-primary spin-main-btn" id="spin-btn">SPIN</button>
+                </div>
+                <div class="spin-panel">
+                    <h3>Ready Entries</h3>
+                    <div id="spin-list" class="spin-entry-list"></div>
+                    <h3>Winner History</h3>
+                    <div id="spin-history" class="spin-history"></div>
+                </div>
+            </div>
+        `);
+        let people = [
+            {name:'Rayhan', department:'Maintenance', property:'Marriott Riyadh', group:'Team A', phone:'+966 57 748 4238', notes:'Sample'},
+            {name:'Ahmed', department:'Purchasing', property:'Courtyard', group:'Team B', phone:'', notes:''},
+            {name:'Sara', department:'Finance', property:'Head Office', group:'Team A', phone:'', notes:''},
+            {name:'Mohammed', department:'Operations', property:'Marriott Riyadh', group:'Team C', phone:'', notes:''}
+        ];
+        let angle = 0;
+        let spinning = false;
+        const canvas = container.querySelector('#spin-canvas');
+        const ctx = canvas.getContext('2d');
+        const colors = ['#00e599','#22d3ee','#f59e0b','#ec4899','#8b5cf6','#ef4444','#14b8a6','#a3e635'];
+        const clean = v => String(v || '').trim();
+        const unique = key => [...new Set(people.map(p => clean(p[key])).filter(Boolean))].sort();
+        function fillSelect(id, values) {
+            const el = container.querySelector(id);
+            const current = el.value;
+            el.innerHTML = '<option value="">All</option>' + values.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+            el.value = values.includes(current) ? current : '';
+        }
+        function filtered() {
+            const dept = container.querySelector('#spin-dept').value;
+            const property = container.querySelector('#spin-property').value;
+            const group = container.querySelector('#spin-group').value;
+            return people.filter(p => (!dept || p.department === dept) && (!property || p.property === property) && (!group || p.group === group));
+        }
+        function refreshFilters() {
+            fillSelect('#spin-dept', unique('department'));
+            fillSelect('#spin-property', unique('property'));
+            fillSelect('#spin-group', unique('group'));
+            render();
+        }
+        function render() {
+            const entries = filtered();
+            container.querySelector('#spin-stats').innerHTML = metricCards([
+                ['Total Loaded', people.length], ['Ready to Spin', entries.length], ['Departments', unique('department').length], ['Properties', unique('property').length]
+            ]);
+            container.querySelector('#spin-list').innerHTML = entries.slice(0, 100).map((p, i) => `<div class="spin-entry"><strong>${i + 1}. ${escapeHtml(p.name)}</strong><span>${escapeHtml([p.department, p.property, p.group].filter(Boolean).join(' • '))}</span></div>`).join('') || '<p class="muted">No entries match the filters.</p>';
+            draw(entries);
+        }
+        function draw(entries) {
+            const w = canvas.width, h = canvas.height, cx = w / 2, cy = h / 2, r = Math.min(w, h) / 2 - 12;
+            ctx.clearRect(0, 0, w, h);
+            if (!entries.length) {
+                ctx.fillStyle = '#0f172a'; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#fff'; ctx.font = '800 24px Inter, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('Upload names to spin', cx, cy);
+                return;
+            }
+            const slice = Math.PI * 2 / entries.length;
+            entries.forEach((p, i) => {
+                const start = angle + i * slice, end = start + slice;
+                ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, r, start, end); ctx.closePath(); ctx.fillStyle = colors[i % colors.length]; ctx.fill();
+                ctx.save(); ctx.translate(cx, cy); ctx.rotate(start + slice / 2); ctx.textAlign = 'right'; ctx.fillStyle = '#06111f'; ctx.font = '800 15px Inter, sans-serif'; ctx.fillText(p.name.slice(0, 26), r - 18, 5); ctx.restore();
+            });
+            ctx.beginPath(); ctx.arc(cx, cy, 50, 0, Math.PI * 2); ctx.fillStyle = '#020617'; ctx.fill(); ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.font = '900 16px Inter, sans-serif'; ctx.fillText('SPIN', cx, cy + 6);
+            ctx.beginPath(); ctx.moveTo(cx + 6, 10); ctx.lineTo(cx - 18, 50); ctx.lineTo(cx + 30, 50); ctx.closePath(); ctx.fillStyle = '#fff'; ctx.fill();
+        }
+        function winnerFor(entries) {
+            const pointer = (Math.PI * 1.5 - (angle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+            return entries[Math.floor(pointer / (Math.PI * 2 / entries.length)) % entries.length];
+        }
+        container.querySelector('#spin-btn').onclick = () => {
+            const entries = filtered();
+            if (spinning || !entries.length) return;
+            spinning = true;
+            const start = performance.now(), startAngle = angle, spinFor = 3200, extra = (7 + Math.random() * 4) * Math.PI * 2 + Math.random() * Math.PI * 2;
+            function tick(now) {
+                const t = Math.min(1, (now - start) / spinFor);
+                angle = startAngle + (1 - Math.pow(1 - t, 4)) * extra;
+                draw(entries);
+                if (t < 1) requestAnimationFrame(tick);
+                else {
+                    spinning = false;
+                    const winner = winnerFor(entries);
+                    const msg = `${winner.name}${winner.department ? ' — ' + winner.department : ''}${winner.property ? ' / ' + winner.property : ''}`;
+                    const phone = clean(winner.phone).replace(/\D/g, '');
+                    container.querySelector('#spin-history').insertAdjacentHTML('afterbegin', `<div class="winner-card">🏆 <strong>${escapeHtml(msg)}</strong>${phone ? `<br><a href="tel:+${phone}">Call</a> <a href="https://wa.me/${phone}" target="_blank" rel="noopener">WhatsApp</a>` : ''}</div>`);
+                    alert('Winner: ' + msg);
+                }
+            }
+            requestAnimationFrame(tick);
+        };
+        container.querySelector('#spin-file').onchange = async (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+            const fd = new FormData();
+            fd.append('file', file);
+            const res = await fetch('/tools/api/spin-wheel/import', { method: 'POST', body: fd });
+            const data = await res.json();
+            if (data.status !== 'success') { alert(data.message || 'Import failed'); return; }
+            people = data.people.map(p => ({ name: clean(p.name), department: clean(p.department), property: clean(p.property), group: clean(p.group), phone: clean(p.phone), notes: clean(p.notes) })).filter(p => p.name);
+            refreshFilters();
+        };
+        container.querySelector('#spin-add-manual').onclick = () => {
+            const names = container.querySelector('#spin-manual').value.split(/\r?\n/).map(clean).filter(Boolean);
+            people = people.concat(names.map(name => ({ name, department: 'Manual', property: '', group: 'Manual', phone: '', notes: '' })));
+            container.querySelector('#spin-manual').value = '';
+            refreshFilters();
+        };
+        ['#spin-dept', '#spin-property', '#spin-group'].forEach(id => container.querySelector(id).onchange = render);
+        refreshFilters();
+    }
 
 };
 
@@ -3213,5 +3350,6 @@ function textTransformTool(container, title, placeholder, actions) {
     input.value = placeholder.includes('URL') ? 'https://example.com/a page?q=hello world' : 'Paste <strong>text</strong> & clean it here.';
     run(actions[0][1]);
 }
+
 
 

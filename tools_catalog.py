@@ -591,7 +591,21 @@ TOOLS = [
         "detailed_desc": "Plan deadlines, delivery dates, renewals, hotel tasks, and project timelines with simple date math.",
         "keywords": ["date calculator", "days between dates", "deadline calculator", "add days", "business date"],
         "client_powered": True
+
+    },
+    {
+        "id": "spin-wheel-excel",
+        "slug": "spin-wheel-excel",
+        "title": "Excel Spin Wheel Picker",
+        "category": "business",
+        "badge": "Excel",
+        "icon": "🎡",
+        "short_desc": "Download a formatted Excel template, upload names with department/property/group columns, filter, and spin a fair winner wheel.",
+        "detailed_desc": "Create raffles, team selections, duty rosters, supplier draws, room assignments, or staff rotations. Upload the provided Excel-compatible template with Name, Department, Property, Group, Phone, and Notes columns, then filter the list and spin the wheel instantly.",
+        "keywords": ["spin wheel", "excel picker", "random name picker", "wheel spinner", "department picker", "property picker", "raffle wheel"],
+        "client_powered": False
     }
+
 
 ]
 
