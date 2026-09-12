@@ -323,6 +323,18 @@ TOOLS = [
         "keywords": ["jwt decoder", "decode jwt", "json web token", "jwt claims", "jwt inspect"],
         "client_powered": True
     },
+    {
+        "id": "dwg-viewer",
+        "slug": "dwg-viewer",
+        "title": "DWG & CAD Blueprint File Viewer",
+        "category": "dev",
+        "badge": "CAD Pro",
+        "icon": "📐",
+        "short_desc": "Interactive GUI viewer for AutoCAD DWG and DXF engineering drawings with zoom, pan, layers, crosshairs, distance measurement, and export.",
+        "detailed_desc": "Open and inspect AutoCAD DWG and DXF technical drawings directly in your browser with a responsive CAD GUI. Features 60 FPS vector canvas, layer visibility manager, world coordinate crosshair HUD, interactive distance measurement tool, CAD background themes (AutoCAD Dark, Blueprint Cyan, Clean White, Matrix Green), entity inspector, and instant export to high-res PNG, SVG, or DXF.",
+        "keywords": ["dwg viewer", "cad viewer", "dwg file viewer", "autocad viewer", "dxf viewer", "blueprint viewer", "open dwg online", "dwg to svg", "cad drawing inspector", "engineering drawing viewer"],
+        "client_powered": True
+    },
 
     # --- Text & Content ---
     {

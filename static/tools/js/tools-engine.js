@@ -3095,6 +3095,1130 @@ Monetization: Google AdSense integrated</textarea>
         };
 
         copyBtn.onclick = (e) => Utils.copyToClipboard(hexTxt.textContent, e.target);
-    }
+    },
 
+    // 33. DWG & CAD Drawing Viewer
+    'dwg-viewer': (container) => {
+        container.innerHTML = `
+            <div class="cad-workspace-container" id="cadWorkspaceContainer">
+                <!-- Top CAD Toolbar -->
+                <div class="cad-toolbar">
+                    <div class="cad-toolbar-group">
+                        <input type="file" id="cadFileInput" accept=".dwg,.dxf" style="display: none;">
+                        <button class="cad-btn cad-btn-primary" id="btnOpenCad">
+                            <span>📁</span> Open DWG / DXF
+                        </button>
+
+                        <select class="cad-select" id="cadSampleSelect" title="Load sample CAD blueprint">
+                            <option value="">⚡ Load Sample Blueprint...</option>
+                            <option value="floorplan">🏢 Architectural Floor Plan</option>
+                            <option value="mechanical">⚙️ Mechanical Flange & Spoke</option>
+                            <option value="schematic">⚡ Electrical Circuit Schematic</option>
+                        </select>
+                    </div>
+
+                    <div class="cad-toolbar-group">
+                        <button class="cad-btn" id="btnCadFit" title="Fit drawing to screen (F)">
+                            <span>🔍</span> Fit
+                        </button>
+                        <button class="cad-btn" id="btnCadReset" title="Reset view 1:1 (R)">
+                            <span>🔄</span> Reset
+                        </button>
+                        <button class="cad-btn" id="btnCadZoomIn" title="Zoom in (+)">
+                            <span>➕</span>
+                        </button>
+                        <button class="cad-btn" id="btnCadZoomOut" title="Zoom out (-)">
+                            <span>➖</span>
+                        </button>
+
+                        <select class="cad-select" id="cadThemeSelect" title="CAD Viewport Theme">
+                            <option value="dark">🖤 AutoCAD Dark</option>
+                            <option value="blueprint">🔷 Blueprint Cyan</option>
+                            <option value="light">⚪ Clean White</option>
+                            <option value="matrix">💚 Matrix Green</option>
+                        </select>
+
+                        <button class="cad-btn" id="btnCadGrid" title="Toggle CAD grid (G)">
+                            <span>🔲</span> Grid
+                        </button>
+                        <button class="cad-btn" id="btnCadCrosshair" title="Toggle Reticle">
+                            <span>🎯</span> Reticle
+                        </button>
+                        <button class="cad-btn cad-btn-accent" id="btnCadMeasure" title="Distance Measurement Tool (M)">
+                            <span>📏</span> Measure
+                        </button>
+                    </div>
+
+                    <div class="cad-toolbar-group">
+                        <button class="cad-btn" id="btnCadExportPng" title="Export 2x High-Res PNG">
+                            <span>📷</span> PNG
+                        </button>
+                        <button class="cad-btn" id="btnCadExportSvg" title="Export Scalable Vector Graphics">
+                            <span>📐</span> SVG
+                        </button>
+                        <button class="cad-btn" id="btnCadExportDxf" title="Download Standard DXF File">
+                            <span>📄</span> DXF
+                        </button>
+                        <button class="cad-btn" id="btnCadFullscreen" title="Toggle Fullscreen">
+                            <span>🗖</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Main Viewport Layout -->
+                <div class="cad-main-viewport-layout" id="cadViewport">
+                    <!-- Canvas Drawing Area -->
+                    <div class="cad-canvas-container" id="cadCanvasContainer">
+                        <canvas class="cad-canvas" id="cadCanvas"></canvas>
+
+                        <!-- HUD Coordinate Reader -->
+                        <div class="cad-hud-coords" id="cadHudCoords">
+                            X: 0.000 | Y: 0.000 | Zoom: 100%
+                        </div>
+
+                        <!-- Active Mode Banner -->
+                        <div class="cad-hud-mode-banner" id="cadModeBanner">
+                            📏 Measure Mode: Click Point A to begin
+                        </div>
+
+                        <!-- UCS Icon (User Coordinate System) -->
+                        <div class="cad-ucs-icon" id="cadUcsIcon">
+                            <svg width="38" height="38" viewBox="0 0 40 40">
+                                <line x1="6" y1="34" x2="34" y2="34" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round" />
+                                <polygon points="34,31 39,34 34,37" fill="#ef4444" />
+                                <text x="32" y="28" fill="#ef4444" font-size="9" font-family="sans-serif" font-weight="bold">X</text>
+                                <line x1="6" y1="34" x2="6" y2="6" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" />
+                                <polygon points="3,6 6,1 9,6" fill="#22c55e" />
+                                <text x="10" y="10" fill="#22c55e" font-size="9" font-family="sans-serif" font-weight="bold">Y</text>
+                                <circle cx="6" cy="34" r="2.5" fill="#38bdf8" />
+                            </svg>
+                        </div>
+
+                        <!-- Empty State Dropzone Overlay -->
+                        <div class="cad-empty-dropzone" id="cadDropzone">
+                            <div class="cad-dropzone-icon">📐</div>
+                            <h2 style="font-size: 1.4rem; font-weight: 800; margin-bottom: 0.4rem; color: #f8fafc;">
+                                Drop AutoCAD DWG or DXF File Here
+                            </h2>
+                            <p style="color: var(--text-muted); max-width: 460px; font-size: 0.88rem; margin-bottom: 1.2rem;">
+                                Support for all AutoCAD versions (R12 through AutoCAD 2024). Inspect vector layers, dimensions, text, measure distances, and export cleanly.
+                            </p>
+                            <button class="cad-btn cad-btn-primary" id="btnDropzoneUpload" style="padding: 0.6rem 1.4rem; font-size: 0.92rem;">
+                                <span>📂</span> Select File from Computer
+                            </button>
+                            <div class="cad-sample-quicklinks">
+                                <span style="font-size: 0.8rem; color: var(--text-dim); align-self: center;">Or try a sample:</span>
+                                <button class="cad-btn" id="btnQuickFloorplan">🏢 Floor Plan</button>
+                                <button class="cad-btn" id="btnQuickMechanical">⚙️ Flange Blueprint</button>
+                                <button class="cad-btn" id="btnQuickSchematic">⚡ Schematic</button>
+                            </div>
+                        </div>
+
+                        <!-- Loading Spinner Overlay -->
+                        <div class="cad-loading-overlay" id="cadLoadingOverlay" style="display: none;">
+                            <div class="spinner"></div>
+                            <h3 id="cadLoadingText">Analyzing CAD Drawing...</h3>
+                            <p style="color: var(--text-muted); font-size: 0.82rem;">Parsing layers, vectors, and bounding geometry</p>
+                        </div>
+                    </div>
+
+                    <!-- Right Inspector Sidebar -->
+                    <div class="cad-inspector-sidebar" id="cadSidebar">
+                        <div class="cad-sidebar-tabs">
+                            <button class="cad-sidebar-tab-btn active" data-tab="layers">Layers (<span id="cadLayerCount">0</span>)</button>
+                            <button class="cad-sidebar-tab-btn" data-tab="properties">Properties</button>
+                            <button class="cad-sidebar-tab-btn" data-tab="measurements">Measure (<span id="cadMeasureCount">0</span>)</button>
+                        </div>
+
+                        <div class="cad-sidebar-content" id="cadSidebarLayers">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                                <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase;">Drawing Layers</span>
+                                <button class="cad-btn" id="btnToggleAllLayers" style="padding: 0.2rem 0.5rem; font-size: 0.72rem;">Toggle All</button>
+                            </div>
+                            <div id="cadLayersListContainer">
+                                <p style="color: var(--text-dim); font-size: 0.8rem; text-align: center; padding: 2rem 0;">No active layers.</p>
+                            </div>
+                        </div>
+
+                        <div class="cad-sidebar-content" id="cadSidebarProperties" style="display: none;">
+                            <div class="cad-prop-card">
+                                <div class="cad-prop-title">Document</div>
+                                <div class="cad-prop-val" id="propFileName">—</div>
+                                <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 2px;" id="propFileSize">—</div>
+                            </div>
+                            <div class="cad-prop-card">
+                                <div class="cad-prop-title">AutoCAD Format Version</div>
+                                <div class="cad-prop-val" id="propCadVersion" style="color: #38bdf8;">—</div>
+                            </div>
+                            <div class="cad-prop-card">
+                                <div class="cad-prop-title">Drawing Extents (Units)</div>
+                                <div class="cad-prop-grid">
+                                    <div>
+                                        <span style="font-size: 0.7rem; color: var(--text-dim);">Width:</span>
+                                        <div class="cad-prop-val" id="propExtWidth">—</div>
+                                    </div>
+                                    <div>
+                                        <span style="font-size: 0.7rem; color: var(--text-dim);">Height:</span>
+                                        <div class="cad-prop-val" id="propExtHeight">—</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="cad-prop-card">
+                                <div class="cad-prop-title">Entity Statistics</div>
+                                <div class="cad-prop-grid" id="propStatsGrid">
+                                    <div><span style="font-size: 0.7rem; color: var(--text-dim);">Lines:</span> <strong id="statLines">0</strong></div>
+                                    <div><span style="font-size: 0.7rem; color: var(--text-dim);">Circles:</span> <strong id="statCircles">0</strong></div>
+                                    <div><span style="font-size: 0.7rem; color: var(--text-dim);">Polylines:</span> <strong id="statPolylines">0</strong></div>
+                                    <div><span style="font-size: 0.7rem; color: var(--text-dim);">Arcs:</span> <strong id="statArcs">0</strong></div>
+                                    <div><span style="font-size: 0.7rem; color: var(--text-dim);">Texts:</span> <strong id="statTexts">0</strong></div>
+                                    <div><span style="font-size: 0.7rem; color: var(--text-dim);">Total:</span> <strong id="statTotal" style="color: #38bdf8;">0</strong></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="cad-sidebar-content" id="cadSidebarMeasurements" style="display: none;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                                <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase;">Recorded Measurements</span>
+                                <button class="cad-btn" id="btnClearMeasurements" style="padding: 0.2rem 0.5rem; font-size: 0.72rem;">Clear</button>
+                            </div>
+                            <div id="cadMeasurementList">
+                                <p style="color: var(--text-dim); font-size: 0.8rem; text-align: center; padding: 2rem 0;">No measurements recorded yet.<br>Click "Measure" above to measure distances.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // DOM elements
+        const fileInput = container.querySelector('#cadFileInput');
+        const btnOpen = container.querySelector('#btnOpenCad');
+        const btnDropzoneUpload = container.querySelector('#btnDropzoneUpload');
+        const dropzone = container.querySelector('#cadDropzone');
+        const loadingOverlay = container.querySelector('#cadLoadingOverlay');
+        const loadingText = container.querySelector('#cadLoadingText');
+        const sampleSelect = container.querySelector('#cadSampleSelect');
+        const themeSelect = container.querySelector('#cadThemeSelect');
+        const canvasContainer = container.querySelector('#cadCanvasContainer');
+        const canvas = container.querySelector('#cadCanvas');
+        const hudCoords = container.querySelector('#cadHudCoords');
+        const modeBanner = container.querySelector('#cadModeBanner');
+        const btnFit = container.querySelector('#btnCadFit');
+        const btnReset = container.querySelector('#btnCadReset');
+        const btnZoomIn = container.querySelector('#btnCadZoomIn');
+        const btnZoomOut = container.querySelector('#btnCadZoomOut');
+        const btnGrid = container.querySelector('#btnCadGrid');
+        const btnCrosshair = container.querySelector('#btnCadCrosshair');
+        const btnMeasure = container.querySelector('#btnCadMeasure');
+        const btnFullscreen = container.querySelector('#btnCadFullscreen');
+        const btnExportPng = container.querySelector('#btnCadExportPng');
+        const btnExportSvg = container.querySelector('#btnCadExportSvg');
+        const btnExportDxf = container.querySelector('#btnCadExportDxf');
+        const layersContainer = container.querySelector('#cadLayersListContainer');
+        const layerCountEl = container.querySelector('#cadLayerCount');
+        const btnToggleAllLayers = container.querySelector('#btnToggleAllLayers');
+        const measurementListEl = container.querySelector('#cadMeasurementList');
+        const measureCountEl = container.querySelector('#cadMeasureCount');
+        const btnClearMeasurements = container.querySelector('#btnClearMeasurements');
+
+        // Quick sample buttons
+        container.querySelector('#btnQuickFloorplan').onclick = () => loadSample('floorplan');
+        container.querySelector('#btnQuickMechanical').onclick = () => loadSample('mechanical');
+        container.querySelector('#btnQuickSchematic').onclick = () => loadSample('schematic');
+
+        // Theme palette definitions
+        const THEMES = {
+            dark: {
+                bg: '#181c24',
+                gridMinor: '#1e2430',
+                gridMajor: '#273142',
+                axisX: '#ef4444',
+                axisY: '#22c55e',
+                defaultStroke: '#f8fafc',
+                crosshair: 'rgba(56, 189, 248, 0.45)',
+                measure: '#f59e0b'
+            },
+            blueprint: {
+                bg: '#0a2239',
+                gridMinor: '#0e2e4d',
+                gridMajor: '#153f68',
+                axisX: '#f87171',
+                axisY: '#4ade80',
+                defaultStroke: '#38bdf8',
+                crosshair: 'rgba(255, 255, 255, 0.4)',
+                measure: '#fbbf24'
+            },
+            light: {
+                bg: '#ffffff',
+                gridMinor: '#f1f5f9',
+                gridMajor: '#e2e8f0',
+                axisX: '#dc2626',
+                axisY: '#16a34a',
+                defaultStroke: '#0f172a',
+                crosshair: 'rgba(15, 23, 42, 0.4)',
+                measure: '#d97706'
+            },
+            matrix: {
+                bg: '#051a0e',
+                gridMinor: '#092917',
+                gridMajor: '#0f3d23',
+                axisX: '#f87171',
+                axisY: '#22c55e',
+                defaultStroke: '#4ade80',
+                crosshair: 'rgba(74, 222, 128, 0.5)',
+                measure: '#facc15'
+            }
+        };
+
+        // State variables
+        let currentDrawing = null;
+        let activeTheme = 'dark';
+        let showGrid = true;
+        let showCrosshair = true;
+        let measureMode = false;
+        let measureStart = null;
+        let measureEnd = null;
+        let measurements = [];
+
+        let scale = 1.0;
+        let panX = 0.0;
+        let panY = 0.0;
+        let isDragging = false;
+        let lastMousePos = { x: 0, y: 0 };
+        let mouseCAD = { x: 0, y: 0 };
+        let mouseScreen = { x: 0, y: 0 };
+        let layersVisibility = {};
+
+        const ctx = canvas.getContext('2d');
+
+        // Resize Canvas with high-DPI scaling
+        function resizeCanvas() {
+            const rect = canvasContainer.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = Math.max(100, Math.floor(rect.width * dpr));
+            canvas.height = Math.max(100, Math.floor(rect.height * dpr));
+            render();
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        setTimeout(resizeCanvas, 50);
+
+        // Coordinate transforms
+        function toScreenX(cadX) {
+            const dpr = window.devicePixelRatio || 1;
+            const viewW = canvas.width / dpr;
+            return (cadX - panX) * scale + viewW / 2;
+        }
+
+        function toScreenY(cadY) {
+            const dpr = window.devicePixelRatio || 1;
+            const viewH = canvas.height / dpr;
+            return viewH / 2 - (cadY - panY) * scale;
+        }
+
+        function toCADX(screenX) {
+            const dpr = window.devicePixelRatio || 1;
+            const viewW = canvas.width / dpr;
+            return (screenX - viewW / 2) / scale + panX;
+        }
+
+        function toCADY(screenY) {
+            const dpr = window.devicePixelRatio || 1;
+            const viewH = canvas.height / dpr;
+            return panY - (screenY - viewH / 2) / scale;
+        }
+
+        // Fit drawing extents to viewport
+        function fitExtents() {
+            if (!currentDrawing || !currentDrawing.extents) return;
+            const ext = currentDrawing.extents;
+            const dpr = window.devicePixelRatio || 1;
+            const viewW = canvas.width / dpr;
+            const viewH = canvas.height / dpr;
+
+            panX = (ext.min_x + ext.max_x) / 2;
+            panY = (ext.min_y + ext.max_y) / 2;
+
+            const w = Math.max(ext.width, 10);
+            const h = Math.max(ext.height, 10);
+            const scaleX = (viewW * 0.82) / w;
+            const scaleY = (viewH * 0.82) / h;
+            scale = Math.max(0.001, Math.min(scaleX, scaleY));
+
+            render();
+        }
+
+        // Reset view
+        function resetView() {
+            if (currentDrawing && currentDrawing.extents) {
+                fitExtents();
+            } else {
+                panX = 0;
+                panY = 0;
+                scale = 1.0;
+                render();
+            }
+        }
+
+        // Main Render Loop
+        function render() {
+            const dpr = window.devicePixelRatio || 1;
+            ctx.save();
+            ctx.scale(dpr, dpr);
+
+            const viewW = canvas.width / dpr;
+            const viewH = canvas.height / dpr;
+            const theme = THEMES[activeTheme] || THEMES.dark;
+
+            // 1. Clear & fill background
+            ctx.fillStyle = theme.bg;
+            ctx.fillRect(0, 0, viewW, viewH);
+
+            // 2. Draw CAD Grid
+            if (showGrid) {
+                drawGrid(theme, viewW, viewH);
+            }
+
+            // 3. Draw CAD Drawing Entities
+            if (currentDrawing && currentDrawing.entities) {
+                drawEntities(theme);
+            }
+
+            // 4. Draw Active Measurement Dimension Line
+            if (measureMode && measureStart) {
+                drawActiveMeasurement(theme);
+            }
+
+            // 5. Draw Completed Measurements
+            drawRecordedMeasurements(theme);
+
+            // 6. Draw Reticle / Crosshair
+            if (showCrosshair && mouseScreen.x >= 0 && mouseScreen.x <= viewW && mouseScreen.y >= 0 && mouseScreen.y <= viewH) {
+                drawCrosshair(theme, viewW, viewH);
+            }
+
+            ctx.restore();
+
+            // Update Telemetry HUD
+            updateHud();
+        }
+
+        function drawGrid(theme, viewW, viewH) {
+            // Adaptive grid spacing based on zoom scale
+            const targetPixelSpacing = 60;
+            const cadSpacingRaw = targetPixelSpacing / scale;
+            const power = Math.floor(Math.log10(cadSpacingRaw));
+            const base = Math.pow(10, power);
+            let minorStep = base;
+            if (cadSpacingRaw / base > 5) minorStep = base * 5;
+            else if (cadSpacingRaw / base > 2) minorStep = base * 2;
+            const majorStep = minorStep * 5;
+
+            const minCadX = toCADX(0);
+            const maxCadX = toCADX(viewW);
+            const minCadY = toCADY(viewH);
+            const maxCadY = toCADY(0);
+
+            const startMinorX = Math.floor(minCadX / minorStep) * minorStep;
+            const startMinorY = Math.floor(minCadY / minorStep) * minorStep;
+
+            // Draw Minor Grid
+            ctx.lineWidth = 0.8;
+            ctx.strokeStyle = theme.gridMinor;
+            ctx.beginPath();
+            for (let gx = startMinorX; gx <= maxCadX; gx += minorStep) {
+                const sx = toScreenX(gx);
+                ctx.moveTo(sx, 0);
+                ctx.lineTo(sx, viewH);
+            }
+            for (let gy = startMinorY; gy <= maxCadY; gy += minorStep) {
+                const sy = toScreenY(gy);
+                ctx.moveTo(0, sy);
+                ctx.lineTo(viewW, sy);
+            }
+            ctx.stroke();
+
+            // Draw Major Grid
+            const startMajorX = Math.floor(minCadX / majorStep) * majorStep;
+            const startMajorY = Math.floor(minCadY / majorStep) * majorStep;
+            ctx.lineWidth = 1.0;
+            ctx.strokeStyle = theme.gridMajor;
+            ctx.beginPath();
+            for (let gx = startMajorX; gx <= maxCadX; gx += majorStep) {
+                const sx = toScreenX(gx);
+                ctx.moveTo(sx, 0);
+                ctx.lineTo(sx, viewH);
+            }
+            for (let gy = startMajorY; gy <= maxCadY; gy += majorStep) {
+                const sy = toScreenY(gy);
+                ctx.moveTo(0, sy);
+                ctx.lineTo(viewW, sy);
+            }
+            ctx.stroke();
+
+            // Draw World Origin Axes (0,0)
+            const originSX = toScreenX(0);
+            const originSY = toScreenY(0);
+
+            // X-Axis (Red)
+            ctx.lineWidth = 1.5;
+            ctx.strokeStyle = theme.axisX;
+            ctx.beginPath();
+            ctx.moveTo(0, originSY);
+            ctx.lineTo(viewW, originSY);
+            ctx.stroke();
+
+            // Y-Axis (Green)
+            ctx.strokeStyle = theme.axisY;
+            ctx.beginPath();
+            ctx.moveTo(originSX, 0);
+            ctx.lineTo(originSX, viewH);
+            ctx.stroke();
+        }
+
+        function drawEntities(theme) {
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            for (const ent of currentDrawing.entities) {
+                // Check layer visibility
+                if (ent.layer && layersVisibility[ent.layer] === false) {
+                    continue;
+                }
+
+                const strokeColor = ent.color || theme.defaultStroke;
+                ctx.strokeStyle = strokeColor;
+                ctx.fillStyle = strokeColor;
+
+                if (ent.type === 'LINE') {
+                    const sx1 = toScreenX(ent.start[0]);
+                    const sy1 = toScreenY(ent.start[1]);
+                    const sx2 = toScreenX(ent.end[0]);
+                    const sy2 = toScreenY(ent.end[1]);
+                    ctx.lineWidth = 1.4;
+                    ctx.beginPath();
+                    ctx.moveTo(sx1, sy1);
+                    ctx.lineTo(sx2, sy2);
+                    ctx.stroke();
+                } else if (ent.type === 'CIRCLE') {
+                    const scx = toScreenX(ent.center[0]);
+                    const scy = toScreenY(ent.center[1]);
+                    const sRadius = ent.radius * scale;
+                    if (sRadius > 0.5) {
+                        ctx.lineWidth = 1.4;
+                        ctx.beginPath();
+                        ctx.arc(scx, scy, sRadius, 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
+                } else if (ent.type === 'ARC') {
+                    const scx = toScreenX(ent.center[0]);
+                    const scy = toScreenY(ent.center[1]);
+                    const sRadius = ent.radius * scale;
+                    if (sRadius > 0.5) {
+                        const startRad = (ent.start_angle * Math.PI) / 180;
+                        const endRad = (ent.end_angle * Math.PI) / 180;
+                        ctx.lineWidth = 1.4;
+                        ctx.beginPath();
+                        // Note: inverted Y-axis means clockwise is counter-clockwise in screen space
+                        ctx.arc(scx, scy, sRadius, -endRad, -startRad);
+                        ctx.stroke();
+                    }
+                } else if (ent.type === 'POLYLINE') {
+                    if (ent.points && ent.points.length >= 2) {
+                        ctx.lineWidth = 1.4;
+                        ctx.beginPath();
+                        const startSX = toScreenX(ent.points[0][0]);
+                        const startSY = toScreenY(ent.points[0][1]);
+                        ctx.moveTo(startSX, startSY);
+                        for (let p = 1; p < ent.points.length; p++) {
+                            ctx.lineTo(toScreenX(ent.points[p][0]), toScreenY(ent.points[p][1]));
+                        }
+                        if (ent.closed) {
+                            ctx.closePath();
+                        }
+                        ctx.stroke();
+                    }
+                } else if (ent.type === 'TEXT') {
+                    const sx = toScreenX(ent.point[0]);
+                    const sy = toScreenY(ent.point[1]);
+                    const fontSize = Math.max(9, Math.min(48, (ent.height || 3.5) * scale));
+                    ctx.font = `600 ${fontSize}px 'JetBrains Mono', monospace`;
+                    ctx.fillText(ent.text, sx, sy);
+                } else if (ent.type === 'POINT') {
+                    const sx = toScreenX(ent.point[0]);
+                    const sy = toScreenY(ent.point[1]);
+                    ctx.beginPath();
+                    ctx.arc(sx, sy, 2.5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+
+        function drawActiveMeasurement(theme) {
+            const sx1 = toScreenX(measureStart.x);
+            const sy1 = toScreenY(measureStart.y);
+            const targetX = measureEnd ? measureEnd.x : mouseCAD.x;
+            const targetY = measureEnd ? measureEnd.y : mouseCAD.y;
+            const sx2 = toScreenX(targetX);
+            const sy2 = toScreenY(targetY);
+
+            // Point A glowing ring
+            ctx.fillStyle = theme.measure;
+            ctx.beginPath();
+            ctx.arc(sx1, sy1, 4, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Dashed dimension line
+            ctx.lineWidth = 1.6;
+            ctx.strokeStyle = theme.measure;
+            ctx.setLineDash([5, 4]);
+            ctx.beginPath();
+            ctx.moveTo(sx1, sy1);
+            ctx.lineTo(sx2, sy2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Point B ring
+            ctx.beginPath();
+            ctx.arc(sx2, sy2, 4, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Calculate distance & angle
+            const dx = targetX - measureStart.x;
+            const dy = targetY - measureStart.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const angleDeg = (Math.atan2(dy, dx) * 180 / Math.PI + 360) % 360;
+
+            // Dimension Label Badge
+            const midSX = (sx1 + sx2) / 2;
+            const midSY = (sy1 + sy2) / 2 - 12;
+            const labelText = `Dist: ${dist.toFixed(2)} | ΔX: ${Math.abs(dx).toFixed(2)} | ΔY: ${Math.abs(dy).toFixed(2)} | ${angleDeg.toFixed(1)}°`;
+
+            ctx.font = "bold 11px 'JetBrains Mono', monospace";
+            const textMetrics = ctx.measureText(labelText);
+            const pad = 6;
+            ctx.fillStyle = "rgba(10, 15, 29, 0.9)";
+            ctx.fillRect(midSX - textMetrics.width / 2 - pad, midSY - 12, textMetrics.width + pad * 2, 18);
+            ctx.strokeStyle = theme.measure;
+            ctx.strokeRect(midSX - textMetrics.width / 2 - pad, midSY - 12, textMetrics.width + pad * 2, 18);
+
+            ctx.fillStyle = theme.measure;
+            ctx.textAlign = 'center';
+            ctx.fillText(labelText, midSX, midSY + 1);
+            ctx.textAlign = 'start';
+        }
+
+        function drawRecordedMeasurements(theme) {
+            measurements.forEach((m, idx) => {
+                const sx1 = toScreenX(m.p1.x);
+                const sy1 = toScreenY(m.p1.y);
+                const sx2 = toScreenX(m.p2.x);
+                const sy2 = toScreenY(m.p2.y);
+
+                ctx.strokeStyle = "rgba(245, 158, 11, 0.6)";
+                ctx.lineWidth = 1.2;
+                ctx.beginPath();
+                ctx.moveTo(sx1, sy1);
+                ctx.lineTo(sx2, sy2);
+                ctx.stroke();
+
+                ctx.fillStyle = "rgba(245, 158, 11, 0.8)";
+                ctx.beginPath();
+                ctx.arc(sx1, sy1, 2.5, 0, Math.PI * 2);
+                ctx.arc(sx2, sy2, 2.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                const midSX = (sx1 + sx2) / 2;
+                const midSY = (sy1 + sy2) / 2 - 8;
+                ctx.font = "10px 'JetBrains Mono', monospace";
+                ctx.fillStyle = "#f59e0b";
+                ctx.fillText(`M${idx + 1}: ${m.dist.toFixed(2)}`, midSX + 4, midSY);
+            });
+        }
+
+        function drawCrosshair(theme, viewW, viewH) {
+            const cx = mouseScreen.x;
+            const cy = mouseScreen.y;
+
+            ctx.lineWidth = 0.9;
+            ctx.strokeStyle = theme.crosshair;
+            ctx.setLineDash([4, 4]);
+
+            // Full crosshairs
+            ctx.beginPath();
+            ctx.moveTo(0, cy);
+            ctx.lineTo(viewW, cy);
+            ctx.moveTo(cx, 0);
+            ctx.lineTo(cx, viewH);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Reticle box at intersection
+            ctx.strokeRect(cx - 5, cy - 5, 10, 10);
+
+            // Floating Coordinate Tag
+            const coordTag = `(${mouseCAD.x.toFixed(2)}, ${mouseCAD.y.toFixed(2)})`;
+            ctx.font = "10px 'JetBrains Mono', monospace";
+            ctx.fillStyle = "rgba(10, 15, 29, 0.8)";
+            ctx.fillRect(cx + 8, cy + 8, ctx.measureText(coordTag).width + 8, 16);
+            ctx.fillStyle = theme.defaultStroke;
+            ctx.fillText(coordTag, cx + 12, cy + 20);
+        }
+
+        function updateHud() {
+            hudCoords.textContent = `X: ${mouseCAD.x.toFixed(3)} | Y: ${mouseCAD.y.toFixed(3)} | Scale: ${(scale * 100).toFixed(0)}%`;
+        }
+
+        // Mouse & Navigation Events
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            const cadAtCursorX = toCADX(mouseX);
+            const cadAtCursorY = toCADY(mouseY);
+
+            const zoomFactor = e.deltaY < 0 ? 1.15 : 0.87;
+            scale = Math.max(0.0001, Math.min(1000, scale * zoomFactor));
+
+            // Adjust pan so point under cursor stays at cursor
+            panX = cadAtCursorX - (mouseX - (canvas.width / (window.devicePixelRatio || 1)) / 2) / scale;
+            panY = cadAtCursorY + (mouseY - (canvas.height / (window.devicePixelRatio || 1)) / 2) / scale;
+
+            render();
+        }, { passive: false });
+
+        canvas.addEventListener('mousedown', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const clickY = e.clientY - rect.top;
+
+            if (measureMode && e.button === 0) {
+                // Measure click
+                const cadX = toCADX(clickX);
+                const cadY = toCADY(clickY);
+
+                if (!measureStart) {
+                    measureStart = { x: cadX, y: cadY };
+                    modeBanner.textContent = `📏 Point A locked at (${cadX.toFixed(2)}, ${cadY.toFixed(2)}). Click Point B to finish.`;
+                } else {
+                    const p1 = measureStart;
+                    const p2 = { x: cadX, y: cadY };
+                    const dx = p2.x - p1.x;
+                    const dy = p2.y - p1.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    const angle = (Math.atan2(dy, dx) * 180 / Math.PI + 360) % 360;
+
+                    const record = {
+                        id: measurements.length + 1,
+                        p1,
+                        p2,
+                        dist,
+                        dx,
+                        dy,
+                        angle,
+                        time: new Date().toLocaleTimeString()
+                    };
+                    measurements.push(record);
+                    measureStart = null;
+                    modeBanner.textContent = `✅ Measured: ${dist.toFixed(2)} units (ΔX: ${Math.abs(dx).toFixed(2)}, ΔY: ${Math.abs(dy).toFixed(2)}). Click to measure again.`;
+                    updateMeasurementSidebar();
+                }
+                render();
+                return;
+            }
+
+            // Normal Pan drag (left or middle button)
+            if (e.button === 0 || e.button === 1) {
+                isDragging = true;
+                lastMousePos = { x: e.clientX, y: e.clientY };
+            }
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            mouseScreen = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+            mouseCAD = { x: toCADX(mouseScreen.x), y: toCADY(mouseScreen.y) };
+
+            if (isDragging) {
+                const deltaX = e.clientX - lastMousePos.x;
+                const deltaY = e.clientY - lastMousePos.y;
+                panX -= deltaX / scale;
+                panY += deltaY / scale;
+                lastMousePos = { x: e.clientX, y: e.clientY };
+                render();
+            } else if (showCrosshair || (measureMode && measureStart)) {
+                render();
+            }
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        // Keyboard Shortcuts
+        window.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+            if (e.key === 'f' || e.key === 'F') fitExtents();
+            else if (e.key === 'r' || e.key === 'R') resetView();
+            else if (e.key === 'g' || e.key === 'G') {
+                showGrid = !showGrid;
+                render();
+            } else if (e.key === 'm' || e.key === 'M') {
+                toggleMeasureMode();
+            } else if (e.key === 'Escape') {
+                if (measureMode) {
+                    measureStart = null;
+                    toggleMeasureMode(false);
+                }
+            }
+        });
+
+        // Toggle measure mode
+        function toggleMeasureMode(force) {
+            measureMode = typeof force === 'boolean' ? force : !measureMode;
+            btnMeasure.classList.toggle('active', measureMode);
+            modeBanner.style.display = measureMode ? 'block' : 'none';
+            if (measureMode) {
+                modeBanner.textContent = "📏 Measure Mode: Click Point A on drawing";
+                // Switch to measurements sidebar tab
+                activateSidebarTab('measurements');
+            } else {
+                measureStart = null;
+            }
+            render();
+        }
+
+        btnMeasure.onclick = () => toggleMeasureMode();
+
+        btnGrid.onclick = () => {
+            showGrid = !showGrid;
+            btnGrid.classList.toggle('cad-btn-accent', showGrid);
+            render();
+        };
+
+        btnCrosshair.onclick = () => {
+            showCrosshair = !showCrosshair;
+            btnCrosshair.classList.toggle('cad-btn-accent', showCrosshair);
+            render();
+        };
+
+        btnFit.onclick = fitExtents;
+        btnReset.onclick = resetView;
+        btnZoomIn.onclick = () => {
+            scale *= 1.25;
+            render();
+        };
+        btnZoomOut.onclick = () => {
+            scale /= 1.25;
+            render();
+        };
+
+        themeSelect.onchange = (e) => {
+            activeTheme = e.target.value;
+            render();
+        };
+
+        sampleSelect.onchange = (e) => {
+            if (e.target.value) {
+                loadSample(e.target.value);
+            }
+        };
+
+        // Fullscreen toggle
+        btnFullscreen.onclick = () => {
+            const containerEl = container.querySelector('#cadWorkspaceContainer');
+            if (!document.fullscreenElement) {
+                containerEl.requestFullscreen().catch(() => {});
+            } else {
+                document.exitFullscreen().catch(() => {});
+            }
+            setTimeout(resizeCanvas, 150);
+        };
+
+        // File upload handling
+        btnOpen.onclick = () => fileInput.click();
+        btnDropzoneUpload.onclick = () => fileInput.click();
+
+        fileInput.onchange = (e) => {
+            if (e.target.files && e.target.files[0]) {
+                handleFileUpload(e.target.files[0]);
+            }
+        };
+
+        // Drag & Drop
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropzone.classList.add('dragover');
+        });
+
+        dropzone.addEventListener('dragleave', () => {
+            dropzone.classList.remove('dragover');
+        });
+
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('dragover');
+            if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                handleFileUpload(e.dataTransfer.files[0]);
+            }
+        });
+
+        async function handleFileUpload(file) {
+            loadingOverlay.style.display = 'flex';
+            loadingText.textContent = `Analyzing ${file.name}...`;
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const resp = await fetch('/tools/api/dwg-convert', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await resp.json();
+                if (data.status === 'success') {
+                    loadDrawingData(data);
+                } else {
+                    alert(`CAD Parsing Error: ${data.message || 'Could not parse drawing'}`);
+                }
+            } catch (err) {
+                console.error("DWG parse error:", err);
+                alert(`Error uploading file: ${err.message}`);
+            } finally {
+                loadingOverlay.style.display = 'none';
+            }
+        }
+
+        async function loadSample(sampleType) {
+            loadingOverlay.style.display = 'flex';
+            loadingText.textContent = `Loading ${sampleType} blueprint...`;
+
+            try {
+                const resp = await fetch(`/tools/api/dwg-sample/${sampleType}`);
+                const data = await resp.json();
+                if (data.status === 'success') {
+                    loadDrawingData(data);
+                }
+            } catch (err) {
+                console.error("Error loading sample:", err);
+            } finally {
+                loadingOverlay.style.display = 'none';
+            }
+        }
+
+        function loadDrawingData(data) {
+            currentDrawing = data;
+            dropzone.style.display = 'none';
+
+            // Populate layers visibility
+            layersVisibility = {};
+            if (data.layers) {
+                Object.keys(data.layers).forEach(layerName => {
+                    layersVisibility[layerName] = data.layers[layerName].visible !== false;
+                });
+            }
+
+            // Update UI sidebar tabs
+            updateLayersSidebar();
+            updatePropertiesSidebar();
+            measurements = [];
+            updateMeasurementSidebar();
+
+            // Fit to viewport
+            fitExtents();
+        }
+
+        function updateLayersSidebar() {
+            if (!currentDrawing || !currentDrawing.layers) {
+                layersContainer.innerHTML = '<p style="color: var(--text-dim); font-size: 0.8rem; text-align: center; padding: 2rem 0;">No layers detected.</p>';
+                layerCountEl.textContent = '0';
+                return;
+            }
+
+            const layerKeys = Object.keys(currentDrawing.layers);
+            layerCountEl.textContent = layerKeys.length;
+
+            layersContainer.innerHTML = layerKeys.map(k => {
+                const layer = currentDrawing.layers[k];
+                const isChecked = layersVisibility[k] !== false;
+                return `
+                    <div class="cad-layer-row">
+                        <div class="cad-layer-left">
+                            <input type="checkbox" id="chk_layer_${k}" ${isChecked ? 'checked' : ''} data-layer="${k}" style="cursor: pointer;">
+                            <span class="cad-layer-swatch" style="background: ${layer.color};"></span>
+                            <span class="cad-layer-name" title="${layer.name}">${layer.name}</span>
+                        </div>
+                        <span style="font-size: 0.72rem; color: var(--text-dim); font-family: var(--font-mono);">${layer.count || 0} ent</span>
+                    </div>
+                `;
+            }).join('');
+
+            // Bind checkbox events
+            layersContainer.querySelectorAll('input[type="checkbox"]').forEach(chk => {
+                chk.onchange = (e) => {
+                    const layerName = e.target.getAttribute('data-layer');
+                    layersVisibility[layerName] = e.target.checked;
+                    render();
+                };
+            });
+        }
+
+        btnToggleAllLayers.onclick = () => {
+            if (!currentDrawing || !currentDrawing.layers) return;
+            const keys = Object.keys(currentDrawing.layers);
+            const anyVisible = keys.some(k => layersVisibility[k]);
+            const targetState = !anyVisible;
+            keys.forEach(k => {
+                layersVisibility[k] = targetState;
+            });
+            updateLayersSidebar();
+            render();
+        };
+
+        function updatePropertiesSidebar() {
+            if (!currentDrawing) return;
+            container.querySelector('#propFileName').textContent = currentDrawing.filename || "drawing.dwg";
+            container.querySelector('#propFileSize').textContent = currentDrawing.file_size ? Utils.formatBytes(currentDrawing.file_size) : "Native Vector";
+            container.querySelector('#propCadVersion').textContent = currentDrawing.version || "AutoCAD Standard";
+
+            const ext = currentDrawing.extents || { width: 0, height: 0 };
+            container.querySelector('#propExtWidth').textContent = `${ext.width.toFixed(2)} u`;
+            container.querySelector('#propExtHeight').textContent = `${ext.height.toFixed(2)} u`;
+
+            const stats = currentDrawing.stats || {};
+            container.querySelector('#statLines').textContent = stats.lines || 0;
+            container.querySelector('#statCircles').textContent = stats.circles || 0;
+            container.querySelector('#statPolylines').textContent = stats.polylines || 0;
+            container.querySelector('#statArcs').textContent = stats.arcs || 0;
+            container.querySelector('#statTexts').textContent = stats.texts || 0;
+            container.querySelector('#statTotal').textContent = stats.total || 0;
+        }
+
+        function updateMeasurementSidebar() {
+            measureCountEl.textContent = measurements.length;
+            if (measurements.length === 0) {
+                measurementListEl.innerHTML = '<p style="color: var(--text-dim); font-size: 0.8rem; text-align: center; padding: 2rem 0;">No measurements recorded yet.<br>Click "Measure" above to start.</p>';
+                return;
+            }
+
+            measurementListEl.innerHTML = measurements.map((m, idx) => `
+                <div class="cad-measure-item">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                        <strong style="color: #38bdf8;">Measurement #${idx + 1}</strong>
+                        <span style="color: var(--text-dim); font-size: 0.7rem;">${m.time}</span>
+                    </div>
+                    <div style="font-size: 0.85rem; font-weight: 700; color: #f59e0b;">${m.dist.toFixed(3)} units</div>
+                    <div style="color: var(--text-muted); font-size: 0.72rem; margin-top: 2px;">
+                        ΔX: ${Math.abs(m.dx).toFixed(2)} | ΔY: ${Math.abs(m.dy).toFixed(2)} | ∠ ${m.angle.toFixed(1)}°
+                    </div>
+                </div>
+            `).reverse().join('');
+        }
+
+        btnClearMeasurements.onclick = () => {
+            measurements = [];
+            measureStart = null;
+            updateMeasurementSidebar();
+            render();
+        };
+
+        // Sidebar Tabs Navigation
+        const tabBtns = container.querySelectorAll('.cad-sidebar-tab-btn');
+        tabBtns.forEach(btn => {
+            btn.onclick = () => activateSidebarTab(btn.getAttribute('data-tab'));
+        });
+
+        function activateSidebarTab(tabKey) {
+            tabBtns.forEach(b => b.classList.toggle('active', b.getAttribute('data-tab') === tabKey));
+            container.querySelector('#cadSidebarLayers').style.display = tabKey === 'layers' ? 'block' : 'none';
+            container.querySelector('#cadSidebarProperties').style.display = tabKey === 'properties' ? 'block' : 'none';
+            container.querySelector('#cadSidebarMeasurements').style.display = tabKey === 'measurements' ? 'block' : 'none';
+        }
+
+        // Export High-Res PNG
+        btnExportPng.onclick = () => {
+            if (!currentDrawing) {
+                alert("Please load or open a DWG / DXF file first.");
+                return;
+            }
+            const offCanvas = document.createElement('canvas');
+            offCanvas.width = canvas.width;
+            offCanvas.height = canvas.height;
+            const offCtx = offCanvas.getContext('2d');
+            offCtx.drawImage(canvas, 0, 0);
+
+            const dataUrl = offCanvas.toDataURL('image/png');
+            const a = document.createElement('a');
+            a.download = `${currentDrawing.filename ? currentDrawing.filename.replace(/\.[^/.]+$/, "") : "blueprint"}_export.png`;
+            a.href = dataUrl;
+            a.click();
+        };
+
+        // Export Vector SVG
+        btnExportSvg.onclick = () => {
+            if (!currentDrawing || !currentDrawing.extents) {
+                alert("Please load or open a DWG / DXF file first.");
+                return;
+            }
+            const ext = currentDrawing.extents;
+            const pad = Math.max(ext.width, ext.height) * 0.05;
+            const minX = ext.min_x - pad;
+            const minY = ext.min_y - pad;
+            const width = ext.width + pad * 2;
+            const height = ext.height + pad * 2;
+
+            let svgMarkup = `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" viewBox="${minX} ${-ext.max_y - pad} ${width} ${height}">\n`;
+            svgMarkup += `  <rect x="${minX}" y="${-ext.max_y - pad}" width="${width}" height="${height}" fill="#181c24" />\n`;
+
+            for (const ent of currentDrawing.entities) {
+                if (ent.layer && layersVisibility[ent.layer] === false) continue;
+                const col = ent.color || '#38bdf8';
+                if (ent.type === 'LINE') {
+                    svgMarkup += `  <line x1="${ent.start[0]}" y1="${-ent.start[1]}" x2="${ent.end[0]}" y2="${-ent.end[1]}" stroke="${col}" stroke-width="0.8" />\n`;
+                } else if (ent.type === 'CIRCLE') {
+                    svgMarkup += `  <circle cx="${ent.center[0]}" cy="${-ent.center[1]}" r="${ent.radius}" stroke="${col}" stroke-width="0.8" fill="none" />\n`;
+                } else if (ent.type === 'POLYLINE' && ent.points) {
+                    const pts = ent.points.map(p => `${p[0]},${-p[1]}`).join(' ');
+                    svgMarkup += `  <${ent.closed ? 'polygon' : 'polyline'} points="${pts}" stroke="${col}" stroke-width="0.8" fill="none" />\n`;
+                } else if (ent.type === 'TEXT') {
+                    svgMarkup += `  <text x="${ent.point[0]}" y="${-ent.point[1]}" font-size="${ent.height || 4}" fill="${col}">${ent.text}</text>\n`;
+                }
+            }
+            svgMarkup += `</svg>`;
+
+            const blob = new Blob([svgMarkup], { type: 'image/svg+xml' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.download = `${currentDrawing.filename ? currentDrawing.filename.replace(/\.[^/.]+$/, "") : "drawing"}.svg`;
+            a.href = url;
+            a.click();
+            URL.revokeObjectURL(url);
+        };
+
+        // Download Converted DXF
+        btnExportDxf.onclick = async () => {
+            if (!currentDrawing) {
+                alert("Please load or open a DWG / DXF file first.");
+                return;
+            }
+            if (currentDrawing.dxf_content) {
+                const blob = new Blob([currentDrawing.dxf_content], { type: 'application/dxf' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.download = `${currentDrawing.filename ? currentDrawing.filename.replace(/\.[^/.]+$/, "") : "drawing"}.dxf`;
+                a.href = url;
+                a.click();
+                URL.revokeObjectURL(url);
+            } else {
+                alert("DXF conversion is available directly via standard export.");
+            }
+        };
+
+        // Initial render
+        render();
+    }
 };
+

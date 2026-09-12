@@ -363,3 +363,79 @@ def api_images_to_pdf():
         )
     except Exception as e:
         return jsonify({"status": "error", "message": f"Conversion error: {str(e)}"}), 500
+
+
+# --- DWG & CAD Viewer Endpoints ---
+
+@tools_bp.route('/api/dwg-convert', methods=['POST'])
+def api_dwg_convert():
+    """
+    Parse uploaded AutoCAD DWG or DXF file and return normalized CAD geometry.
+    """
+    if 'file' not in request.files:
+        return jsonify({"status": "error", "message": "No file uploaded. Please upload a .dwg or .dxf file."}), 400
+
+    uploaded_file = request.files['file']
+    filename = uploaded_file.filename or "drawing.dwg"
+    ext = os.path.splitext(filename)[1].lower()
+
+    if ext not in ('.dwg', '.dxf'):
+        return jsonify({
+            "status": "error",
+            "message": f"Unsupported CAD format '{ext}'. Only .dwg and .dxf files are supported."
+        }), 400
+
+    try:
+        import dwg_processor
+        file_bytes = uploaded_file.read()
+
+        if ext == '.dwg':
+            data = dwg_processor.parse_dwg_bytes(file_bytes, filename=filename)
+        else:
+            # DXF
+            dxf_text = file_bytes.decode('utf-8', errors='ignore')
+            data = dwg_processor.parse_dxf_text(dxf_text, filename=filename)
+
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": f"Failed to parse CAD file: {str(e)}"
+        }), 500
+
+
+@tools_bp.route('/api/dwg-sample/<sample_type>', methods=['GET'])
+def api_dwg_sample(sample_type):
+    """
+    Return built-in sample CAD model (floorplan, mechanical, schematic).
+    """
+    try:
+        import dwg_processor
+        data = dwg_processor.get_sample_cad(sample_type)
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@tools_bp.route('/api/dwg-download-dxf', methods=['POST'])
+def api_dwg_download_dxf():
+    """
+    Download converted DXF drawing text as file attachment.
+    """
+    data = request.get_json(silent=True) or {}
+    dxf_content = data.get('dxf_content', '')
+    filename = data.get('filename', 'drawing.dxf')
+    if not filename.lower().endswith('.dxf'):
+        filename = f"{os.path.splitext(filename)[0]}.dxf"
+
+    if not dxf_content:
+        return jsonify({"status": "error", "message": "No DXF content provided."}), 400
+
+    stream = io.BytesIO(dxf_content.encode('utf-8'))
+    return send_file(
+        stream,
+        as_attachment=True,
+        download_name=filename,
+        mimetype='application/dxf'
+    )
+
