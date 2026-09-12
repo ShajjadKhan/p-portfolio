@@ -422,7 +422,203 @@ TOOLS = [
         "detailed_desc": "Accurate unit conversion between Decimal (base-10: 1000) and Binary (base-2: 1024) storage metrics, plus bandwidth download time estimators.",
         "keywords": ["unit converter", "byte converter", "mb to gb", "storage converter", "network speed converter", "bandwidth calculator"],
         "client_powered": True
+
+    },
+    {
+        "id": "percentage-calculator",
+        "slug": "percentage-calculator",
+        "title": "Percentage Change & Reverse Calculator",
+        "category": "business",
+        "badge": "Quick Math",
+        "icon": "%",
+        "short_desc": "Calculate percentage increase, decrease, reverse percentages, and what percent one number is of another.",
+        "detailed_desc": "A fast everyday percentage calculator for pricing, reporting, discounts, growth, and supplier comparisons.",
+        "keywords": ["percentage calculator", "percent change", "reverse percentage", "increase decrease", "percentage of number"],
+        "client_powered": True
+    },
+    {
+        "id": "loan-calculator",
+        "slug": "loan-calculator",
+        "title": "Loan EMI & Monthly Payment Calculator",
+        "category": "business",
+        "badge": "Finance",
+        "icon": "🏦",
+        "short_desc": "Estimate monthly loan payments, total interest, and total repayment from principal, rate, and term.",
+        "detailed_desc": "Useful for car loans, personal loans, equipment purchases, and installment planning with instant amortization summary.",
+        "keywords": ["loan calculator", "emi calculator", "monthly payment", "interest calculator", "installment calculator"],
+        "client_powered": True
+    },
+    {
+        "id": "salary-converter",
+        "slug": "salary-converter",
+        "title": "Salary Hourly, Monthly & Annual Converter",
+        "category": "business",
+        "badge": "Work",
+        "icon": "💼",
+        "short_desc": "Convert hourly pay to monthly or annual salary, and estimate daily, weekly, and overtime values.",
+        "detailed_desc": "Simple compensation planning for employees, contractors, freelancers, and small business owners.",
+        "keywords": ["salary converter", "hourly to annual", "monthly salary", "daily pay", "overtime calculator"],
+        "client_powered": True
+    },
+    {
+        "id": "vat-invoice-calculator",
+        "slug": "vat-invoice-calculator",
+        "title": "VAT Invoice Line Calculator",
+        "category": "business",
+        "badge": "Invoice",
+        "icon": "🧾",
+        "short_desc": "Calculate subtotal, VAT, discount, and grand total for invoice-style line items.",
+        "detailed_desc": "Enter item quantity, unit price, VAT, and discount to generate a clean invoice total breakdown.",
+        "keywords": ["vat calculator", "invoice calculator", "tax invoice", "line total", "subtotal vat"],
+        "client_powered": True
+    },
+    {
+        "id": "timestamp-converter",
+        "slug": "timestamp-converter",
+        "title": "Unix Timestamp & Date Converter",
+        "category": "dev",
+        "badge": "Time",
+        "icon": "⏱️",
+        "short_desc": "Convert Unix timestamps to readable dates and generate current timestamps in seconds or milliseconds.",
+        "detailed_desc": "Developer-friendly date conversion with local and UTC output, ISO strings, and copy-ready values.",
+        "keywords": ["timestamp converter", "unix time", "epoch converter", "date to timestamp", "iso date"],
+        "client_powered": True
+    },
+    {
+        "id": "cron-helper",
+        "slug": "cron-helper",
+        "title": "Cron Expression Helper",
+        "category": "dev",
+        "badge": "Scheduler",
+        "icon": "🕒",
+        "short_desc": "Build common cron expressions and read plain-English explanations for schedules.",
+        "detailed_desc": "Create common minute, hourly, daily, weekly, and monthly cron patterns without memorizing cron syntax.",
+        "keywords": ["cron generator", "cron expression", "schedule helper", "crontab", "cron builder"],
+        "client_powered": True
+    },
+    {
+        "id": "regex-tester",
+        "slug": "regex-tester",
+        "title": "Regex Tester & Match Highlighter",
+        "category": "dev",
+        "badge": "Pattern",
+        "icon": ".*",
+        "short_desc": "Test JavaScript regular expressions against sample text with live match count and highlighted results.",
+        "detailed_desc": "Paste text, write a regex, choose flags, and inspect matches instantly in the browser.",
+        "keywords": ["regex tester", "regular expression", "pattern match", "javascript regex", "regex checker"],
+        "client_powered": True
+    },
+    {
+        "id": "url-encoder",
+        "slug": "url-encoder",
+        "title": "URL Encoder, Decoder & Slugifier",
+        "category": "web",
+        "badge": "Clean URL",
+        "icon": "🔣",
+        "short_desc": "Encode/decode URL text and convert titles into clean SEO-friendly slugs.",
+        "detailed_desc": "Prepare safe query parameters, decode copied URLs, and generate readable lowercase URL slugs.",
+        "keywords": ["url encoder", "url decoder", "slug generator", "encodeURIComponent", "seo slug"],
+        "client_powered": True
+    },
+    {
+        "id": "utm-builder",
+        "slug": "utm-builder",
+        "title": "UTM Campaign Link Builder",
+        "category": "web",
+        "badge": "Marketing",
+        "icon": "🎯",
+        "short_desc": "Build trackable marketing URLs with source, medium, campaign, term, and content parameters.",
+        "detailed_desc": "Generate clean UTM campaign URLs for Google Analytics, ads, email, social, and WhatsApp campaigns.",
+        "keywords": ["utm builder", "campaign url", "google analytics", "tracking link", "marketing url"],
+        "client_powered": True
+    },
+    {
+        "id": "color-converter",
+        "slug": "color-converter",
+        "title": "HEX, RGB & HSL Color Converter",
+        "category": "image",
+        "badge": "Color",
+        "icon": "🌈",
+        "short_desc": "Convert colors between HEX, RGB, and HSL with a live color preview.",
+        "detailed_desc": "A quick design utility for converting brand colors and CSS values across common color formats.",
+        "keywords": ["hex to rgb", "rgb to hsl", "color converter", "css color", "hex converter"],
+        "client_powered": True
+    },
+    {
+        "id": "html-entity-tools",
+        "slug": "html-entity-tools",
+        "title": "HTML Entity Encoder & Decoder",
+        "category": "content",
+        "badge": "HTML",
+        "icon": "&lt;&gt;",
+        "short_desc": "Encode text for safe HTML display or decode HTML entities back into readable text.",
+        "detailed_desc": "Convert special characters such as <, >, &, quotes, and pasted HTML entities with one click.",
+        "keywords": ["html entity", "html encode", "html decode", "escape html", "unescape html"],
+        "client_powered": True
+    },
+    {
+        "id": "text-cleaner",
+        "slug": "text-cleaner",
+        "title": "Text Cleaner & Whitespace Fixer",
+        "category": "content",
+        "badge": "Cleanup",
+        "icon": "🧹",
+        "short_desc": "Remove extra spaces, blank lines, duplicate lines, tabs, and messy copied formatting.",
+        "detailed_desc": "Clean text pasted from PDFs, emails, websites, and documents before sending or publishing.",
+        "keywords": ["text cleaner", "remove spaces", "duplicate lines", "whitespace cleaner", "format text"],
+        "client_powered": True
+    },
+    {
+        "id": "csv-table-converter",
+        "slug": "csv-table-converter",
+        "title": "CSV to HTML / Markdown Table Converter",
+        "category": "content",
+        "badge": "Tables",
+        "icon": "▦",
+        "short_desc": "Convert CSV data into clean Markdown tables or HTML table markup.",
+        "detailed_desc": "Paste spreadsheet-style CSV and instantly create copy-ready tables for websites, docs, and GitHub READMEs.",
+        "keywords": ["csv to table", "markdown table", "html table", "csv converter", "table generator"],
+        "client_powered": True
+    },
+    {
+        "id": "random-picker",
+        "slug": "random-picker",
+        "title": "Random Picker, Team Splitter & Number Generator",
+        "category": "converters",
+        "badge": "Random",
+        "icon": "🎲",
+        "short_desc": "Pick random names, split teams, shuffle lists, and generate random numbers.",
+        "detailed_desc": "Useful for giveaways, classroom groups, work assignments, random ordering, and quick decisions.",
+        "keywords": ["random picker", "team splitter", "random number", "list shuffler", "giveaway picker"],
+        "client_powered": True
+    },
+    {
+        "id": "date-calculator",
+        "slug": "date-calculator",
+        "title": "Date Difference & Deadline Calculator",
+        "category": "converters",
+        "badge": "Dates",
+        "icon": "📅",
+        "short_desc": "Calculate days between two dates or add/subtract days from a start date.",
+        "detailed_desc": "Plan deadlines, delivery dates, renewals, hotel tasks, and project timelines with simple date math.",
+        "keywords": ["date calculator", "days between dates", "deadline calculator", "add days", "business date"],
+        "client_powered": True
+
+    },
+    {
+        "id": "spin-wheel-excel",
+        "slug": "spin-wheel-excel",
+        "title": "Excel Spin Wheel Picker",
+        "category": "business",
+        "badge": "Excel",
+        "icon": "🎡",
+        "short_desc": "Download a formatted Excel template, upload names with department/property/group columns, filter, and spin a fair winner wheel.",
+        "detailed_desc": "Create raffles, team selections, duty rosters, supplier draws, room assignments, or staff rotations. Upload the provided Excel-compatible template with Name, Department, Property, Group, Phone, and Notes columns, then filter the list and spin the wheel instantly.",
+        "keywords": ["spin wheel", "excel picker", "random name picker", "wheel spinner", "department picker", "property picker", "raffle wheel"],
+        "client_powered": False
     }
+
+
 ]
 
 def get_tool_by_slug(slug):
