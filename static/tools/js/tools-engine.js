@@ -3182,9 +3182,977 @@ Monetization: Google AdSense integrated</textarea>
     },
 
     'date-calculator': (container) => {
-        container.innerHTML = basicToolShell('Date Calculator', `<div class="tool-form-grid"><div class="control-group"><label>Start Date</label><input type="date" id="date-a"></div><div class="control-group"><label>End Date</label><input type="date" id="date-b"></div><div class="control-group"><label>Add Days</label><input type="number" id="date-add" value="30"></div></div><div class="result-grid" id="date-out"></div>`);
-        const a=container.querySelector('#date-a'), b=container.querySelector('#date-b'), add=container.querySelector('#date-add'), out=container.querySelector('#date-out'); a.value=new Date().toISOString().slice(0,10); b.value=new Date(Date.now()+7*864e5).toISOString().slice(0,10); function calc(){const da=new Date(a.value), db=new Date(b.value); const days=Math.round((db-da)/864e5); const future=new Date(da.getTime()+(+add.value||0)*864e5); out.innerHTML=metricCards([['Days Between', String(days)],['Weeks', (days/7).toFixed(2)],['After Added Days', future.toISOString().slice(0,10)],['Start Weekday', da.toLocaleDateString(undefined,{weekday:'long'})]]);} [a,b,add].forEach(i=>i.oninput=calc); calc();
+        container.innerHTML = `
+            <div class="dt-calc-container">
+                <!-- Navigation Tabs -->
+                <div class="dt-calc-tabs">
+                    <button class="dt-calc-tab-btn active" data-tab="datediff">
+                        <span>📅</span> Date to Date Diff
+                    </button>
+                    <button class="dt-calc-tab-btn" data-tab="dateadd">
+                        <span>➕</span> Add / Subtract Days
+                    </button>
+                    <button class="dt-calc-tab-btn" data-tab="timetotime">
+                        <span>⏱️</span> Time to Time
+                    </button>
+                    <button class="dt-calc-tab-btn" data-tab="datetimerange">
+                        <span>🗓️</span> Date & Time Range
+                    </button>
+                    <button class="dt-calc-tab-btn" data-tab="countdown">
+                        <span>⏳</span> Live Countdown
+                    </button>
+                </div>
+
+                <!-- Mode 1: Date to Date Difference -->
+                <div class="dt-panel active" id="dt-panel-datediff">
+                    <div class="tool-form-grid">
+                        <div class="control-group">
+                            <label>Start Date</label>
+                            <input type="date" id="dd-start" class="code-area" style="height:44px; padding:0 10px;">
+                            <div class="dt-presets-row">
+                                <button class="dt-preset-pill" data-target="dd-start" data-preset="today">Today</button>
+                                <button class="dt-preset-pill" data-target="dd-start" data-preset="yesterday">Yesterday</button>
+                                <button class="dt-preset-pill" data-target="dd-start" data-preset="start-month">1st of Month</button>
+                                <button class="dt-preset-pill" data-target="dd-start" data-preset="start-year">Jan 1</button>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label>End Date</label>
+                            <input type="date" id="dd-end" class="code-area" style="height:44px; padding:0 10px;">
+                            <div class="dt-presets-row">
+                                <button class="dt-preset-pill" data-target="dd-end" data-preset="today">Today</button>
+                                <button class="dt-preset-pill" data-target="dd-end" data-preset="plus30">+30 Days</button>
+                                <button class="dt-preset-pill" data-target="dd-end" data-preset="plus90">+90 Days</button>
+                                <button class="dt-preset-pill" data-target="dd-end" data-preset="end-month">End of Month</button>
+                                <button class="dt-preset-pill" data-target="dd-end" data-preset="end-year">Dec 31</button>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label>Weekend Standard</label>
+                            <select id="dd-weekend" class="code-area" style="height:44px;">
+                                <option value="sat-sun">Saturday & Sunday (Standard)</option>
+                                <option value="fri-sat">Friday & Saturday (Middle East / GCC)</option>
+                                <option value="fri">Friday Only</option>
+                                <option value="sun">Sunday Only</option>
+                                <option value="none">None (7 Days / Week)</option>
+                            </select>
+                            <div style="margin-top: .6rem; display: flex; align-items: center; gap: .5rem;">
+                                <input type="checkbox" id="dd-include-end" style="width: auto; cursor: pointer;">
+                                <label for="dd-include-end" style="margin-bottom:0; font-size: .82rem; cursor: pointer; color: var(--text-main);">
+                                    Include end date (+1 day)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Hero Result Card -->
+                    <div class="dt-hero-card" id="dd-hero">
+                        <div class="dt-hero-label">Duration Between Dates</div>
+                        <div class="dt-hero-value" id="dd-hero-val">0 Days</div>
+                        <div class="dt-hero-sub" id="dd-hero-sub">Loading date difference...</div>
+                        <div class="dt-progress-wrap" id="dd-progress-wrap" style="display: none;">
+                            <div style="display:flex; justify-content:space-between; font-size:.75rem; color:#94a3b8;">
+                                <span>Timeline Progress</span>
+                                <span id="dd-progress-pct">0%</span>
+                            </div>
+                            <div class="dt-progress-track">
+                                <div class="dt-progress-bar" id="dd-progress-bar" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Metrics Grid -->
+                    <div class="dt-metrics-grid" id="dd-metrics"></div>
+
+                    <div class="controls-panel">
+                        <button class="btn-primary" id="dd-copy-btn">📋 Copy Full Summary</button>
+                        <button class="btn-secondary" id="dd-swap-btn">🔄 Swap Start / End</button>
+                    </div>
+                </div>
+
+                <!-- Mode 2: Add or Subtract Days -->
+                <div class="dt-panel" id="dt-panel-dateadd">
+                    <div class="tool-form-grid">
+                        <div class="control-group">
+                            <label>Starting Date</label>
+                            <input type="date" id="da-start" class="code-area" style="height:44px; padding:0 10px;">
+                            <div class="dt-presets-row">
+                                <button class="dt-preset-pill" data-target="da-start" data-preset="today">Today</button>
+                                <button class="dt-preset-pill" data-target="da-start" data-preset="tomorrow">Tomorrow</button>
+                                <button class="dt-preset-pill" data-target="da-start" data-preset="start-month">1st of Month</button>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label>Operation</label>
+                            <div style="display:flex; gap:.5rem; height:44px;">
+                                <button type="button" class="btn-primary da-op-btn active" data-op="add" style="flex:1; justify-content:center;">➕ Add (+)</button>
+                                <button type="button" class="btn-secondary da-op-btn" data-op="sub" style="flex:1; justify-content:center;">➖ Subtract (-)</button>
+                            </div>
+                            <input type="hidden" id="da-op" value="add">
+                        </div>
+
+                        <div class="control-group">
+                            <label>Calculation Mode</label>
+                            <select id="da-weekend-mode" class="code-area" style="height:44px;">
+                                <option value="all">All Calendar Days</option>
+                                <option value="business-sat-sun">Working Days Only (Skip Sat/Sun)</option>
+                                <option value="business-fri-sat">Working Days Only (Skip Fri/Sat - GCC)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Quantity Inputs -->
+                    <div class="tool-form-grid">
+                        <div class="control-group">
+                            <label>Days</label>
+                            <input type="number" id="da-days" value="30" min="0" class="code-area" style="height:44px;">
+                        </div>
+                        <div class="control-group">
+                            <label>Weeks</label>
+                            <input type="number" id="da-weeks" value="0" min="0" class="code-area" style="height:44px;">
+                        </div>
+                        <div class="control-group">
+                            <label>Months</label>
+                            <input type="number" id="da-months" value="0" min="0" class="code-area" style="height:44px;">
+                        </div>
+                        <div class="control-group">
+                            <label>Years</label>
+                            <input type="number" id="da-years" value="0" min="0" class="code-area" style="height:44px;">
+                        </div>
+                    </div>
+
+                    <!-- Quick Preset Pills -->
+                    <div>
+                        <div style="font-size: .8rem; font-weight: 600; color: #94a3b8; margin-bottom: .3rem;">Quick Add Presets:</div>
+                        <div class="dt-presets-row">
+                            <button class="dt-preset-pill da-preset" data-days="7" data-weeks="0" data-months="0" data-years="0">+7 Days (1 Wk)</button>
+                            <button class="dt-preset-pill da-preset" data-days="14" data-weeks="0" data-months="0" data-years="0">+14 Days (2 Wks)</button>
+                            <button class="dt-preset-pill da-preset" data-days="30" data-weeks="0" data-months="0" data-years="0">+30 Days (1 Mo)</button>
+                            <button class="dt-preset-pill da-preset" data-days="60" data-weeks="0" data-months="0" data-years="0">+60 Days (2 Mos)</button>
+                            <button class="dt-preset-pill da-preset" data-days="90" data-weeks="0" data-months="0" data-years="0">+90 Days (Quarter)</button>
+                            <button class="dt-preset-pill da-preset" data-days="180" data-weeks="0" data-months="0" data-years="0">+180 Days (Half Yr)</button>
+                            <button class="dt-preset-pill da-preset" data-days="0" data-weeks="0" data-months="0" data-years="1">+1 Year</button>
+                        </div>
+                    </div>
+
+                    <!-- Hero Target Date Result -->
+                    <div class="dt-hero-card" id="da-hero">
+                        <div class="dt-hero-label">Resulting Target Date</div>
+                        <div class="dt-hero-value" id="da-hero-val">-</div>
+                        <div class="dt-hero-sub" id="da-hero-sub">-</div>
+                    </div>
+
+                    <!-- Details Grid -->
+                    <div class="dt-metrics-grid" id="da-metrics"></div>
+
+                    <div class="controls-panel">
+                        <button class="btn-primary" id="da-copy-iso">📋 Copy Date (YYYY-MM-DD)</button>
+                        <button class="btn-secondary" id="da-copy-full">📋 Copy Full Description</button>
+                        <button class="btn-secondary" id="da-use-diff">➡️ Use in Date to Date Diff</button>
+                    </div>
+                </div>
+
+                <!-- Mode 3: Time to Time -->
+                <div class="dt-panel" id="dt-panel-timetotime">
+                    <div class="tool-form-grid">
+                        <div class="control-group">
+                            <label>Start Time</label>
+                            <input type="time" id="tt-start-time" value="09:00" class="code-area" style="height:44px;">
+                            <div class="dt-presets-row">
+                                <button class="dt-preset-pill tt-preset-start" data-time="now">Now</button>
+                                <button class="dt-preset-pill tt-preset-start" data-time="08:00">08:00 AM</button>
+                                <button class="dt-preset-pill tt-preset-start" data-time="09:00">09:00 AM</button>
+                                <button class="dt-preset-pill tt-preset-start" data-time="13:00">01:00 PM</button>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label>End Time</label>
+                            <input type="time" id="tt-end-time" value="17:30" class="code-area" style="height:44px;">
+                            <div class="dt-presets-row">
+                                <button class="dt-preset-pill tt-preset-end" data-time="now">Now</button>
+                                <button class="dt-preset-pill tt-preset-end" data-time="17:00">05:00 PM</button>
+                                <button class="dt-preset-pill tt-preset-end" data-time="18:00">06:00 PM</button>
+                                <button class="dt-preset-pill tt-preset-end" data-time="22:00">10:00 PM</button>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label>Break / Lunch Deduction (Mins)</label>
+                            <input type="number" id="tt-break" value="30" min="0" step="5" class="code-area" style="height:44px;">
+                            <div class="dt-presets-row">
+                                <button class="dt-preset-pill tt-preset-break" data-break="0">None</button>
+                                <button class="dt-preset-pill tt-preset-break" data-break="15">15m</button>
+                                <button class="dt-preset-pill tt-preset-break" data-break="30">30m</button>
+                                <button class="dt-preset-pill tt-preset-break" data-break="45">45m</button>
+                                <button class="dt-preset-pill tt-preset-break" data-break="60">60m</button>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label>Hourly Wage / Rate (Optional)</label>
+                            <input type="number" id="tt-rate" placeholder="e.g. 50 (SAR/hr)" min="0" step="0.5" class="code-area" style="height:44px;">
+                            <div style="margin-top: .6rem; display: flex; align-items: center; gap: .5rem;">
+                                <input type="checkbox" id="tt-overnight" style="width: auto; cursor: pointer;">
+                                <label for="tt-overnight" style="margin-bottom:0; font-size: .82rem; cursor: pointer; color: var(--text-main);">
+                                    Overnight / Next Day (+24h)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Hero Time Result -->
+                    <div class="dt-hero-card" id="tt-hero">
+                        <div class="dt-hero-label">Net Work Time</div>
+                        <div class="dt-hero-value" id="tt-hero-val">8h 00m</div>
+                        <div class="dt-hero-sub" id="tt-hero-sub">Gross: 8h 30m | 30m unpaid break</div>
+                    </div>
+
+                    <!-- Metrics Grid -->
+                    <div class="dt-metrics-grid" id="tt-metrics"></div>
+
+                    <div class="controls-panel">
+                        <button class="btn-primary" id="tt-copy-btn">📋 Copy Timesheet Entry</button>
+                    </div>
+                </div>
+
+                <!-- Mode 4: Date & Time Range -->
+                <div class="dt-panel" id="dt-panel-datetimerange">
+                    <div class="tool-form-grid">
+                        <div class="control-group">
+                            <label>Start Date & Time</label>
+                            <input type="datetime-local" id="dtr-start" class="code-area" style="height:44px; padding:0 10px;">
+                        </div>
+                        <div class="control-group">
+                            <label>End Date & Time</label>
+                            <input type="datetime-local" id="dtr-end" class="code-area" style="height:44px; padding:0 10px;">
+                        </div>
+                    </div>
+
+                    <div class="dt-hero-card" id="dtr-hero">
+                        <div class="dt-hero-label">Exact Date & Time Span</div>
+                        <div class="dt-hero-value" id="dtr-hero-val">-</div>
+                        <div class="dt-hero-sub" id="dtr-hero-sub">-</div>
+                    </div>
+
+                    <div class="dt-metrics-grid" id="dtr-metrics"></div>
+
+                    <div class="controls-panel">
+                        <button class="btn-primary" id="dtr-copy-btn">📋 Copy Exact Span</button>
+                    </div>
+                </div>
+
+                <!-- Mode 5: Live Countdown -->
+                <div class="dt-panel" id="dt-panel-countdown">
+                    <div class="tool-form-grid">
+                        <div class="control-group">
+                            <label>Event / Milestone Name</label>
+                            <input type="text" id="cd-title" value="Project Delivery Deadline" class="code-area" style="height:44px; padding:0 10px;">
+                        </div>
+                        <div class="control-group">
+                            <label>Target Date & Time</label>
+                            <input type="datetime-local" id="cd-target" class="code-area" style="height:44px; padding:0 10px;">
+                            <div class="dt-presets-row">
+                                <button class="dt-preset-pill cd-preset" data-preset="tomorrow">Tomorrow 9 AM</button>
+                                <button class="dt-preset-pill cd-preset" data-preset="friday">Friday 5 PM</button>
+                                <button class="dt-preset-pill cd-preset" data-preset="end-month">End of Month</button>
+                                <button class="dt-preset-pill cd-preset" data-preset="new-year">New Year 2027</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Digital Ticking Clock Display -->
+                    <div class="dt-hero-card" style="text-align: center; align-items: center;">
+                        <div class="dt-hero-label" id="cd-event-label">COUNTDOWN TO TARGET</div>
+                        <div class="dt-countdown-clock">
+                            <div class="dt-countdown-unit">
+                                <div class="dt-countdown-num" id="cd-days">00</div>
+                                <div class="dt-countdown-lbl">Days</div>
+                            </div>
+                            <div class="dt-countdown-unit">
+                                <div class="dt-countdown-num" id="cd-hours">00</div>
+                                <div class="dt-countdown-lbl">Hours</div>
+                            </div>
+                            <div class="dt-countdown-unit">
+                                <div class="dt-countdown-num" id="cd-mins">00</div>
+                                <div class="dt-countdown-lbl">Minutes</div>
+                            </div>
+                            <div class="dt-countdown-unit">
+                                <div class="dt-countdown-num" id="cd-secs">00</div>
+                                <div class="dt-countdown-lbl">Seconds</div>
+                            </div>
+                        </div>
+                        <div class="dt-hero-sub" id="cd-status-sub">Calculating live time...</div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Tab Switching Logic
+        const tabBtns = container.querySelectorAll('.dt-calc-tab-btn');
+        const panels = container.querySelectorAll('.dt-panel');
+        tabBtns.forEach(btn => {
+            btn.onclick = () => {
+                tabBtns.forEach(b => b.classList.remove('active'));
+                panels.forEach(p => p.classList.remove('active'));
+                btn.classList.add('active');
+                const targetId = `dt-panel-${btn.dataset.tab}`;
+                const targetPanel = container.querySelector(`#${targetId}`);
+                if (targetPanel) targetPanel.classList.add('active');
+            };
+        });
+
+        // -------------------------------------------------------------
+        // Helper Utilities
+        // -------------------------------------------------------------
+        const pad2 = n => String(n).padStart(2, '0');
+
+        const parseYMD = str => {
+            if (!str) return new Date();
+            const [y, m, d] = str.split('-').map(Number);
+            return new Date(y, (m || 1) - 1, d || 1);
+        };
+
+        const formatYMD = d => {
+            if (!d || isNaN(d)) return '';
+            return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+        };
+
+        const formatLongDate = d => {
+            if (!d || isNaN(d)) return '';
+            return d.toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        };
+
+        const isWeekend = (d, type) => {
+            const day = d.getDay(); // 0 = Sun, 1 = Mon ... 6 = Sat
+            if (type === 'sat-sun') return day === 0 || day === 6;
+            if (type === 'fri-sat') return day === 5 || day === 6;
+            if (type === 'fri') return day === 5;
+            if (type === 'sun') return day === 0;
+            return false;
+        };
+
+        const getDayOfYear = d => {
+            const start = new Date(d.getFullYear(), 0, 0);
+            const diff = d - start + ((start.getTimezoneOffset() - d.getTimezoneOffset()) * 60000);
+            return Math.floor(diff / 864e5);
+        };
+
+        const getISOWeek = d => {
+            const target = new Date(d.valueOf());
+            const dayNr = (d.getDay() + 6) % 7;
+            target.setDate(target.getDate() - dayNr + 3);
+            const firstThursday = target.valueOf();
+            target.setMonth(0, 1);
+            if (target.getDay() !== 4) {
+                target.setMonth(0, 1 + ((4 - target.getDay()) + 7) % 7);
+            }
+            return 1 + Math.ceil((firstThursday - target) / 6048e5);
+        };
+
+        const isLeapYear = y => ((y % 4 === 0) && (y % 100 !== 0)) || (y % 400 === 0);
+
+        // -------------------------------------------------------------
+        // MODE 1: Date to Date Difference
+        // -------------------------------------------------------------
+        const ddStart = container.querySelector('#dd-start');
+        const ddEnd = container.querySelector('#dd-end');
+        const ddWeekend = container.querySelector('#dd-weekend');
+        const ddIncludeEnd = container.querySelector('#dd-include-end');
+        const ddHeroVal = container.querySelector('#dd-hero-val');
+        const ddHeroSub = container.querySelector('#dd-hero-sub');
+        const ddMetrics = container.querySelector('#dd-metrics');
+        const ddProgressWrap = container.querySelector('#dd-progress-wrap');
+        const ddProgressBar = container.querySelector('#dd-progress-bar');
+        const ddProgressPct = container.querySelector('#dd-progress-pct');
+
+        // Init default dates: Start = Today, End = +30 Days
+        const now = new Date();
+        ddStart.value = formatYMD(now);
+        const defaultEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 30);
+        ddEnd.value = formatYMD(defaultEnd);
+
+        function calcDateDiff() {
+            if (!ddStart.value || !ddEnd.value) return;
+            let d1 = parseYMD(ddStart.value);
+            let d2 = parseYMD(ddEnd.value);
+            const isReversed = d2 < d1;
+            const startD = isReversed ? d2 : d1;
+            const endD = isReversed ? d1 : d2;
+
+            const includeEnd = ddIncludeEnd.checked;
+            const weekendType = ddWeekend.value;
+
+            // Total Days
+            let totalDays = Math.round((endD - startD) / 864e5);
+            if (includeEnd) totalDays += 1;
+
+            // Business days vs Weekend days
+            let busDays = 0;
+            let wkndDays = 0;
+            let cur = new Date(startD.getFullYear(), startD.getMonth(), startD.getDate());
+            const limit = includeEnd ? endD : new Date(endD.getFullYear(), endD.getMonth(), endD.getDate() - 1);
+
+            while (cur <= limit) {
+                if (isWeekend(cur, weekendType)) {
+                    wkndDays++;
+                } else {
+                    busDays++;
+                }
+                cur.setDate(cur.getDate() + 1);
+            }
+
+            // Natural Years, Months, Days breakdown
+            let yDiff = endD.getFullYear() - startD.getFullYear();
+            let mDiff = endD.getMonth() - startD.getMonth();
+            let dDiff = endD.getDate() - startD.getDate();
+
+            if (includeEnd) dDiff += 1;
+            if (dDiff < 0) {
+                const prevMonthLast = new Date(endD.getFullYear(), endD.getMonth(), 0).getDate();
+                dDiff += prevMonthLast;
+                mDiff -= 1;
+            }
+            if (mDiff < 0) {
+                mDiff += 12;
+                yDiff -= 1;
+            }
+
+            const parts = [];
+            if (yDiff > 0) parts.push(`${yDiff} year${yDiff > 1 ? 's' : ''}`);
+            if (mDiff > 0) parts.push(`${mDiff} month${mDiff > 1 ? 's' : ''}`);
+            if (dDiff > 0 || parts.length === 0) parts.push(`${dDiff} day${dDiff !== 1 ? 's' : ''}`);
+            const naturalStr = parts.join(', ');
+
+            // Hero Display
+            ddHeroVal.textContent = `${totalDays.toLocaleString()} Days (${naturalStr})`;
+            const revNote = isReversed ? ' [End Date is earlier than Start Date]' : '';
+            ddHeroSub.textContent = `${formatLongDate(startD)} → ${formatLongDate(endD)}${revNote}`;
+
+            // Metrics Cards
+            const weeks = Math.floor(totalDays / 7);
+            const remDays = totalDays % 7;
+            const hours = totalDays * 24;
+            const minutes = hours * 60;
+            const seconds = minutes * 60;
+            const pctYear = ((totalDays / (isLeapYear(startD.getFullYear()) ? 366 : 365)) * 100).toFixed(1);
+
+            ddMetrics.innerHTML = `
+                <div class="dt-metric-box">
+                    <div class="dt-metric-title">📆 Total Calendar Days</div>
+                    <div class="dt-metric-data">${totalDays.toLocaleString()}</div>
+                </div>
+                <div class="dt-metric-box">
+                    <div class="dt-metric-title">💼 Business Workdays</div>
+                    <div class="dt-metric-data" style="color: #34d399;">${busDays.toLocaleString()}</div>
+                </div>
+                <div class="dt-metric-box">
+                    <div class="dt-metric-title">🏖️ Weekend Days</div>
+                    <div class="dt-metric-data" style="color: #fbbf24;">${wkndDays.toLocaleString()}</div>
+                </div>
+                <div class="dt-metric-box">
+                    <div class="dt-metric-title">📅 Weeks & Days</div>
+                    <div class="dt-metric-data">${weeks}w ${remDays}d</div>
+                </div>
+                <div class="dt-metric-box">
+                    <div class="dt-metric-title">🕒 Equivalent Hours</div>
+                    <div class="dt-metric-data">${hours.toLocaleString()} h</div>
+                </div>
+                <div class="dt-metric-box">
+                    <div class="dt-metric-title">⏱️ Total Minutes</div>
+                    <div class="dt-metric-data">${minutes.toLocaleString()} m</div>
+                </div>
+                <div class="dt-metric-box">
+                    <div class="dt-metric-title">⚡ Total Seconds</div>
+                    <div class="dt-metric-data">${seconds.toLocaleString()} s</div>
+                </div>
+                <div class="dt-metric-box">
+                    <div class="dt-metric-title">📊 % of Current Year</div>
+                    <div class="dt-metric-data" style="color: #38bdf8;">${pctYear}%</div>
+                </div>
+            `;
+
+            // Progress Timeline bar if today is between start and end
+            const todayMid = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            if (todayMid >= startD && todayMid <= endD && totalDays > 0) {
+                const elapsed = Math.round((todayMid - startD) / 864e5);
+                const pct = Math.min(100, Math.max(0, Math.round((elapsed / totalDays) * 100)));
+                ddProgressWrap.style.display = 'flex';
+                ddProgressBar.style.width = `${pct}%`;
+                ddProgressPct.textContent = `${pct}% elapsed (Today: Day ${elapsed} of ${totalDays})`;
+            } else {
+                ddProgressWrap.style.display = 'none';
+            }
+        }
+
+        [ddStart, ddEnd, ddWeekend, ddIncludeEnd].forEach(el => {
+            el.addEventListener('input', calcDateDiff);
+            el.addEventListener('change', calcDateDiff);
+        });
+
+        // Date Diff Preset Buttons
+        container.querySelectorAll('#dt-panel-datediff .dt-preset-pill').forEach(btn => {
+            btn.onclick = () => {
+                const target = container.querySelector(`#${btn.dataset.target}`);
+                const p = btn.dataset.preset;
+                const d = new Date();
+                if (p === 'today') target.value = formatYMD(d);
+                else if (p === 'yesterday') { d.setDate(d.getDate() - 1); target.value = formatYMD(d); }
+                else if (p === 'plus30') { d.setDate(d.getDate() + 30); target.value = formatYMD(d); }
+                else if (p === 'plus90') { d.setDate(d.getDate() + 90); target.value = formatYMD(d); }
+                else if (p === 'start-month') target.value = formatYMD(new Date(d.getFullYear(), d.getMonth(), 1));
+                else if (p === 'end-month') target.value = formatYMD(new Date(d.getFullYear(), d.getMonth() + 1, 0));
+                else if (p === 'start-year') target.value = `${d.getFullYear()}-01-01`;
+                else if (p === 'end-year') target.value = `${d.getFullYear()}-12-31`;
+                calcDateDiff();
+            };
+        });
+
+        container.querySelector('#dd-swap-btn').onclick = () => {
+            const tmp = ddStart.value;
+            ddStart.value = ddEnd.value;
+            ddEnd.value = tmp;
+            calcDateDiff();
+        };
+
+        container.querySelector('#dd-copy-btn').onclick = (e) => {
+            const txt = `📅 Date Range: ${ddStart.value} to ${ddEnd.value}\nTotal Duration: ${ddHeroVal.textContent}\n${ddHeroSub.textContent}`;
+            Utils.copyToClipboard(txt, e.target);
+        };
+
+        // -------------------------------------------------------------
+        // MODE 2: Add or Subtract Days
+        // -------------------------------------------------------------
+        const daStart = container.querySelector('#da-start');
+        const daOpInput = container.querySelector('#da-op');
+        const daOpBtns = container.querySelectorAll('.da-op-btn');
+        const daWeekendMode = container.querySelector('#da-weekend-mode');
+        const daDays = container.querySelector('#da-days');
+        const daWeeks = container.querySelector('#da-weeks');
+        const daMonths = container.querySelector('#da-months');
+        const daYears = container.querySelector('#da-years');
+        const daHeroVal = container.querySelector('#da-hero-val');
+        const daHeroSub = container.querySelector('#da-hero-sub');
+        const daMetrics = container.querySelector('#da-metrics');
+
+        daStart.value = formatYMD(now);
+
+        daOpBtns.forEach(btn => {
+            btn.onclick = () => {
+                daOpBtns.forEach(b => { b.classList.remove('active', 'btn-primary'); b.classList.add('btn-secondary'); });
+                btn.classList.add('active', 'btn-primary');
+                btn.classList.remove('btn-secondary');
+                daOpInput.value = btn.dataset.op;
+                calcDateAdd();
+            };
+        });
+
+        function calcDateAdd() {
+            if (!daStart.value) return;
+            const startD = parseYMD(daStart.value);
+            const op = daOpInput.value === 'sub' ? -1 : 1;
+            const mode = daWeekendMode.value;
+
+            const days = parseInt(daDays.value, 10) || 0;
+            const weeks = parseInt(daWeeks.value, 10) || 0;
+            const months = parseInt(daMonths.value, 10) || 0;
+            const years = parseInt(daYears.value, 10) || 0;
+
+            let resD = new Date(startD.getFullYear(), startD.getMonth(), startD.getDate());
+
+            if (mode.startsWith('business')) {
+                const wType = mode === 'business-fri-sat' ? 'fri-sat' : 'sat-sun';
+                // Add total business days: days + weeks*5
+                const totalBusDays = (days + (weeks * 5));
+                let added = 0;
+                while (added < totalBusDays) {
+                    resD.setDate(resD.getDate() + op);
+                    if (!isWeekend(resD, wType)) {
+                        added++;
+                    }
+                }
+                // Add months and years normally
+                if (months !== 0) resD.setMonth(resD.getMonth() + (months * op));
+                if (years !== 0) resD.setFullYear(resD.getFullYear() + (years * op));
+            } else {
+                const totalCalDays = days + (weeks * 7);
+                if (totalCalDays !== 0) resD.setDate(resD.getDate() + (totalCalDays * op));
+                if (months !== 0) resD.setMonth(resD.getMonth() + (months * op));
+                if (years !== 0) resD.setFullYear(resD.getFullYear() + (years * op));
+            }
+
+            // Hero Output
+            daHeroVal.textContent = formatLongDate(resD);
+            const diffDays = Math.round((resD - startD) / 864e5);
+            const relTxt = diffDays === 0 ? 'Today (Same date)' : (diffDays > 0 ? `In ${diffDays} days` : `${Math.abs(diffDays)} days ago`);
+            daHeroSub.textContent = `${relTxt} • ${formatYMD(resD)}`;
+
+            // Metrics
+            const dayOfYear = getDayOfYear(resD);
+            const weekNum = getISOWeek(resD);
+            const quarter = `Q${Math.floor(resD.getMonth() / 3) + 1} ${resD.getFullYear()}`;
+            const leap = isLeapYear(resD.getFullYear()) ? 'Yes (366 days)' : 'No (365 days)';
+
+            daMetrics.innerHTML = `
+                <div class="dt-metric-box">
+                    <div class="dt-metric-title">📆 Formatted ISO Date</div>
+                    <div class="dt-metric-data" style="font-size:1.1rem; color:#38bdf8;">${formatYMD(resD)}</div>
+                </div>
+                <div class="dt-metric-box">
+                    <div class="dt-metric-title">📅 Day of Week</div>
+                    <div class="dt-metric-data">${resD.toLocaleDateString('en-US', { weekday: 'long' })}</div>
+                </div>
+                <div class="dt-metric-box">
+                    <div class="dt-metric-title">🗓️ Day of the Year</div>
+                    <div class="dt-metric-data">Day ${dayOfYear}</div>
+                </div>
+                <div class="dt-metric-box">
+                    <div class="dt-metric-title">🔢 ISO Week Number</div>
+                    <div class="dt-metric-data">Week ${weekNum}</div>
+                </div>
+                <div class="dt-metric-box">
+                    <div class="dt-metric-title">📊 Financial Quarter</div>
+                    <div class="dt-metric-data">${quarter}</div>
+                </div>
+                <div class="dt-metric-box">
+                    <div class="dt-metric-title">⚖️ Leap Year</div>
+                    <div class="dt-metric-data">${leap}</div>
+                </div>
+            `;
+        }
+
+        [daStart, daWeekendMode, daDays, daWeeks, daMonths, daYears].forEach(el => {
+            el.addEventListener('input', calcDateAdd);
+            el.addEventListener('change', calcDateAdd);
+        });
+
+        // Quick add presets
+        container.querySelectorAll('.da-preset').forEach(btn => {
+            btn.onclick = () => {
+                daDays.value = btn.dataset.days || 0;
+                daWeeks.value = btn.dataset.weeks || 0;
+                daMonths.value = btn.dataset.months || 0;
+                daYears.value = btn.dataset.years || 0;
+                calcDateAdd();
+            };
+        });
+
+        container.querySelectorAll('#dt-panel-dateadd .dt-preset-pill').forEach(btn => {
+            btn.onclick = () => {
+                const p = btn.dataset.preset;
+                const d = new Date();
+                if (p === 'today') daStart.value = formatYMD(d);
+                else if (p === 'tomorrow') { d.setDate(d.getDate() + 1); daStart.value = formatYMD(d); }
+                else if (p === 'start-month') daStart.value = formatYMD(new Date(d.getFullYear(), d.getMonth(), 1));
+                calcDateAdd();
+            };
+        });
+
+        container.querySelector('#da-copy-iso').onclick = (e) => {
+            const val = daHeroSub.textContent.split('•')[1]?.trim() || '';
+            Utils.copyToClipboard(val, e.target);
+        };
+
+        container.querySelector('#da-copy-full').onclick = (e) => {
+            const txt = `Target Date: ${daHeroVal.textContent} (${daHeroSub.textContent})`;
+            Utils.copyToClipboard(txt, e.target);
+        };
+
+        container.querySelector('#da-use-diff').onclick = () => {
+            const val = daHeroSub.textContent.split('•')[1]?.trim() || '';
+            if (val) {
+                ddEnd.value = val;
+                // Switch to tab 1
+                container.querySelector('[data-tab="datediff"]').click();
+                calcDateDiff();
+            }
+        };
+
+        // -------------------------------------------------------------
+        // MODE 3: Time to Time Duration
+        // -------------------------------------------------------------
+        const ttStartTime = container.querySelector('#tt-start-time');
+        const ttEndTime = container.querySelector('#tt-end-time');
+        const ttBreak = container.querySelector('#tt-break');
+        const ttRate = container.querySelector('#tt-rate');
+        const ttOvernight = container.querySelector('#tt-overnight');
+        const ttHeroVal = container.querySelector('#tt-hero-val');
+        const ttHeroSub = container.querySelector('#tt-hero-sub');
+        const ttMetrics = container.querySelector('#tt-metrics');
+
+        function calcTimeToTime() {
+            if (!ttStartTime.value || !ttEndTime.value) return;
+
+            const [sh, sm] = ttStartTime.value.split(':').map(Number);
+            const [eh, em] = ttEndTime.value.split(':').map(Number);
+
+            let startMins = (sh * 60) + sm;
+            let endMins = (eh * 60) + em;
+
+            // Auto-detect overnight
+            if (endMins < startMins && !ttOvernight.checked) {
+                ttOvernight.checked = true;
+            }
+
+            if (ttOvernight.checked && endMins < startMins) {
+                endMins += (24 * 60);
+            }
+
+            let grossMins = endMins - startMins;
+            if (grossMins < 0) grossMins += (24 * 60);
+
+            const breakMins = parseInt(ttBreak.value, 10) || 0;
+            const netMins = Math.max(0, grossMins - breakMins);
+
+            const grossH = Math.floor(grossMins / 60);
+            const grossM = grossMins % 60;
+
+            const netH = Math.floor(netMins / 60);
+            const netM = netMins % 60;
+            const netDecimal = (netMins / 60).toFixed(2);
+
+            // Hero
+            ttHeroVal.textContent = `${netH}h ${pad2(netM)}m Net Work Time (${netDecimal} hrs)`;
+            ttHeroSub.textContent = `Gross: ${grossH}h ${pad2(grossM)}m (${grossMins}m) | ${breakMins}m Break Deducted`;
+
+            const hourlyRate = parseFloat(ttRate.value) || 0;
+            const earningsStr = hourlyRate > 0 ? (netDecimal * hourlyRate).toFixed(2) : '-';
+
+            ttMetrics.innerHTML = `
+                <div class="dt-metric-box">
+                    <div class="dt-metric-title">⏱️ Decimal Hours</div>
+                    <div class="dt-metric-data" style="color: #38bdf8;">${netDecimal} hrs</div>
+                </div>
+                <div class="dt-metric-box">
+                    <div class="dt-metric-title">🕒 Net Minutes</div>
+                    <div class="dt-metric-data">${netMins.toLocaleString()} mins</div>
+                </div>
+                <div class="dt-metric-box">
+                    <div class="dt-metric-title">⚡ Total Seconds</div>
+                    <div class="dt-metric-data">${(netMins * 60).toLocaleString()} s</div>
+                </div>
+                <div class="dt-metric-box">
+                    <div class="dt-metric-title">☕ Break Deducted</div>
+                    <div class="dt-metric-data" style="color: #fbbf24;">${breakMins} mins</div>
+                </div>
+                <div class="dt-metric-box">
+                    <div class="dt-metric-title">💰 Calculated Earnings</div>
+                    <div class="dt-metric-data" style="color: #34d399;">${earningsStr !== '-' ? earningsStr : 'Enter rate'}</div>
+                </div>
+                <div class="dt-metric-box">
+                    <div class="dt-metric-title">🌙 Overnight Status</div>
+                    <div class="dt-metric-data" style="font-size: 1rem;">${ttOvernight.checked ? 'Overnight (+24h)' : 'Same Day'}</div>
+                </div>
+            `;
+        }
+
+        [ttStartTime, ttEndTime, ttBreak, ttRate, ttOvernight].forEach(el => {
+            el.addEventListener('input', calcTimeToTime);
+            el.addEventListener('change', calcTimeToTime);
+        });
+
+        // Time Presets
+        container.querySelectorAll('.tt-preset-start').forEach(btn => {
+            btn.onclick = () => {
+                if (btn.dataset.time === 'now') {
+                    const d = new Date();
+                    ttStartTime.value = `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+                } else {
+                    ttStartTime.value = btn.dataset.time;
+                }
+                calcTimeToTime();
+            };
+        });
+
+        container.querySelectorAll('.tt-preset-end').forEach(btn => {
+            btn.onclick = () => {
+                if (btn.dataset.time === 'now') {
+                    const d = new Date();
+                    ttEndTime.value = `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+                } else {
+                    ttEndTime.value = btn.dataset.time;
+                }
+                calcTimeToTime();
+            };
+        });
+
+        container.querySelectorAll('.tt-preset-break').forEach(btn => {
+            btn.onclick = () => {
+                ttBreak.value = btn.dataset.break;
+                calcTimeToTime();
+            };
+        });
+
+        container.querySelector('#tt-copy-btn').onclick = (e) => {
+            const txt = `Timesheet Entry: ${ttStartTime.value} to ${ttEndTime.value} (${ttHeroVal.textContent})\n${ttHeroSub.textContent}`;
+            Utils.copyToClipboard(txt, e.target);
+        };
+
+        // -------------------------------------------------------------
+        // MODE 4: Combined Date & Time Range
+        // -------------------------------------------------------------
+        const dtrStart = container.querySelector('#dtr-start');
+        const dtrEnd = container.querySelector('#dtr-end');
+        const dtrHeroVal = container.querySelector('#dtr-hero-val');
+        const dtrHeroSub = container.querySelector('#dtr-hero-sub');
+        const dtrMetrics = container.querySelector('#dtr-metrics');
+
+        const nowDtr = new Date();
+        const futureDtr = new Date(nowDtr.getTime() + (2 * 864e5) + (8.5 * 36e5));
+        const toLocalDT = d => `${formatYMD(d)}T${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+        dtrStart.value = toLocalDT(nowDtr);
+        dtrEnd.value = toLocalDT(futureDtr);
+
+        function calcDateTimeRange() {
+            if (!dtrStart.value || !dtrEnd.value) return;
+            const t1 = new Date(dtrStart.value).getTime();
+            const t2 = new Date(dtrEnd.value).getTime();
+
+            const diffMs = Math.abs(t2 - t1);
+            let rem = Math.floor(diffMs / 1000);
+
+            const days = Math.floor(rem / 86400);
+            rem %= 86400;
+            const hours = Math.floor(rem / 3600);
+            rem %= 3600;
+            const mins = Math.floor(rem / 60);
+            const secs = rem % 60;
+
+            const decHours = (diffMs / 36e5).toFixed(2);
+            const decDays = (diffMs / 864e5).toFixed(2);
+
+            dtrHeroVal.textContent = `${days}d ${hours}h ${mins}m ${secs}s`;
+            dtrHeroSub.textContent = `Total: ${decHours} Decimal Hours • ${decDays} Decimal Days`;
+
+            dtrMetrics.innerHTML = `
+                <div class="dt-metric-box">
+                    <div class="dt-metric-title">🕒 Decimal Hours</div>
+                    <div class="dt-metric-data" style="color:#38bdf8;">${decHours} h</div>
+                </div>
+                <div class="dt-metric-box">
+                    <div class="dt-metric-title">📆 Decimal Days</div>
+                    <div class="dt-metric-data">${decDays} d</div>
+                </div>
+                <div class="dt-metric-box">
+                    <div class="dt-metric-title">⏱️ Total Minutes</div>
+                    <div class="dt-metric-data">${Math.floor(diffMs / 60000).toLocaleString()} m</div>
+                </div>
+                <div class="dt-metric-box">
+                    <div class="dt-metric-title">⚡ Total Seconds</div>
+                    <div class="dt-metric-data">${Math.floor(diffMs / 1000).toLocaleString()} s</div>
+                </div>
+            `;
+        }
+
+        [dtrStart, dtrEnd].forEach(el => {
+            el.addEventListener('input', calcDateTimeRange);
+            el.addEventListener('change', calcDateTimeRange);
+        });
+
+        container.querySelector('#dtr-copy-btn').onclick = (e) => {
+            Utils.copyToClipboard(`${dtrHeroVal.textContent} (${dtrHeroSub.textContent})`, e.target);
+        };
+
+        // -------------------------------------------------------------
+        // MODE 5: Live Countdown & Milestone
+        // -------------------------------------------------------------
+        const cdTitle = container.querySelector('#cd-title');
+        const cdTarget = container.querySelector('#cd-target');
+        const cdEventLabel = container.querySelector('#cd-event-label');
+        const cdDays = container.querySelector('#cd-days');
+        const cdHours = container.querySelector('#cd-hours');
+        const cdMins = container.querySelector('#cd-mins');
+        const cdSecs = container.querySelector('#cd-secs');
+        const cdStatusSub = container.querySelector('#cd-status-sub');
+
+        // Target: End of current month 23:59:59
+        const eom = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+        cdTarget.value = `${formatYMD(eom)}T23:59`;
+
+        function updateCountdown() {
+            if (!cdTarget.value) return;
+            const targetMs = new Date(cdTarget.value).getTime();
+            const nowMs = Date.now();
+            const diff = targetMs - nowMs;
+
+            cdEventLabel.textContent = `COUNTDOWN: ${cdTitle.value.toUpperCase() || 'TARGET EVENT'}`;
+
+            if (diff <= 0) {
+                cdDays.textContent = '00';
+                cdHours.textContent = '00';
+                cdMins.textContent = '00';
+                cdSecs.textContent = '00';
+                const pastSec = Math.floor(Math.abs(diff) / 1000);
+                cdStatusSub.textContent = `🎉 Event reached! (${Math.floor(pastSec / 86400)} days ago)`;
+                cdStatusSub.style.color = '#34d399';
+                return;
+            }
+
+            cdStatusSub.style.color = '#94a3b8';
+            let rem = Math.floor(diff / 1000);
+            const d = Math.floor(rem / 86400);
+            rem %= 86400;
+            const h = Math.floor(rem / 3600);
+            rem %= 3600;
+            const m = Math.floor(rem / 60);
+            const s = rem % 60;
+
+            cdDays.textContent = pad2(d);
+            cdHours.textContent = pad2(h);
+            cdMins.textContent = pad2(m);
+            cdSecs.textContent = pad2(s);
+            cdStatusSub.textContent = `Target: ${formatLongDate(new Date(targetMs))} at ${new Date(targetMs).toLocaleTimeString()}`;
+        }
+
+        const cdInterval = setInterval(updateCountdown, 1000);
+        [cdTitle, cdTarget].forEach(el => {
+            el.addEventListener('input', updateCountdown);
+            el.addEventListener('change', updateCountdown);
+        });
+
+        container.querySelectorAll('.cd-preset').forEach(btn => {
+            btn.onclick = () => {
+                const p = btn.dataset.preset;
+                const d = new Date();
+                if (p === 'tomorrow') {
+                    d.setDate(d.getDate() + 1);
+                    d.setHours(9, 0, 0);
+                    cdTarget.value = `${formatYMD(d)}T09:00`;
+                    cdTitle.value = 'Tomorrow Morning 9:00 AM';
+                } else if (p === 'friday') {
+                    const daysUntilFri = (5 - d.getDay() + 7) % 7 || 7;
+                    d.setDate(d.getDate() + daysUntilFri);
+                    d.setHours(17, 0, 0);
+                    cdTarget.value = `${formatYMD(d)}T17:00`;
+                    cdTitle.value = 'Friday Weekend Kickoff (5 PM)';
+                } else if (p === 'end-month') {
+                    const eomDate = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 0);
+                    cdTarget.value = `${formatYMD(eomDate)}T23:59`;
+                    cdTitle.value = 'End of Month Deadline';
+                } else if (p === 'new-year') {
+                    cdTarget.value = `${d.getFullYear() + 1}-01-01T00:00`;
+                    cdTitle.value = `New Year ${d.getFullYear() + 1} Countdown`;
+                }
+                updateCountdown();
+            };
+        });
+
+        // Initialize all active calculations
+        calcDateDiff();
+        calcDateAdd();
+        calcTimeToTime();
+        calcDateTimeRange();
+        updateCountdown();
     },
+
 
     'spin-wheel-excel': (container) => {
         container.innerHTML = basicToolShell('Excel Spin Wheel Picker', `

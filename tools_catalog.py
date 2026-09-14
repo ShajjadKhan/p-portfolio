@@ -595,15 +595,14 @@ TOOLS = [
     {
         "id": "date-calculator",
         "slug": "date-calculator",
-        "title": "Date Difference & Deadline Calculator",
+        "title": "Date & Time Master Calculator",
         "category": "converters",
-        "badge": "Dates",
+        "badge": "Date & Time Pro",
         "icon": "📅",
-        "short_desc": "Calculate days between two dates or add/subtract days from a start date.",
-        "detailed_desc": "Plan deadlines, delivery dates, renewals, hotel tasks, and project timelines with simple date math.",
-        "keywords": ["date calculator", "days between dates", "deadline calculator", "add days", "business date"],
+        "short_desc": "All-in-one Date to Date difference, Day Adder & Subtractor, Time to Time duration, and Workday Calculator.",
+        "detailed_desc": "Comprehensive multi-mode date and time utility: calculate exact duration between two dates (years, months, weeks, days, business days), add or subtract calendar and business days with weekend presets, calculate elapsed work hours and payroll between times with overnight detection, and live countdowns.",
+        "keywords": ["date calculator", "date to date", "date to day added", "time to time", "days between dates", "add days to date", "time duration calculator", "work hours calculator", "business days calculator", "deadline calculator", "countdown timer"],
         "client_powered": True
-
     },
     {
         "id": "spin-wheel-excel",
