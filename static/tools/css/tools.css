@@ -2433,3 +2433,242 @@ ins.adsbygoogle:has(iframe) + .ad-fallback-card {
         font-size: 1.55rem;
     }
 }
+
+
+/* ==========================================================================
+   Date & Time Master Calculator Styles
+   ========================================================================== */
+.dt-calc-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    max-width: 1060px;
+    margin: 0 auto;
+}
+
+.dt-calc-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    background: rgba(15, 23, 42, 0.7);
+    padding: .45rem;
+    border-radius: 14px;
+    border: 1px solid var(--border-dim, #1f293d);
+}
+
+.dt-calc-tab-btn {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .65rem 1.1rem;
+    border-radius: 10px;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-muted, #94a3b8);
+    font-size: .88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .2s ease;
+}
+
+.dt-calc-tab-btn:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.dt-calc-tab-btn.active {
+    color: #fff;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.25), rgba(6, 182, 212, 0.2));
+    border-color: rgba(59, 130, 246, 0.4);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+}
+
+.dt-panel {
+    display: none;
+    flex-direction: column;
+    gap: 1.25rem;
+    background: rgba(17, 24, 39, 0.85);
+    border: 1px solid var(--border-dim, #1f293d);
+    border-radius: 18px;
+    padding: 1.5rem;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.dt-panel.active {
+    display: flex;
+}
+
+.dt-presets-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .4rem;
+    margin-top: .4rem;
+}
+
+.dt-preset-pill {
+    padding: .28rem .65rem;
+    font-size: .75rem;
+    font-weight: 600;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-muted, #94a3b8);
+    cursor: pointer;
+    transition: all .15s ease;
+}
+
+.dt-preset-pill:hover {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: rgba(59, 130, 246, 0.5);
+    color: #fff;
+}
+
+.dt-hero-card {
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.8));
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 16px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: .6rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.dt-hero-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(to bottom, #38bdf8, #3b82f6, #6366f1);
+}
+
+.dt-hero-label {
+    font-size: .8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: #38bdf8;
+}
+
+.dt-hero-value {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #f8fafc;
+    letter-spacing: -.02em;
+    line-height: 1.25;
+}
+
+.dt-hero-sub {
+    font-size: .95rem;
+    color: #94a3b8;
+    line-height: 1.4;
+}
+
+.dt-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: .9rem;
+}
+
+.dt-metric-box {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid var(--border-dim, #1f293d);
+    border-radius: 12px;
+    padding: .9rem 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: .3rem;
+    transition: transform .15s ease, border-color .15s ease;
+}
+
+.dt-metric-box:hover {
+    transform: translateY(-2px);
+    border-color: rgba(56, 189, 248, 0.4);
+}
+
+.dt-metric-title {
+    font-size: .75rem;
+    font-weight: 600;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+}
+
+.dt-metric-data {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #f1f5f9;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.dt-progress-wrap {
+    margin-top: .5rem;
+    display: flex;
+    flex-direction: column;
+    gap: .4rem;
+}
+
+.dt-progress-track {
+    width: 100%;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.dt-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #38bdf8, #3b82f6);
+    border-radius: 4px;
+    transition: width .3s ease;
+}
+
+.dt-countdown-clock {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin: 1rem 0;
+    width: 100%;
+    max-width: 600px;
+}
+
+.dt-countdown-unit {
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid rgba(59, 130, 246, 0.35);
+    border-radius: 14px;
+    padding: 1.2rem .6rem;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.dt-countdown-num {
+    font-size: 2.3rem;
+    font-weight: 800;
+    font-family: 'JetBrains Mono', monospace;
+    color: #38bdf8;
+    line-height: 1.1;
+}
+
+.dt-countdown-lbl {
+    font-size: .75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: #94a3b8;
+    margin-top: .4rem;
+}
+
+@media (max-width: 650px) {
+    .dt-countdown-clock {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .dt-hero-value {
+        font-size: 1.55rem;
+    }
+}
