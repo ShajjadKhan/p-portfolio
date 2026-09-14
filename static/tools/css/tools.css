@@ -96,6 +96,14 @@ a {
     color: var(--text-main);
 }
 
+.tools-brand-logo-img {
+    width: 34px;
+    height: 34px;
+    object-fit: contain;
+    display: block;
+    flex: 0 0 auto;
+}
+
 .logo-symbol {
     color: #f59e0b;
     font-size: 1.35rem;
