@@ -3184,19 +3184,24 @@ Monetization: Google AdSense integrated</textarea>
     'date-calculator': (container) => {
         container.innerHTML = `
             <div class="dt-calc-container">
+                <div class="dt-calc-intro">
+                    <span class="dt-calc-kicker">Simple date math</span>
+                    <h2>How much time is between two dates?</h2>
+                    <p>Choose a calculator mode below. Start with <strong>Count days</strong> for the clearest answer, then add time or workday rules only when you need them.</p>
+                </div>
                 <!-- Navigation Tabs -->
                 <div class="dt-calc-tabs">
                     <button class="dt-calc-tab-btn active" data-tab="datediff">
-                        <span>📅</span> Date to Date Diff
+                        <span>📅</span> Count days
                     </button>
                     <button class="dt-calc-tab-btn" data-tab="dateadd">
-                        <span>➕</span> Add / Subtract Days
+                        <span>➕</span> Add or subtract
                     </button>
                     <button class="dt-calc-tab-btn" data-tab="timetotime">
-                        <span>⏱️</span> Time to Time
+                        <span>⏱️</span> Compare times
                     </button>
                     <button class="dt-calc-tab-btn" data-tab="datetimerange">
-                        <span>🗓️</span> Date & Time Range
+                        <span>🗓️</span> Date + time
                     </button>
                     <button class="dt-calc-tab-btn" data-tab="countdown">
                         <span>⏳</span> Live Countdown
