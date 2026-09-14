@@ -4291,7 +4291,6 @@ Monetization: Google AdSense integrated</textarea>
         ['#spin-dept', '#spin-property', '#spin-group'].forEach(id => container.querySelector(id).onchange = render);
         refreshFilters();
     }
->>>>>>> origin/main
 
     // 33. DWG & CAD Drawing Viewer
     'dwg-viewer': (container) => {
