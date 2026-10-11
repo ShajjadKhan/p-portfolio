@@ -20,14 +20,14 @@
     <!-- Tools Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='tools/css/tools.css') }}?v=2.2">
 
-    <!-- External Client-Side Libraries -->
+    <!-- Local Client-Side Libraries (100% Self-Hosted & Zero Third-Party Dependencies) -->
     <script src="{{ url_for('static', filename='tools/js/vendor/qrcode.min.js') }}?v=1.5.1" defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js" defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" defer></script>
+    <script src="{{ url_for('static', filename='tools/js/vendor/pdf-lib.min.js') }}?v=1.17.1" defer></script>
+    <script src="{{ url_for('static', filename='tools/js/vendor/pdf.min.js') }}?v=3.11.174" defer></script>
     <script>
         window.initPdfWorker = function() {
             if (window.pdfjsLib) {
-                window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                window.pdfjsLib.GlobalWorkerOptions.workerSrc = "{{ url_for('static', filename='tools/js/vendor/pdf.worker.min.js') }}";
             }
         };
         window.addEventListener('load', window.initPdfWorker);
