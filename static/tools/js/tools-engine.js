@@ -707,6 +707,1751 @@ const ToolRenderers = {
         });
     },
 
+    // =========================================================================
+    // High-Accuracy PDF Editor & Precision Signer
+    // =========================================================================
+    'pdf-editor': (container) => {
+        let currentPdfBuffer = null;
+        let pdfDoc = null;
+        let originalFileName = 'document.pdf';
+        let totalPages = 0;
+        let currentPageNum = 1;
+        let currentZoom = 1.0;
+        let currentRotation = 0;
+        let pageWidthPt = 595.28;
+        let pageHeightPt = 841.89;
+
+        let activeTool = 'select'; // select, text, whiteout, redact, draw, highlight, shape, signature, image, stamp
+        let selectedId = null;
+        let shapeSubtype = 'rect'; // rect, circle, line, arrow
+
+        // Active tool styling properties
+        const textProps = {
+            fontFamily: 'Helvetica',
+            fontSize: 14,
+            color: '#000000',
+            bgColor: 'transparent',
+            bold: false,
+            italic: false
+        };
+        const penProps = {
+            color: '#000000',
+            width: 2
+        };
+        const highlightProps = {
+            color: '#fff159',
+            width: 20
+        };
+        const shapeProps = {
+            stroke: '#000000',
+            strokeWidth: 2,
+            fill: 'transparent'
+        };
+
+        // Annotations, Drawings & Rotations by page number
+        const pageAnnotations = {}; // { [pageNum]: [ items ] }
+        const pageDrawings = {};    // { [pageNum]: [ strokes ] }
+        const pageRotations = {};   // { [pageNum]: rotationDeg }
+
+        // Undo & Redo History
+        const undoStack = [];
+        const redoStack = [];
+
+        // Interaction state
+        let isInteracting = false;
+        let interactionMode = null; // 'drag', 'resize', 'create-box', 'draw'
+        let resizeHandle = null;
+        let startClientX = 0, startClientY = 0;
+        let startPtX = 0, startPtY = 0, startPtW = 0, startPtH = 0;
+        let activeStroke = null;
+
+        // Base DOM Setup
+        container.innerHTML = `
+            <div class="pdf-ed-wrapper">
+                <!-- Dropzone State -->
+                <div id="pdf-ed-dropzone" class="pdf-ed-dropzone-box">
+                    <div class="pdf-ed-dropzone-icon">✍️📄</div>
+                    <div class="pdf-ed-dropzone-title">High-Accuracy PDF Editor & Signer</div>
+                    <div class="pdf-ed-dropzone-sub">
+                        Edit PDF files with pixel-perfect coordinate precision: add text, whiteout & erase, draw signatures, highlight, redact, and insert images with lossless vector export.
+                    </div>
+                    <div class="pdf-ed-dropzone-actions">
+                        <button type="button" class="btn-primary" id="pdf-ed-choose-btn">Choose PDF File</button>
+                        <button type="button" class="btn-secondary" id="pdf-ed-blank-btn">Create Blank Document (A4)</button>
+                        <input type="file" id="pdf-ed-file-input" accept="application/pdf" style="display: none;">
+                    </div>
+                </div>
+
+                <!-- Active Editor Workspace -->
+                <div id="pdf-ed-workspace" style="display: none; flex-direction: column;">
+                    <!-- Top Bar: Navigation, Zoom & Actions -->
+                    <div class="pdf-ed-topbar">
+                        <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                            <div class="pdf-ed-doc-badge">
+                                <span>📄</span>
+                                <span class="pdf-ed-doc-name" id="pdf-ed-filename">document.pdf</span>
+                            </div>
+                            <div class="pdf-ed-nav-group">
+                                <button type="button" class="pdf-ed-btn-mini" id="pdf-ed-prev-btn" title="Previous Page">◀</button>
+                                <div class="pdf-ed-page-indicator">
+                                    Page <input type="number" id="pdf-ed-page-num" min="1" max="1" value="1" class="pdf-ed-page-input">
+                                    <span>/ <span id="pdf-ed-total-pages">1</span></span>
+                                </div>
+                                <button type="button" class="pdf-ed-btn-mini" id="pdf-ed-next-btn" title="Next Page">▶</button>
+                                <button type="button" class="pdf-ed-btn-mini" id="pdf-ed-rotate-btn" title="Rotate Page 90°">🔄 Rotate</button>
+                            </div>
+                        </div>
+
+                        <div class="pdf-ed-zoom-group">
+                            <button type="button" class="pdf-ed-btn-mini" id="pdf-ed-zoom-out" title="Zoom Out">➖</button>
+                            <span class="pdf-ed-zoom-val" id="pdf-ed-zoom-txt">100%</span>
+                            <button type="button" class="pdf-ed-btn-mini" id="pdf-ed-zoom-in" title="Zoom In">➕</button>
+                            <button type="button" class="pdf-ed-btn-mini" id="pdf-ed-zoom-fit" title="Fit Width">Fit Width</button>
+                        </div>
+
+                        <div class="pdf-ed-actions-group">
+                            <button type="button" class="pdf-ed-btn-mini" id="pdf-ed-undo-btn" title="Undo (Ctrl+Z)">↩ Undo</button>
+                            <button type="button" class="pdf-ed-btn-mini" id="pdf-ed-redo-btn" title="Redo (Ctrl+Y)">↪ Redo</button>
+                            <button type="button" class="pdf-ed-btn-mini" id="pdf-ed-clear-btn" title="Clear Page Annotations">🗑️ Clear</button>
+                            <button type="button" class="pdf-ed-btn-mini" id="pdf-ed-new-btn" title="Open Another PDF">📂 Open</button>
+                            <button type="button" class="pdf-ed-export-btn" id="pdf-ed-export-btn">
+                                <span>💾</span>
+                                <span>Export Vector PDF</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Tool Ribbon -->
+                    <div class="pdf-ed-ribbon" id="pdf-ed-tools">
+                        <button type="button" class="pdf-ed-tool-btn active" data-tool="select" title="Select, Move, and Resize Elements">
+                            <span>👆</span> Select
+                        </button>
+                        <div class="pdf-ed-tool-sep"></div>
+                        <button type="button" class="pdf-ed-tool-btn" data-tool="text" title="Click anywhere to add text">
+                            <span>🔤</span> Add Text
+                        </button>
+                        <button type="button" class="pdf-ed-tool-btn" data-tool="whiteout" title="Drag box over text to erase/whiteout">
+                            <span>⬜</span> Whiteout / Erase
+                        </button>
+                        <button type="button" class="pdf-ed-tool-btn" data-tool="redact" title="Drag black box to redact confidential info">
+                            <span>⬛</span> Redact
+                        </button>
+                        <div class="pdf-ed-tool-sep"></div>
+                        <button type="button" class="pdf-ed-tool-btn" data-tool="draw" title="Freehand Pen Tool">
+                            <span>✏️</span> Pen
+                        </button>
+                        <button type="button" class="pdf-ed-tool-btn" data-tool="highlight" title="Neon Translucent Highlighter">
+                            <span>🖍️</span> Highlighter
+                        </button>
+                        <button type="button" class="pdf-ed-tool-btn" data-tool="shape" title="Draw Rectangles, Circles, Lines, Arrows">
+                            <span>🔲</span> Shapes
+                        </button>
+                        <div class="pdf-ed-tool-sep"></div>
+                        <button type="button" class="pdf-ed-tool-btn" data-tool="signature" title="Insert Drawn or Typed Signature">
+                            <span>✍️</span> Signature
+                        </button>
+                        <button type="button" class="pdf-ed-tool-btn" data-tool="image" title="Insert Image / Stamp">
+                            <span>🖼️</span> Insert Image
+                            <input type="file" id="pdf-ed-img-input" accept="image/*" style="display: none;">
+                        </button>
+                        <button type="button" class="pdf-ed-tool-btn" data-tool="stamp" title="Insert Official Approval / Status Stamps">
+                            <span>🏷️</span> Stamps
+                        </button>
+                    </div>
+
+                    <!-- Property Ribbon -->
+                    <div class="pdf-ed-props" id="pdf-ed-props"></div>
+
+                    <!-- Workspace Layout: Left Sidebar + Viewport Stage -->
+                    <div class="pdf-ed-main-layout">
+                        <div class="pdf-ed-sidebar" id="pdf-ed-sidebar"></div>
+                        <div class="pdf-ed-viewport" id="pdf-ed-viewport">
+                            <div class="pdf-ed-stage-wrap" id="pdf-ed-stage-wrap">
+                                <div class="pdf-ed-stage" id="pdf-ed-stage">
+                                    <canvas class="pdf-ed-base-canvas" id="pdf-ed-base-canvas"></canvas>
+                                    <canvas class="pdf-ed-draw-canvas" id="pdf-ed-draw-canvas"></canvas>
+                                    <div class="pdf-ed-anno-layer" id="pdf-ed-anno-layer"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Precision Status HUD -->
+                    <div class="pdf-ed-hud">
+                        <div id="pdf-ed-hud-dims">Page: 595 x 842 pt (210.0 x 297.0 mm, A4)</div>
+                        <div id="pdf-ed-hud-coords">Cursor: X: 0.0 pt, Y: 0.0 pt</div>
+                        <div class="pdf-ed-hud-badge">
+                            <span>🔒</span> Sub-Pixel Lossless Vector Mapping
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Status Feedback Box -->
+                <div id="pdf-ed-status" style="padding: 0.75rem 1rem; color: var(--accent); font-weight: 600; font-size: 0.85rem; display: none;"></div>
+            </div>
+        `;
+
+        // Cache DOM references
+        const dzBox = container.querySelector('#pdf-ed-dropzone');
+        const wsBox = container.querySelector('#pdf-ed-workspace');
+        const fileInput = container.querySelector('#pdf-ed-file-input');
+        const chooseBtn = container.querySelector('#pdf-ed-choose-btn');
+        const blankBtn = container.querySelector('#pdf-ed-blank-btn');
+        const statusBox = container.querySelector('#pdf-ed-status');
+
+        const fileNameEl = container.querySelector('#pdf-ed-filename');
+        const pageNumInput = container.querySelector('#pdf-ed-page-num');
+        const totalPagesEl = container.querySelector('#pdf-ed-total-pages');
+        const prevBtn = container.querySelector('#pdf-ed-prev-btn');
+        const nextBtn = container.querySelector('#pdf-ed-next-btn');
+        const rotateBtn = container.querySelector('#pdf-ed-rotate-btn');
+
+        const zoomOutBtn = container.querySelector('#pdf-ed-zoom-out');
+        const zoomInBtn = container.querySelector('#pdf-ed-zoom-in');
+        const zoomFitBtn = container.querySelector('#pdf-ed-zoom-fit');
+        const zoomTxt = container.querySelector('#pdf-ed-zoom-txt');
+
+        const undoBtn = container.querySelector('#pdf-ed-undo-btn');
+        const redoBtn = container.querySelector('#pdf-ed-redo-btn');
+        const clearBtn = container.querySelector('#pdf-ed-clear-btn');
+        const newBtn = container.querySelector('#pdf-ed-new-btn');
+        const exportBtn = container.querySelector('#pdf-ed-export-btn');
+
+        const toolsRibbon = container.querySelector('#pdf-ed-tools');
+        const propsRibbon = container.querySelector('#pdf-ed-props');
+        const sidebar = container.querySelector('#pdf-ed-sidebar');
+        const viewport = container.querySelector('#pdf-ed-viewport');
+        const stage = container.querySelector('#pdf-ed-stage');
+        const baseCanvas = container.querySelector('#pdf-ed-base-canvas');
+        const drawCanvas = container.querySelector('#pdf-ed-draw-canvas');
+        const annoLayer = container.querySelector('#pdf-ed-anno-layer');
+        const hudDims = container.querySelector('#pdf-ed-hud-dims');
+        const hudCoords = container.querySelector('#pdf-ed-hud-coords');
+        const imgInput = container.querySelector('#pdf-ed-img-input');
+
+        // Helpers
+        function showStatus(msg, isError = false) {
+            statusBox.style.display = 'block';
+            statusBox.style.color = isError ? 'var(--tag-pdf)' : 'var(--accent)';
+            statusBox.textContent = msg;
+        }
+
+        function hideStatus() {
+            statusBox.style.display = 'none';
+        }
+
+        function hexToRgb(hex) {
+            if (!hex || hex === 'transparent') return { r: 0, g: 0, b: 0 };
+            hex = hex.replace('#', '');
+            if (hex.length === 3) {
+                hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+            }
+            const num = parseInt(hex, 16);
+            return {
+                r: ((num >> 16) & 255) / 255,
+                g: ((num >> 8) & 255) / 255,
+                b: (num & 255) / 255
+            };
+        }
+
+        function dataUriToUint8(dataUri) {
+            const base64 = dataUri.split(',')[1];
+            const binaryStr = atob(base64);
+            const len = binaryStr.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryStr.charCodeAt(i);
+            }
+            return bytes;
+        }
+
+        function getEventPdfPoint(e) {
+            const rect = stage.getBoundingClientRect();
+            const clientX = e.clientX !== undefined ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+            const clientY = e.clientY !== undefined ? e.clientY : (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+            const screenX = clientX - rect.left;
+            const screenY = clientY - rect.top;
+            const ptX = screenX / currentZoom;
+            const ptY = screenY / currentZoom;
+            return {
+                screenX,
+                screenY,
+                ptX: Math.max(0, Math.min(pageWidthPt, ptX)),
+                ptY: Math.max(0, Math.min(pageHeightPt, ptY))
+            };
+        }
+
+        function saveHistory() {
+            const items = pageAnnotations[currentPageNum] ? JSON.parse(JSON.stringify(pageAnnotations[currentPageNum])) : [];
+            const drawings = pageDrawings[currentPageNum] ? JSON.parse(JSON.stringify(pageDrawings[currentPageNum])) : [];
+            undoStack.push({ pageNum: currentPageNum, items, drawings });
+            redoStack.length = 0;
+            if (undoStack.length > 30) undoStack.shift();
+        }
+
+        function undo() {
+            if (!undoStack.length) return;
+            const curState = {
+                pageNum: currentPageNum,
+                items: pageAnnotations[currentPageNum] ? JSON.parse(JSON.stringify(pageAnnotations[currentPageNum])) : [],
+                drawings: pageDrawings[currentPageNum] ? JSON.parse(JSON.stringify(pageDrawings[currentPageNum])) : []
+            };
+            redoStack.push(curState);
+            const prev = undoStack.pop();
+            pageAnnotations[prev.pageNum] = prev.items;
+            pageDrawings[prev.pageNum] = prev.drawings;
+            if (prev.pageNum !== currentPageNum) {
+                currentPageNum = prev.pageNum;
+            }
+            renderPage(currentPageNum);
+        }
+
+        function redo() {
+            if (!redoStack.length) return;
+            const curState = {
+                pageNum: currentPageNum,
+                items: pageAnnotations[currentPageNum] ? JSON.parse(JSON.stringify(pageAnnotations[currentPageNum])) : [],
+                drawings: pageDrawings[currentPageNum] ? JSON.parse(JSON.stringify(pageDrawings[currentPageNum])) : []
+            };
+            undoStack.push(curState);
+            const next = redoStack.pop();
+            pageAnnotations[next.pageNum] = next.items;
+            pageDrawings[next.pageNum] = next.drawings;
+            if (next.pageNum !== currentPageNum) {
+                currentPageNum = next.pageNum;
+            }
+            renderPage(currentPageNum);
+        }
+
+        // Dropzone & File Loading
+        chooseBtn.onclick = () => fileInput.click();
+        fileInput.onchange = (e) => {
+            if (e.target.files && e.target.files[0]) {
+                handleFile(e.target.files[0]);
+            }
+        };
+
+        blankBtn.onclick = async () => {
+            showStatus('Generating blank A4 document...');
+            try {
+                const { PDFDocument } = window.PDFLib;
+                const blankDoc = await PDFDocument.create();
+                blankDoc.addPage([595.28, 841.89]);
+                const bytes = await blankDoc.save();
+                await loadPdfBuffer(bytes.buffer, 'blank-document.pdf');
+                hideStatus();
+            } catch (err) {
+                showStatus('Failed to create blank document: ' + err.message, true);
+            }
+        };
+
+        dzBox.ondragover = (e) => { e.preventDefault(); dzBox.classList.add('dragover'); };
+        dzBox.ondragleave = () => dzBox.classList.remove('dragover');
+        dzBox.ondrop = (e) => {
+            e.preventDefault();
+            dzBox.classList.remove('dragover');
+            if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        };
+
+        async function handleFile(file) {
+            if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+                showStatus('Please select a valid PDF file.', true);
+                return;
+            }
+            showStatus('Reading PDF file into browser memory...');
+            try {
+                const buffer = await Utils.readFileAsArrayBuffer(file);
+                await loadPdfBuffer(buffer, file.name);
+                hideStatus();
+            } catch (err) {
+                showStatus('Failed to read file: ' + err.message, true);
+            }
+        }
+
+        async function loadPdfBuffer(buffer, filename) {
+            currentPdfBuffer = buffer;
+            originalFileName = filename || 'document.pdf';
+            fileNameEl.textContent = originalFileName;
+
+            showStatus('Parsing PDF structure and pages...');
+            try {
+                if (!window.pdfjsLib) {
+                    throw new Error('PDF.js library not loaded yet. Please wait a moment and try again.');
+                }
+                const loadingTask = window.pdfjsLib.getDocument({ data: currentPdfBuffer });
+                pdfDoc = await loadingTask.promise;
+                totalPages = pdfDoc.numPages;
+                currentPageNum = 1;
+                currentZoom = 1.0;
+                currentRotation = 0;
+                pageRotations[1] = 0;
+
+                totalPagesEl.textContent = totalPages;
+                pageNumInput.max = totalPages;
+                pageNumInput.value = 1;
+
+                dzBox.style.display = 'none';
+                wsBox.style.display = 'flex';
+
+                await renderThumbnails();
+                await renderPage(1);
+                updatePropertyRibbon();
+            } catch (err) {
+                console.error(err);
+                showStatus('Failed to load PDF: ' + err.message, true);
+            }
+        }
+
+        // Render Thumbnails Sidebar
+        async function renderThumbnails() {
+            sidebar.innerHTML = '';
+            for (let i = 1; i <= totalPages; i++) {
+                const card = document.createElement('div');
+                card.className = `pdf-ed-thumb-card ${i === currentPageNum ? 'active' : ''}`;
+                card.setAttribute('data-page', i);
+
+                const thumbCanvas = document.createElement('canvas');
+                thumbCanvas.className = 'pdf-ed-thumb-img';
+                const numLabel = document.createElement('div');
+                numLabel.className = 'pdf-ed-thumb-num';
+                numLabel.textContent = `Page ${i}`;
+
+                card.appendChild(thumbCanvas);
+                card.appendChild(numLabel);
+                sidebar.appendChild(card);
+
+                card.onclick = () => {
+                    if (currentPageNum !== i) {
+                        currentPageNum = i;
+                        pageNumInput.value = i;
+                        updateThumbnailActiveState();
+                        renderPage(i);
+                    }
+                };
+
+                // Render thumbnail async
+                pdfDoc.getPage(i).then(page => {
+                    const unscaled = page.getViewport({ scale: 1.0 });
+                    const scale = 140 / Math.max(unscaled.width, unscaled.height);
+                    const viewport = page.getViewport({ scale });
+                    thumbCanvas.width = viewport.width;
+                    thumbCanvas.height = viewport.height;
+                    const ctx = thumbCanvas.getContext('2d');
+                    page.render({ canvasContext: ctx, viewport });
+                });
+            }
+        }
+
+        function updateThumbnailActiveState() {
+            sidebar.querySelectorAll('.pdf-ed-thumb-card').forEach(card => {
+                const p = parseInt(card.getAttribute('data-page'), 10);
+                if (p === currentPageNum) card.classList.add('active');
+                else card.classList.remove('active');
+            });
+        }
+
+        // Render Active Page & Annotations
+        async function renderPage(pageNum) {
+            if (!pdfDoc) return;
+            const page = await pdfDoc.getPage(pageNum);
+            const baseViewport = page.getViewport({ scale: 1.0, rotation: currentRotation });
+            pageWidthPt = baseViewport.width;
+            pageHeightPt = baseViewport.height;
+
+            const displayWidth = Math.round(pageWidthPt * currentZoom);
+            const displayHeight = Math.round(pageHeightPt * currentZoom);
+
+            // Set Stage dimensions
+            stage.style.width = displayWidth + 'px';
+            stage.style.height = displayHeight + 'px';
+
+            // High-DPI supersampled PDF rendering for crispness
+            const dpr = 2; // 2x supersampling guarantees retina-sharp vector text
+            const scaledViewport = page.getViewport({ scale: currentZoom * dpr, rotation: currentRotation });
+
+            baseCanvas.width = scaledViewport.width;
+            baseCanvas.height = scaledViewport.height;
+            baseCanvas.style.width = displayWidth + 'px';
+            baseCanvas.style.height = displayHeight + 'px';
+
+            const baseCtx = baseCanvas.getContext('2d');
+            baseCtx.clearRect(0, 0, baseCanvas.width, baseCanvas.height);
+            await page.render({ canvasContext: baseCtx, viewport: scaledViewport }).promise;
+
+            // Setup Draw Canvas
+            drawCanvas.width = Math.round(displayWidth * dpr);
+            drawCanvas.height = Math.round(displayHeight * dpr);
+            drawCanvas.style.width = displayWidth + 'px';
+            drawCanvas.style.height = displayHeight + 'px';
+            renderDrawCanvasStrokes();
+
+            // Setup Annotation Layer
+            annoLayer.style.width = displayWidth + 'px';
+            annoLayer.style.height = displayHeight + 'px';
+            renderAnnotationItems();
+
+            // Update HUD
+            hudDims.textContent = `Page ${pageNum}: ${Math.round(pageWidthPt)} x ${Math.round(pageHeightPt)} pt (${(pageWidthPt * 0.352778).toFixed(1)} x ${(pageHeightPt * 0.352778).toFixed(1)} mm)`;
+            updateThumbnailActiveState();
+        }
+
+        function renderDrawCanvasStrokes() {
+            const dpr = 2;
+            const dCtx = drawCanvas.getContext('2d');
+            dCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+            const strokes = pageDrawings[currentPageNum] || [];
+
+            strokes.forEach(stroke => {
+                if (!stroke.points || stroke.points.length < 2) return;
+                dCtx.save();
+                dCtx.scale(currentZoom * dpr, currentZoom * dpr);
+                dCtx.strokeStyle = stroke.color;
+                dCtx.lineWidth = stroke.width;
+                dCtx.lineCap = 'round';
+                dCtx.lineJoin = 'round';
+                dCtx.globalAlpha = stroke.opacity ?? 1.0;
+                dCtx.beginPath();
+                dCtx.moveTo(stroke.points[0].ptX, stroke.points[0].ptY);
+                for (let i = 1; i < stroke.points.length; i++) {
+                    dCtx.lineTo(stroke.points[i].ptX, stroke.points[i].ptY);
+                }
+                dCtx.stroke();
+                dCtx.restore();
+            });
+        }
+
+        function renderAnnotationItems() {
+            annoLayer.innerHTML = '';
+            const items = pageAnnotations[currentPageNum] || [];
+
+            items.forEach(item => {
+                const el = document.createElement('div');
+                el.className = `pdf-anno-el type-${item.type} ${item.id === selectedId ? 'selected' : ''}`;
+                el.setAttribute('data-id', item.id);
+
+                const left = Math.round(item.ptX * currentZoom);
+                const top = Math.round(item.ptY * currentZoom);
+                const width = Math.round(item.ptW * currentZoom);
+                const height = Math.round(item.ptH * currentZoom);
+
+                el.style.left = left + 'px';
+                el.style.top = top + 'px';
+                el.style.width = width + 'px';
+                el.style.height = height + 'px';
+
+                if (item.type === 'whiteout') {
+                    el.style.background = '#ffffff';
+                    el.style.border = 'none';
+                } else if (item.type === 'redact') {
+                    el.style.background = '#000000';
+                    el.style.border = 'none';
+                } else if (item.type === 'rect') {
+                    el.style.background = item.fill && item.fill !== 'transparent' ? item.fill : 'transparent';
+                    el.style.border = `${item.strokeWidth || 2}px solid ${item.stroke || '#000000'}`;
+                } else if (item.type === 'circle') {
+                    el.style.background = item.fill && item.fill !== 'transparent' ? item.fill : 'transparent';
+                    el.style.border = `${item.strokeWidth || 2}px solid ${item.stroke || '#000000'}`;
+                    el.style.borderRadius = '50%';
+                } else if (item.type === 'line' || item.type === 'arrow') {
+                    el.innerHTML = `
+                        <svg width="100%" height="100%" style="display:block; overflow:visible;">
+                            <defs>
+                                <marker id="arrow-${item.id}" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                    <path d="M 0 0 L 10 5 L 0 10 z" fill="${item.stroke || '#000000'}"/>
+                                </marker>
+                            </defs>
+                            <line x1="0" y1="0" x2="${width}" y2="${height}" stroke="${item.stroke || '#000000'}" stroke-width="${item.strokeWidth || 2}" ${item.type === 'arrow' ? `marker-end="url(#arrow-${item.id})"` : ''} />
+                        </svg>
+                    `;
+                } else if (item.type === 'text') {
+                    el.style.color = item.color || '#000000';
+                    el.style.fontFamily = item.fontFamily === 'Courier' ? 'Courier, monospace' : (item.fontFamily === 'Times' ? 'Times New Roman, serif' : 'Helvetica, Arial, sans-serif');
+                    el.style.fontSize = Math.round((item.fontSize || 14) * currentZoom) + 'px';
+                    el.style.fontWeight = item.bold ? '700' : '400';
+                    el.style.fontStyle = item.italic ? 'italic' : 'normal';
+                    el.style.background = item.bgColor && item.bgColor !== 'transparent' ? item.bgColor : 'transparent';
+                    el.style.padding = '2px 4px';
+                    el.textContent = item.text || '';
+                } else if (item.type === 'image' || item.type === 'signature' || item.type === 'stamp') {
+                    const img = document.createElement('img');
+                    img.src = item.dataUrl;
+                    img.style.cssText = 'width:100%; height:100%; object-fit:contain; display:block; pointer-events:none;';
+                    el.appendChild(img);
+                }
+
+                // If selected, attach 8 resize handles
+                if (item.id === selectedId) {
+                    ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'].forEach(dir => {
+                        const hdl = document.createElement('div');
+                        hdl.className = `pdf-anno-hdl ${dir}`;
+                        hdl.setAttribute('data-handle', dir);
+                        el.appendChild(hdl);
+                    });
+                }
+
+                annoLayer.appendChild(el);
+            });
+        }
+
+        // Selection & Item Manipulation
+        function selectItem(id) {
+            selectedId = id;
+            renderAnnotationItems();
+            updatePropertyRibbon();
+        }
+
+        function deselectItem() {
+            if (selectedId !== null) {
+                selectedId = null;
+                renderAnnotationItems();
+                updatePropertyRibbon();
+            }
+        }
+
+        function getSelectedItem() {
+            if (!selectedId) return null;
+            const items = pageAnnotations[currentPageNum] || [];
+            return items.find(it => it.id === selectedId) || null;
+        }
+
+        function deleteSelectedItem() {
+            if (!selectedId) return;
+            saveHistory();
+            pageAnnotations[currentPageNum] = (pageAnnotations[currentPageNum] || []).filter(it => it.id !== selectedId);
+            selectedId = null;
+            renderAnnotationItems();
+            updatePropertyRibbon();
+        }
+
+        function duplicateSelectedItem() {
+            const it = getSelectedItem();
+            if (!it) return;
+            saveHistory();
+            const clone = JSON.parse(JSON.stringify(it));
+            clone.id = 'anno_' + Date.now();
+            clone.ptX = Math.min(pageWidthPt - clone.ptW, clone.ptX + 15);
+            clone.ptY = Math.min(pageHeightPt - clone.ptH, clone.ptY + 15);
+            (pageAnnotations[currentPageNum] = pageAnnotations[currentPageNum] || []).push(clone);
+            selectItem(clone.id);
+        }
+
+        // Dynamic Property Ribbon Generator
+        function updatePropertyRibbon() {
+            const sel = getSelectedItem();
+            propsRibbon.innerHTML = '';
+
+            if (sel) {
+                // Properties for Selected Element
+                if (sel.type === 'text') {
+                    propsRibbon.innerHTML = `
+                        <div class="pdf-ed-prop-item">
+                            <span class="pdf-ed-prop-label">Font</span>
+                            <select id="prop-font" class="pdf-ed-select-mini">
+                                <option value="Helvetica" ${sel.fontFamily === 'Helvetica' ? 'selected' : ''}>Helvetica</option>
+                                <option value="Times" ${sel.fontFamily === 'Times' ? 'selected' : ''}>Times Roman</option>
+                                <option value="Courier" ${sel.fontFamily === 'Courier' ? 'selected' : ''}>Courier</option>
+                            </select>
+                        </div>
+                        <div class="pdf-ed-prop-item">
+                            <span class="pdf-ed-prop-label">Size</span>
+                            <select id="prop-size" class="pdf-ed-select-mini">
+                                ${[10, 12, 14, 16, 18, 20, 24, 28, 32, 40, 48, 64].map(s => `<option value="${s}" ${sel.fontSize === s ? 'selected' : ''}>${s} pt</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="pdf-ed-prop-item">
+                            <span class="pdf-ed-prop-label">Color</span>
+                            <input type="color" id="prop-color" value="${sel.color || '#000000'}" style="width:24px; height:24px; padding:0; border:none; background:none; cursor:pointer;">
+                        </div>
+                        <div class="pdf-ed-prop-item">
+                            <span class="pdf-ed-prop-label">Fill</span>
+                            <select id="prop-bg" class="pdf-ed-select-mini">
+                                <option value="transparent" ${sel.bgColor === 'transparent' ? 'selected' : ''}>None (Transparent)</option>
+                                <option value="#ffffff" ${sel.bgColor === '#ffffff' ? 'selected' : ''}>Whiteout Box</option>
+                                <option value="#fff159" ${sel.bgColor === '#fff159' ? 'selected' : ''}>Highlight Yellow</option>
+                            </select>
+                        </div>
+                        <div class="pdf-ed-prop-item">
+                            <button type="button" class="pdf-ed-btn-mini ${sel.bold ? 'active' : ''}" id="prop-bold" title="Toggle Bold"><b>B</b></button>
+                            <button type="button" class="pdf-ed-btn-mini ${sel.italic ? 'active' : ''}" id="prop-italic" title="Toggle Italic"><i>I</i></button>
+                        </div>
+                        <div class="pdf-ed-prop-item" style="margin-left:auto;">
+                            <button type="button" class="pdf-ed-btn-mini" id="prop-dup" title="Duplicate">📋 Duplicate</button>
+                            <button type="button" class="pdf-ed-btn-mini" id="prop-del" style="color:var(--tag-pdf);" title="Delete">🗑️ Delete</button>
+                        </div>
+                    `;
+
+                    propsRibbon.querySelector('#prop-font').onchange = (e) => { saveHistory(); sel.fontFamily = e.target.value; renderAnnotationItems(); };
+                    propsRibbon.querySelector('#prop-size').onchange = (e) => { saveHistory(); sel.fontSize = parseInt(e.target.value, 10); renderAnnotationItems(); };
+                    propsRibbon.querySelector('#prop-color').onchange = (e) => { saveHistory(); sel.color = e.target.value; renderAnnotationItems(); };
+                    propsRibbon.querySelector('#prop-bg').onchange = (e) => { saveHistory(); sel.bgColor = e.target.value; renderAnnotationItems(); };
+                    propsRibbon.querySelector('#prop-bold').onclick = () => { saveHistory(); sel.bold = !sel.bold; renderAnnotationItems(); updatePropertyRibbon(); };
+                    propsRibbon.querySelector('#prop-italic').onclick = () => { saveHistory(); sel.italic = !sel.italic; renderAnnotationItems(); updatePropertyRibbon(); };
+                    propsRibbon.querySelector('#prop-dup').onclick = duplicateSelectedItem;
+                    propsRibbon.querySelector('#prop-del').onclick = deleteSelectedItem;
+                } else if (sel.type === 'whiteout' || sel.type === 'redact') {
+                    propsRibbon.innerHTML = `
+                        <div class="pdf-ed-prop-item">
+                            <span class="pdf-ed-prop-label">${sel.type === 'whiteout' ? 'Whiteout Eraser' : 'Black Redaction'}</span>
+                            <span style="font-size:0.75rem; color:var(--text-dim);">Coordinates: X: ${Math.round(sel.ptX)}, Y: ${Math.round(sel.ptY)}, W: ${Math.round(sel.ptW)}, H: ${Math.round(sel.ptH)} pt</span>
+                        </div>
+                        <div class="pdf-ed-prop-item" style="margin-left:auto;">
+                            <button type="button" class="pdf-ed-btn-mini" id="prop-dup">📋 Duplicate</button>
+                            <button type="button" class="pdf-ed-btn-mini" id="prop-del" style="color:var(--tag-pdf);">🗑️ Delete</button>
+                        </div>
+                    `;
+                    propsRibbon.querySelector('#prop-dup').onclick = duplicateSelectedItem;
+                    propsRibbon.querySelector('#prop-del').onclick = deleteSelectedItem;
+                } else if (sel.type === 'rect' || sel.type === 'circle' || sel.type === 'line' || sel.type === 'arrow') {
+                    propsRibbon.innerHTML = `
+                        <div class="pdf-ed-prop-item">
+                            <span class="pdf-ed-prop-label">Border Color</span>
+                            <input type="color" id="prop-stroke" value="${sel.stroke || '#000000'}" style="width:24px; height:24px; padding:0; border:none; background:none; cursor:pointer;">
+                        </div>
+                        <div class="pdf-ed-prop-item">
+                            <span class="pdf-ed-prop-label">Width</span>
+                            <select id="prop-stroke-w" class="pdf-ed-select-mini">
+                                ${[1, 2, 3, 4, 6, 8].map(w => `<option value="${w}" ${sel.strokeWidth === w ? 'selected' : ''}>${w}px</option>`).join('')}
+                            </select>
+                        </div>
+                        ${sel.type === 'rect' || sel.type === 'circle' ? `
+                            <div class="pdf-ed-prop-item">
+                                <span class="pdf-ed-prop-label">Fill</span>
+                                <select id="prop-fill" class="pdf-ed-select-mini">
+                                    <option value="transparent" ${sel.fill === 'transparent' ? 'selected' : ''}>Transparent</option>
+                                    <option value="#ffffff" ${sel.fill === '#ffffff' ? 'selected' : ''}>White</option>
+                                    <option value="#000000" ${sel.fill === '#000000' ? 'selected' : ''}>Black</option>
+                                    <option value="#fff159" ${sel.fill === '#fff159' ? 'selected' : ''}>Yellow</option>
+                                    <option value="#00e599" ${sel.fill === '#00e599' ? 'selected' : ''}>Emerald</option>
+                                </select>
+                            </div>
+                        ` : ''}
+                        <div class="pdf-ed-prop-item" style="margin-left:auto;">
+                            <button type="button" class="pdf-ed-btn-mini" id="prop-dup">📋 Duplicate</button>
+                            <button type="button" class="pdf-ed-btn-mini" id="prop-del" style="color:var(--tag-pdf);">🗑️ Delete</button>
+                        </div>
+                    `;
+                    propsRibbon.querySelector('#prop-stroke').onchange = (e) => { saveHistory(); sel.stroke = e.target.value; renderAnnotationItems(); };
+                    propsRibbon.querySelector('#prop-stroke-w').onchange = (e) => { saveHistory(); sel.strokeWidth = parseInt(e.target.value, 10); renderAnnotationItems(); };
+                    if (propsRibbon.querySelector('#prop-fill')) {
+                        propsRibbon.querySelector('#prop-fill').onchange = (e) => { saveHistory(); sel.fill = e.target.value; renderAnnotationItems(); };
+                    }
+                    propsRibbon.querySelector('#prop-dup').onclick = duplicateSelectedItem;
+                    propsRibbon.querySelector('#prop-del').onclick = deleteSelectedItem;
+                } else {
+                    // Image / Signature / Stamp
+                    propsRibbon.innerHTML = `
+                        <div class="pdf-ed-prop-item">
+                            <span class="pdf-ed-prop-label">${sel.type.toUpperCase()}</span>
+                            <span style="font-size:0.75rem; color:var(--text-dim);">${Math.round(sel.ptW)} x ${Math.round(sel.ptH)} pt</span>
+                        </div>
+                        <div class="pdf-ed-prop-item" style="margin-left:auto;">
+                            <button type="button" class="pdf-ed-btn-mini" id="prop-dup">📋 Duplicate</button>
+                            <button type="button" class="pdf-ed-btn-mini" id="prop-del" style="color:var(--tag-pdf);">🗑️ Delete</button>
+                        </div>
+                    `;
+                    propsRibbon.querySelector('#prop-dup').onclick = duplicateSelectedItem;
+                    propsRibbon.querySelector('#prop-del').onclick = deleteSelectedItem;
+                }
+            } else {
+                // Properties for Active Tool
+                if (activeTool === 'select') {
+                    propsRibbon.innerHTML = `
+                        <span style="color:var(--text-muted); font-size:0.78rem;">
+                            👆 Click any text, whiteout, signature, or shape to select, drag to reposition, or drag corner handles to resize.
+                        </span>
+                    `;
+                } else if (activeTool === 'text') {
+                    propsRibbon.innerHTML = `
+                        <div class="pdf-ed-prop-item">
+                            <span class="pdf-ed-prop-label">Font</span>
+                            <select id="def-font" class="pdf-ed-select-mini">
+                                <option value="Helvetica" ${textProps.fontFamily === 'Helvetica' ? 'selected' : ''}>Helvetica</option>
+                                <option value="Times" ${textProps.fontFamily === 'Times' ? 'selected' : ''}>Times Roman</option>
+                                <option value="Courier" ${textProps.fontFamily === 'Courier' ? 'selected' : ''}>Courier</option>
+                            </select>
+                        </div>
+                        <div class="pdf-ed-prop-item">
+                            <span class="pdf-ed-prop-label">Size</span>
+                            <select id="def-size" class="pdf-ed-select-mini">
+                                ${[10, 12, 14, 16, 18, 20, 24, 28, 32, 40, 48].map(s => `<option value="${s}" ${textProps.fontSize === s ? 'selected' : ''}>${s} pt</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="pdf-ed-prop-item">
+                            <span class="pdf-ed-prop-label">Color</span>
+                            <input type="color" id="def-color" value="${textProps.color}" style="width:24px; height:24px; padding:0; border:none; background:none; cursor:pointer;">
+                        </div>
+                        <span style="color:var(--text-dim); font-size:0.75rem; margin-left:0.5rem;">Click anywhere on the PDF page to place text</span>
+                    `;
+                    propsRibbon.querySelector('#def-font').onchange = (e) => textProps.fontFamily = e.target.value;
+                    propsRibbon.querySelector('#def-size').onchange = (e) => textProps.fontSize = parseInt(e.target.value, 10);
+                    propsRibbon.querySelector('#def-color').onchange = (e) => textProps.color = e.target.value;
+                } else if (activeTool === 'whiteout') {
+                    propsRibbon.innerHTML = `
+                        <span style="color:var(--accent); font-weight:600; font-size:0.78rem;">
+                            ⬜ Whiteout Mode: Click & drag over any unwanted PDF text or numbers to permanently erase/cover them.
+                        </span>
+                    `;
+                } else if (activeTool === 'redact') {
+                    propsRibbon.innerHTML = `
+                        <span style="color:var(--tag-pdf); font-weight:600; font-size:0.78rem;">
+                            ⬛ Redact Mode: Click & drag a black redaction block over sensitive confidential content.
+                        </span>
+                    `;
+                } else if (activeTool === 'draw') {
+                    propsRibbon.innerHTML = `
+                        <div class="pdf-ed-prop-item">
+                            <span class="pdf-ed-prop-label">Pen Color</span>
+                            <div class="pdf-ed-color-swatches" id="pen-swatches">
+                                ${['#000000', '#1e3a8a', '#dc2626', '#059669', '#ffffff'].map(c => `
+                                    <div class="pdf-ed-swatch ${penProps.color === c ? 'active' : ''}" data-color="${c}" style="background:${c};"></div>
+                                `).join('')}
+                                <input type="color" id="pen-custom-color" value="${penProps.color}" style="width:20px; height:20px; padding:0; border:none; background:none; cursor:pointer;">
+                            </div>
+                        </div>
+                        <div class="pdf-ed-prop-item">
+                            <span class="pdf-ed-prop-label">Thickness</span>
+                            <select id="pen-width" class="pdf-ed-select-mini">
+                                ${[1, 2, 3, 5, 8].map(w => `<option value="${w}" ${penProps.width === w ? 'selected' : ''}>${w}px</option>`).join('')}
+                            </select>
+                        </div>
+                    `;
+                    propsRibbon.querySelectorAll('.pdf-ed-swatch').forEach(sw => {
+                        sw.onclick = () => {
+                            penProps.color = sw.getAttribute('data-color');
+                            updatePropertyRibbon();
+                        };
+                    });
+                    propsRibbon.querySelector('#pen-custom-color').onchange = (e) => {
+                        penProps.color = e.target.value;
+                        updatePropertyRibbon();
+                    };
+                    propsRibbon.querySelector('#pen-width').onchange = (e) => penProps.width = parseInt(e.target.value, 10);
+                } else if (activeTool === 'highlight') {
+                    propsRibbon.innerHTML = `
+                        <div class="pdf-ed-prop-item">
+                            <span class="pdf-ed-prop-label">Highlighter Color</span>
+                            <div class="pdf-ed-color-swatches">
+                                ${['#fff159', '#00e676', '#00e5ff', '#ff4081', '#ff9100'].map(c => `
+                                    <div class="pdf-ed-swatch ${highlightProps.color === c ? 'active' : ''}" data-color="${c}" style="background:${c};"></div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        <div class="pdf-ed-prop-item">
+                            <span class="pdf-ed-prop-label">Thickness</span>
+                            <select id="hi-width" class="pdf-ed-select-mini">
+                                ${[12, 18, 24, 32].map(w => `<option value="${w}" ${highlightProps.width === w ? 'selected' : ''}>${w}px</option>`).join('')}
+                            </select>
+                        </div>
+                    `;
+                    propsRibbon.querySelectorAll('.pdf-ed-swatch').forEach(sw => {
+                        sw.onclick = () => {
+                            highlightProps.color = sw.getAttribute('data-color');
+                            updatePropertyRibbon();
+                        };
+                    });
+                    propsRibbon.querySelector('#hi-width').onchange = (e) => highlightProps.width = parseInt(e.target.value, 10);
+                } else if (activeTool === 'shape') {
+                    propsRibbon.innerHTML = `
+                        <div class="pdf-ed-prop-item">
+                            <span class="pdf-ed-prop-label">Shape Type</span>
+                            <select id="shape-type" class="pdf-ed-select-mini">
+                                <option value="rect" ${shapeSubtype === 'rect' ? 'selected' : ''}>Rectangle</option>
+                                <option value="circle" ${shapeSubtype === 'circle' ? 'selected' : ''}>Circle</option>
+                                <option value="line" ${shapeSubtype === 'line' ? 'selected' : ''}>Line</option>
+                                <option value="arrow" ${shapeSubtype === 'arrow' ? 'selected' : ''}>Arrow</option>
+                            </select>
+                        </div>
+                        <div class="pdf-ed-prop-item">
+                            <span class="pdf-ed-prop-label">Border</span>
+                            <input type="color" id="shape-stroke" value="${shapeProps.stroke}" style="width:24px; height:24px; padding:0; border:none; background:none; cursor:pointer;">
+                        </div>
+                        <div class="pdf-ed-prop-item">
+                            <span class="pdf-ed-prop-label">Width</span>
+                            <select id="shape-w" class="pdf-ed-select-mini">
+                                ${[1, 2, 3, 5, 8].map(w => `<option value="${w}" ${shapeProps.strokeWidth === w ? 'selected' : ''}>${w}px</option>`).join('')}
+                            </select>
+                        </div>
+                    `;
+                    propsRibbon.querySelector('#shape-type').onchange = (e) => shapeSubtype = e.target.value;
+                    propsRibbon.querySelector('#shape-stroke').onchange = (e) => shapeProps.stroke = e.target.value;
+                    propsRibbon.querySelector('#shape-w').onchange = (e) => shapeProps.strokeWidth = parseInt(e.target.value, 10);
+                }
+            }
+        }
+
+        // Tool Selection Handlers
+        toolsRibbon.querySelectorAll('.pdf-ed-tool-btn').forEach(btn => {
+            btn.onclick = () => {
+                const tool = btn.getAttribute('data-tool');
+                if (tool === 'signature') {
+                    openSignatureModal();
+                    return;
+                }
+                if (tool === 'image') {
+                    imgInput.click();
+                    return;
+                }
+                if (tool === 'stamp') {
+                    openStampModal();
+                    return;
+                }
+
+                toolsRibbon.querySelectorAll('.pdf-ed-tool-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                activeTool = tool;
+                deselectItem();
+                updatePropertyRibbon();
+
+                // Update cursor
+                if (activeTool === 'select') stage.style.cursor = 'default';
+                else if (activeTool === 'text') stage.style.cursor = 'text';
+                else stage.style.cursor = 'crosshair';
+            };
+        });
+
+        // Stage Interactions: Mouse & Touch Events
+        stage.addEventListener('mousemove', (e) => {
+            const pt = getEventPdfPoint(e);
+            hudCoords.textContent = `Cursor: X: ${pt.ptX.toFixed(1)} pt, Y: ${pt.ptY.toFixed(1)} pt`;
+
+            if (!isInteracting) return;
+
+            if (interactionMode === 'drag') {
+                const sel = getSelectedItem();
+                if (!sel) return;
+                const dx = (e.clientX - startClientX) / currentZoom;
+                const dy = (e.clientY - startClientY) / currentZoom;
+                sel.ptX = Math.max(0, Math.min(pageWidthPt - sel.ptW, startPtX + dx));
+                sel.ptY = Math.max(0, Math.min(pageHeightPt - sel.ptH, startPtY + dy));
+                renderAnnotationItems();
+            } else if (interactionMode === 'resize') {
+                const sel = getSelectedItem();
+                if (!sel) return;
+                const dx = (e.clientX - startClientX) / currentZoom;
+                const dy = (e.clientY - startClientY) / currentZoom;
+                const minSize = 10;
+
+                if (resizeHandle.includes('e')) sel.ptW = Math.max(minSize, startPtW + dx);
+                if (resizeHandle.includes('s')) sel.ptH = Math.max(minSize, startPtH + dy);
+                if (resizeHandle.includes('w')) {
+                    const newW = Math.max(minSize, startPtW - dx);
+                    sel.ptX = startPtX + (startPtW - newW);
+                    sel.ptW = newW;
+                }
+                if (resizeHandle.includes('n')) {
+                    const newH = Math.max(minSize, startPtH - dy);
+                    sel.ptY = startPtY + (startPtH - newH);
+                    sel.ptH = newH;
+                }
+                renderAnnotationItems();
+            } else if (interactionMode === 'draw') {
+                if (activeStroke) {
+                    activeStroke.points.push(pt);
+                    renderDrawCanvasStrokes();
+                }
+            }
+        });
+
+        stage.addEventListener('mousedown', (e) => {
+            // Check if clicked on a resize handle
+            const handleEl = e.target.closest('.pdf-anno-hdl');
+            if (handleEl) {
+                e.stopPropagation();
+                const sel = getSelectedItem();
+                if (!sel) return;
+                saveHistory();
+                isInteracting = true;
+                interactionMode = 'resize';
+                resizeHandle = handleEl.getAttribute('data-handle');
+                startClientX = e.clientX;
+                startClientY = e.clientY;
+                startPtX = sel.ptX;
+                startPtY = sel.ptY;
+                startPtW = sel.ptW;
+                startPtH = sel.ptH;
+                return;
+            }
+
+            // Check if clicked on an existing annotation item
+            const itemEl = e.target.closest('.pdf-anno-el');
+            if (itemEl && activeTool === 'select') {
+                const id = itemEl.getAttribute('data-id');
+                selectItem(id);
+                const sel = getSelectedItem();
+                if (!sel) return;
+                saveHistory();
+                isInteracting = true;
+                interactionMode = 'drag';
+                startClientX = e.clientX;
+                startClientY = e.clientY;
+                startPtX = sel.ptX;
+                startPtY = sel.ptY;
+                return;
+            }
+
+            // Clicked on blank area or drawing tool active
+            if (activeTool === 'select') {
+                deselectItem();
+            } else if (activeTool === 'text') {
+                saveHistory();
+                const pt = getEventPdfPoint(e);
+                const newText = {
+                    id: 'text_' + Date.now(),
+                    type: 'text',
+                    ptX: pt.ptX,
+                    ptY: pt.ptY,
+                    ptW: 180,
+                    ptH: 26,
+                    text: 'Double-click to edit text',
+                    fontFamily: textProps.fontFamily,
+                    fontSize: textProps.fontSize,
+                    color: textProps.color,
+                    bgColor: textProps.bgColor,
+                    bold: textProps.bold,
+                    italic: textProps.italic
+                };
+                (pageAnnotations[currentPageNum] = pageAnnotations[currentPageNum] || []).push(newText);
+                selectItem(newText.id);
+                // Reset tool back to select
+                toolsRibbon.querySelector('[data-tool="select"]').click();
+            } else if (activeTool === 'whiteout' || activeTool === 'redact' || activeTool === 'shape') {
+                saveHistory();
+                isInteracting = true;
+                interactionMode = 'create-box';
+                const pt = getEventPdfPoint(e);
+                startPtX = pt.ptX;
+                startPtY = pt.ptY;
+            } else if (activeTool === 'draw' || activeTool === 'highlight') {
+                saveHistory();
+                isInteracting = true;
+                interactionMode = 'draw';
+                const pt = getEventPdfPoint(e);
+                activeStroke = {
+                    type: activeTool,
+                    points: [pt],
+                    color: activeTool === 'draw' ? penProps.color : highlightProps.color,
+                    width: activeTool === 'draw' ? penProps.width : highlightProps.width,
+                    opacity: activeTool === 'draw' ? 1.0 : 0.45
+                };
+                (pageDrawings[currentPageNum] = pageDrawings[currentPageNum] || []).push(activeStroke);
+            }
+        });
+
+        window.addEventListener('mouseup', (e) => {
+            if (!isInteracting) return;
+
+            if (interactionMode === 'create-box') {
+                const pt = getEventPdfPoint(e);
+                const x = Math.min(startPtX, pt.ptX);
+                const y = Math.min(startPtY, pt.ptY);
+                const w = Math.max(15, Math.abs(pt.ptX - startPtX));
+                const h = Math.max(10, Math.abs(pt.ptY - startPtY));
+
+                let newItem = null;
+                if (activeTool === 'whiteout') {
+                    newItem = {
+                        id: 'whiteout_' + Date.now(),
+                        type: 'whiteout',
+                        ptX: x, ptY: y, ptW: w, ptH: h,
+                        fill: '#ffffff', opacity: 1.0
+                    };
+                } else if (activeTool === 'redact') {
+                    newItem = {
+                        id: 'redact_' + Date.now(),
+                        type: 'redact',
+                        ptX: x, ptY: y, ptW: w, ptH: h,
+                        fill: '#000000', opacity: 1.0
+                    };
+                } else if (activeTool === 'shape') {
+                    newItem = {
+                        id: 'shape_' + Date.now(),
+                        type: shapeSubtype,
+                        ptX: x, ptY: y, ptW: w, ptH: h,
+                        stroke: shapeProps.stroke,
+                        strokeWidth: shapeProps.strokeWidth,
+                        fill: shapeProps.fill,
+                        opacity: 1.0
+                    };
+                }
+
+                if (newItem) {
+                    (pageAnnotations[currentPageNum] = pageAnnotations[currentPageNum] || []).push(newItem);
+                    selectItem(newItem.id);
+                    toolsRibbon.querySelector('[data-tool="select"]').click();
+                }
+            }
+
+            isInteracting = false;
+            interactionMode = null;
+            activeStroke = null;
+        });
+
+        // Double Click to Edit Text In-Place
+        annoLayer.addEventListener('dblclick', (e) => {
+            const itemEl = e.target.closest('.pdf-anno-el.type-text');
+            if (!itemEl) return;
+            const sel = getSelectedItem();
+            if (!sel || sel.type !== 'text') return;
+
+            const originalText = sel.text;
+            const newText = prompt('Edit Text Content:', originalText);
+            if (newText !== null && newText !== originalText) {
+                saveHistory();
+                sel.text = newText;
+                renderAnnotationItems();
+            }
+        });
+
+        // Keyboard Shortcuts
+        window.addEventListener('keydown', (e) => {
+            if (!wsBox || wsBox.style.display === 'none') return;
+            // Ignore if active in input/textarea
+            if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+
+            if (e.key === 'Delete' || e.key === 'Backspace') {
+                if (selectedId) {
+                    e.preventDefault();
+                    deleteSelectedItem();
+                }
+            } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+                e.preventDefault();
+                if (e.shiftKey) redo();
+                else undo();
+            } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+                e.preventDefault();
+                redo();
+            }
+        });
+
+        // Topbar Controls Handlers
+        prevBtn.onclick = () => {
+            if (currentPageNum > 1) {
+                currentPageNum--;
+                pageNumInput.value = currentPageNum;
+                renderPage(currentPageNum);
+            }
+        };
+
+        nextBtn.onclick = () => {
+            if (currentPageNum < totalPages) {
+                currentPageNum++;
+                pageNumInput.value = currentPageNum;
+                renderPage(currentPageNum);
+            }
+        };
+
+        pageNumInput.onchange = () => {
+            const val = parseInt(pageNumInput.value, 10);
+            if (val >= 1 && val <= totalPages) {
+                currentPageNum = val;
+                renderPage(currentPageNum);
+            } else {
+                pageNumInput.value = currentPageNum;
+            }
+        };
+
+        rotateBtn.onclick = () => {
+            currentRotation = (currentRotation + 90) % 360;
+            pageRotations[currentPageNum] = currentRotation;
+            renderPage(currentPageNum);
+        };
+
+        zoomInBtn.onclick = () => {
+            if (currentZoom < 2.5) {
+                currentZoom = Math.min(2.5, +(currentZoom + 0.15).toFixed(2));
+                zoomTxt.textContent = `${Math.round(currentZoom * 100)}%`;
+                renderPage(currentPageNum);
+            }
+        };
+
+        zoomOutBtn.onclick = () => {
+            if (currentZoom > 0.4) {
+                currentZoom = Math.max(0.4, +(currentZoom - 0.15).toFixed(2));
+                zoomTxt.textContent = `${Math.round(currentZoom * 100)}%`;
+                renderPage(currentPageNum);
+            }
+        };
+
+        zoomFitBtn.onclick = () => {
+            const availWidth = viewport.clientWidth - 80;
+            if (availWidth > 200 && pageWidthPt > 0) {
+                currentZoom = +(availWidth / pageWidthPt).toFixed(2);
+                zoomTxt.textContent = `${Math.round(currentZoom * 100)}%`;
+                renderPage(currentPageNum);
+            }
+        };
+
+        undoBtn.onclick = undo;
+        redoBtn.onclick = redo;
+        clearBtn.onclick = () => {
+            if (confirm(`Clear all annotations and drawings on Page ${currentPageNum}?`)) {
+                saveHistory();
+                pageAnnotations[currentPageNum] = [];
+                pageDrawings[currentPageNum] = [];
+                selectedId = null;
+                renderPage(currentPageNum);
+                updatePropertyRibbon();
+            }
+        };
+
+        newBtn.onclick = () => {
+            if (confirm('Discard changes and open another PDF document?')) {
+                currentPdfBuffer = null;
+                pdfDoc = null;
+                wsBox.style.display = 'none';
+                dzBox.style.display = 'block';
+                hideStatus();
+            }
+        };
+
+        // Insert Image Handler
+        imgInput.onchange = (e) => {
+            if (e.target.files && e.target.files[0]) {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const img = new Image();
+                    img.onload = () => {
+                        saveHistory();
+                        const maxW = 200;
+                        const aspect = img.height / img.width;
+                        const w = Math.min(maxW, img.width);
+                        const h = w * aspect;
+                        const newItem = {
+                            id: 'img_' + Date.now(),
+                            type: 'image',
+                            ptX: (pageWidthPt - w) / 2,
+                            ptY: (pageHeightPt - h) / 2,
+                            ptW: w,
+                            ptH: h,
+                            dataUrl: reader.result,
+                            opacity: 1.0
+                        };
+                        (pageAnnotations[currentPageNum] = pageAnnotations[currentPageNum] || []).push(newItem);
+                        selectItem(newItem.id);
+                        toolsRibbon.querySelector('[data-tool="select"]').click();
+                    };
+                    img.src = reader.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+
+        // Signature Modal Dialog
+        function openSignatureModal() {
+            let modal = document.getElementById('pdf-ed-sig-modal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'pdf-ed-sig-modal';
+                modal.className = 'pdf-ed-modal';
+                document.body.appendChild(modal);
+            }
+
+            modal.innerHTML = `
+                <div class="pdf-ed-modal-card">
+                    <div class="pdf-ed-modal-header">
+                        <div class="pdf-ed-modal-title">✍️ Create & Insert Signature</div>
+                        <button type="button" class="pdf-ed-modal-close" id="sig-modal-close">✕</button>
+                    </div>
+                    <div class="pdf-ed-modal-body">
+                        <div class="pdf-ed-modal-tabs">
+                            <button type="button" class="pdf-ed-tab-btn active" id="tab-sig-draw">Draw Signature</button>
+                            <button type="button" class="pdf-ed-tab-btn" id="tab-sig-type">Type Signature</button>
+                        </div>
+                        <div id="sig-panel-draw">
+                            <canvas class="pdf-ed-sig-pad" id="sig-pad-canvas" width="460" height="170"></canvas>
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:0.75rem;">
+                                <div style="display:flex; gap:0.4rem; align-items:center;">
+                                    <span style="font-size:0.75rem; color:var(--text-dim);">Ink:</span>
+                                    <div class="pdf-ed-swatch active" data-ink="#000000" style="background:#000000;"></div>
+                                    <div class="pdf-ed-swatch" data-ink="#1e3a8a" style="background:#1e3a8a;"></div>
+                                    <div class="pdf-ed-swatch" data-ink="#2563eb" style="background:#2563eb;"></div>
+                                </div>
+                                <button type="button" class="pdf-ed-btn-mini" id="sig-clear-pad">Clear Pad</button>
+                            </div>
+                        </div>
+                        <div id="sig-panel-type" style="display:none;">
+                            <input type="text" id="sig-type-input" placeholder="Type your name (e.g. Shajjad Khan)" style="width:100%; padding:0.65rem 0.85rem; background:var(--bg-input); border:1px solid var(--border-dim); border-radius:var(--radius-sm); color:var(--text-main); font-size:1rem; margin-bottom:1rem;">
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;" id="sig-type-previews">
+                                ${['Brush Script MT', 'Dancing Script', 'Caveat', 'cursive'].map((f, i) => `
+                                    <div class="sig-type-card ${i === 0 ? 'selected' : ''}" data-font="${f}" style="padding:0.75rem; background:#080d1a; border:1px solid var(--border-dim); border-radius:var(--radius-sm); cursor:pointer; text-align:center;">
+                                        <div style="font-family:'${f}', cursive; font-size:1.4rem; color:var(--accent-blue); line-height:1.2;">Your Signature</div>
+                                        <div style="font-size:0.7rem; color:var(--text-dim); margin-top:0.25rem;">Style ${i+1}</div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="pdf-ed-modal-footer">
+                        <button type="button" class="btn-secondary" id="sig-cancel-btn">Cancel</button>
+                        <button type="button" class="btn-primary" id="sig-insert-btn">Insert Signature</button>
+                    </div>
+                </div>
+            `;
+
+            modal.style.display = 'flex';
+
+            const padCanvas = modal.querySelector('#sig-pad-canvas');
+            const padCtx = padCanvas.getContext('2d');
+            let sigInk = '#000000';
+            let isSigDrawing = false;
+            let sigMode = 'draw';
+            let selectedTypeFont = 'Brush Script MT';
+
+            modal.querySelector('#sig-modal-close').onclick = () => modal.style.display = 'none';
+            modal.querySelector('#sig-cancel-btn').onclick = () => modal.style.display = 'none';
+
+            // Draw Pad Handlers
+            padCanvas.onmousedown = (e) => {
+                isSigDrawing = true;
+                const rect = padCanvas.getBoundingClientRect();
+                padCtx.strokeStyle = sigInk;
+                padCtx.lineWidth = 3;
+                padCtx.lineCap = 'round';
+                padCtx.lineJoin = 'round';
+                padCtx.beginPath();
+                padCtx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+            };
+            padCanvas.onmousemove = (e) => {
+                if (!isSigDrawing) return;
+                const rect = padCanvas.getBoundingClientRect();
+                padCtx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+                padCtx.stroke();
+            };
+            window.addEventListener('mouseup', () => isSigDrawing = false);
+
+            modal.querySelectorAll('[data-ink]').forEach(sw => {
+                sw.onclick = () => {
+                    modal.querySelectorAll('[data-ink]').forEach(s => s.classList.remove('active'));
+                    sw.classList.add('active');
+                    sigInk = sw.getAttribute('data-ink');
+                };
+            });
+
+            modal.querySelector('#sig-clear-pad').onclick = () => {
+                padCtx.clearRect(0, 0, padCanvas.width, padCanvas.height);
+            };
+
+            // Tab Switching
+            modal.querySelector('#tab-sig-draw').onclick = () => {
+                sigMode = 'draw';
+                modal.querySelector('#tab-sig-draw').classList.add('active');
+                modal.querySelector('#tab-sig-type').classList.remove('active');
+                modal.querySelector('#sig-panel-draw').style.display = 'block';
+                modal.querySelector('#sig-panel-type').style.display = 'none';
+            };
+            modal.querySelector('#tab-sig-type').onclick = () => {
+                sigMode = 'type';
+                modal.querySelector('#tab-sig-type').classList.add('active');
+                modal.querySelector('#tab-sig-draw').classList.remove('active');
+                modal.querySelector('#sig-panel-type').style.display = 'block';
+                modal.querySelector('#sig-panel-draw').style.display = 'none';
+            };
+
+            const typeInput = modal.querySelector('#sig-type-input');
+            typeInput.oninput = () => {
+                const name = typeInput.value.trim() || 'Your Signature';
+                modal.querySelectorAll('#sig-type-previews [style*="font-family"]').forEach(el => {
+                    el.textContent = name;
+                });
+            };
+
+            modal.querySelectorAll('.sig-type-card').forEach(card => {
+                card.onclick = () => {
+                    modal.querySelectorAll('.sig-type-card').forEach(c => {
+                        c.classList.remove('selected');
+                        c.style.borderColor = 'var(--border-dim)';
+                    });
+                    card.classList.add('selected');
+                    card.style.borderColor = 'var(--accent)';
+                    selectedTypeFont = card.getAttribute('data-font');
+                };
+            });
+
+            // Crop Transparent Boundaries Helper
+            function cropTransparent(canvas) {
+                const ctx = canvas.getContext('2d');
+                const w = canvas.width, h = canvas.height;
+                const imgData = ctx.getImageData(0, 0, w, h).data;
+                let minX = w, minY = h, maxX = 0, maxY = 0;
+
+                for (let y = 0; y < h; y++) {
+                    for (let x = 0; x < w; x++) {
+                        const alpha = imgData[(y * w + x) * 4 + 3];
+                        if (alpha > 10) {
+                            if (x < minX) minX = x;
+                            if (x > maxX) maxX = x;
+                            if (y < minY) minY = y;
+                            if (y > maxY) maxY = y;
+                        }
+                    }
+                }
+
+                if (minX > maxX || minY > maxY) return canvas.toDataURL('image/png');
+
+                const pad = 8;
+                const cropW = Math.max(20, (maxX - minX) + pad * 2);
+                const cropH = Math.max(12, (maxY - minY) + pad * 2);
+                const c = document.createElement('canvas');
+                c.width = cropW;
+                c.height = cropH;
+                const cCtx = c.getContext('2d');
+                cCtx.drawImage(canvas, minX, minY, maxX - minX, maxY - minY, pad, pad, maxX - minX, maxY - minY);
+                return c.toDataURL('image/png');
+            }
+
+            modal.querySelector('#sig-insert-btn').onclick = () => {
+                let dataUrl = null;
+                if (sigMode === 'draw') {
+                    dataUrl = cropTransparent(padCanvas);
+                } else {
+                    const name = typeInput.value.trim() || 'Signature';
+                    const c = document.createElement('canvas');
+                    c.width = 400;
+                    c.height = 120;
+                    const cCtx = c.getContext('2d');
+                    cCtx.font = `44px '${selectedTypeFont}', cursive`;
+                    cCtx.fillStyle = '#1e3a8a';
+                    cCtx.textAlign = 'center';
+                    cCtx.textBaseline = 'middle';
+                    cCtx.fillText(name, 200, 60);
+                    dataUrl = cropTransparent(c);
+                }
+
+                saveHistory();
+                const sigW = 150;
+                const sigH = 55;
+                const newItem = {
+                    id: 'sig_' + Date.now(),
+                    type: 'signature',
+                    ptX: (pageWidthPt - sigW) / 2,
+                    ptY: (pageHeightPt - sigH) / 2,
+                    ptW: sigW,
+                    ptH: sigH,
+                    dataUrl: dataUrl,
+                    opacity: 1.0
+                };
+                (pageAnnotations[currentPageNum] = pageAnnotations[currentPageNum] || []).push(newItem);
+                modal.style.display = 'none';
+                selectItem(newItem.id);
+                toolsRibbon.querySelector('[data-tool="select"]').click();
+            };
+        }
+
+        // Stamp Preset Modal
+        function openStampModal() {
+            let modal = document.getElementById('pdf-ed-stamp-modal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'pdf-ed-stamp-modal';
+                modal.className = 'pdf-ed-modal';
+                document.body.appendChild(modal);
+            }
+
+            const stampList = [
+                { text: 'APPROVED', color: '#10b981', border: '#10b981' },
+                { text: 'CONFIDENTIAL', color: '#ef4444', border: '#ef4444' },
+                { text: 'DRAFT', color: '#64748b', border: '#64748b' },
+                { text: 'VOID', color: '#dc2626', border: '#dc2626' },
+                { text: 'COMPLETED', color: '#2563eb', border: '#2563eb' },
+                { text: 'URGENT', color: '#f59e0b', border: '#f59e0b' }
+            ];
+
+            modal.innerHTML = `
+                <div class="pdf-ed-modal-card" style="max-width:440px;">
+                    <div class="pdf-ed-modal-header">
+                        <div class="pdf-ed-modal-title">🏷️ Insert Pre-formatted Stamp</div>
+                        <button type="button" class="pdf-ed-modal-close" id="stamp-modal-close">✕</button>
+                    </div>
+                    <div class="pdf-ed-modal-body">
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+                            ${stampList.map((st, i) => `
+                                <button type="button" class="pdf-stamp-btn" data-idx="${i}" style="padding:0.75rem; background:rgba(255,255,255,0.03); border:2px dashed ${st.border}; border-radius:var(--radius-sm); color:${st.color}; font-weight:800; font-size:1.05rem; cursor:pointer; letter-spacing:0.08em; transition:transform 0.1s;">
+                                    ${st.text}
+                                </button>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            modal.style.display = 'flex';
+            modal.querySelector('#stamp-modal-close').onclick = () => modal.style.display = 'none';
+
+            modal.querySelectorAll('.pdf-stamp-btn').forEach(btn => {
+                btn.onclick = () => {
+                    const idx = parseInt(btn.getAttribute('data-idx'), 10);
+                    const st = stampList[idx];
+
+                    // Render crisp badge to canvas
+                    const c = document.createElement('canvas');
+                    c.width = 240;
+                    c.height = 80;
+                    const cCtx = c.getContext('2d');
+                    cCtx.translate(120, 40);
+                    cCtx.rotate(-0.08); // Subtle 4.5° stamp tilt
+                    cCtx.translate(-120, -40);
+
+                    cCtx.strokeStyle = st.border;
+                    cCtx.lineWidth = 4;
+                    cCtx.strokeRect(10, 10, 220, 60);
+
+                    cCtx.fillStyle = st.color;
+                    cCtx.font = '900 24px -apple-system, sans-serif';
+                    cCtx.textAlign = 'center';
+                    cCtx.textBaseline = 'middle';
+                    cCtx.letterSpacing = '2px';
+                    cCtx.fillText(st.text, 120, 40);
+
+                    saveHistory();
+                    const stW = 140;
+                    const stH = 46;
+                    const newItem = {
+                        id: 'stamp_' + Date.now(),
+                        type: 'stamp',
+                        ptX: (pageWidthPt - stW) / 2,
+                        ptY: (pageHeightPt - stH) / 2,
+                        ptW: stW,
+                        ptH: stH,
+                        dataUrl: c.toDataURL('image/png'),
+                        opacity: 0.95
+                    };
+                    (pageAnnotations[currentPageNum] = pageAnnotations[currentPageNum] || []).push(newItem);
+                    modal.style.display = 'none';
+                    selectItem(newItem.id);
+                    toolsRibbon.querySelector('[data-tool="select"]').click();
+                };
+            });
+        }
+
+        // Lossless Vector PDF Export Engine
+        exportBtn.onclick = async () => {
+            if (!currentPdfBuffer) return;
+            showStatus('Assembling precision vector PDF with lossless coordinates...');
+            try {
+                const { PDFDocument, rgb, degrees, StandardFonts } = window.PDFLib;
+                const pdfLibDoc = await PDFDocument.load(currentPdfBuffer);
+
+                // Embed Standard Fonts
+                const embeddedFonts = {
+                    'Helvetica': await pdfLibDoc.embedFont(StandardFonts.Helvetica),
+                    'Helvetica-Bold': await pdfLibDoc.embedFont(StandardFonts.HelveticaBold),
+                    'Helvetica-Oblique': await pdfLibDoc.embedFont(StandardFonts.HelveticaOblique),
+                    'Helvetica-BoldOblique': await pdfLibDoc.embedFont(StandardFonts.HelveticaBoldOblique),
+                    'Times': await pdfLibDoc.embedFont(StandardFonts.TimesRoman),
+                    'Times-Bold': await pdfLibDoc.embedFont(StandardFonts.TimesRomanBold),
+                    'Times-Italic': await pdfLibDoc.embedFont(StandardFonts.TimesRomanItalic),
+                    'Courier': await pdfLibDoc.embedFont(StandardFonts.Courier),
+                    'Courier-Bold': await pdfLibDoc.embedFont(StandardFonts.CourierBold),
+                };
+
+                const pages = pdfLibDoc.getPages();
+                for (let pIdx = 0; pIdx < pages.length; pIdx++) {
+                    const pageNum = pIdx + 1;
+                    const page = pages[pIdx];
+                    const { width: pWidth, height: pHeight } = page.getSize();
+
+                    // Apply custom rotation if updated
+                    if (pageRotations[pageNum]) {
+                        const curRot = page.getRotation().angle || 0;
+                        page.setRotation(degrees((curRot + pageRotations[pageNum]) % 360));
+                    }
+
+                    // 1. Export Freehand Drawings (Pen & Highlighter)
+                    const drawings = pageDrawings[pageNum] || [];
+                    if (drawings.length > 0) {
+                        const dpr = 2; // high-res canvas
+                        const dCanvas = document.createElement('canvas');
+                        dCanvas.width = Math.round(pWidth * dpr);
+                        dCanvas.height = Math.round(pHeight * dpr);
+                        const dCtx = dCanvas.getContext('2d');
+                        dCtx.scale(dpr, dpr);
+
+                        for (const stroke of drawings) {
+                            if (!stroke.points || stroke.points.length < 2) continue;
+                            dCtx.save();
+                            dCtx.strokeStyle = stroke.color;
+                            dCtx.lineWidth = stroke.width;
+                            dCtx.lineCap = 'round';
+                            dCtx.lineJoin = 'round';
+                            dCtx.globalAlpha = stroke.opacity ?? 1.0;
+                            dCtx.beginPath();
+                            dCtx.moveTo(stroke.points[0].ptX, stroke.points[0].ptY);
+                            for (let i = 1; i < stroke.points.length; i++) {
+                                dCtx.lineTo(stroke.points[i].ptX, stroke.points[i].ptY);
+                            }
+                            dCtx.stroke();
+                            dCtx.restore();
+                        }
+
+                        const dataUrl = dCanvas.toDataURL('image/png');
+                        const pngBytes = dataUriToUint8(dataUrl);
+                        const embeddedDrawing = await pdfLibDoc.embedPng(pngBytes);
+                        page.drawImage(embeddedDrawing, {
+                            x: 0,
+                            y: 0,
+                            width: pWidth,
+                            height: pHeight
+                        });
+                    }
+
+                    // 2. Export Vector Annotations
+                    const items = pageAnnotations[pageNum] || [];
+                    for (const item of items) {
+                        if (item.type === 'whiteout' || item.type === 'redact' || item.type === 'rect') {
+                            const x = item.ptX;
+                            const y = pHeight - item.ptY - item.ptH;
+                            const w = Math.max(1, item.ptW);
+                            const h = Math.max(1, item.ptH);
+
+                            const fillHex = item.fill || (item.type === 'whiteout' ? '#ffffff' : '#000000');
+                            const fColor = hexToRgb(fillHex);
+                            const rectOpts = {
+                                x: x,
+                                y: y,
+                                width: w,
+                                height: h,
+                                color: rgb(fColor.r, fColor.g, fColor.b),
+                                opacity: item.opacity ?? 1.0
+                            };
+                            if (item.stroke && item.strokeWidth > 0) {
+                                const sColor = hexToRgb(item.stroke);
+                                rectOpts.borderColor = rgb(sColor.r, sColor.g, sColor.b);
+                                rectOpts.borderWidth = item.strokeWidth;
+                            }
+                            page.drawRectangle(rectOpts);
+                        } else if (item.type === 'circle') {
+                            const radius = Math.min(item.ptW, item.ptH) / 2;
+                            const centerX = item.ptX + radius;
+                            const centerY = pHeight - item.ptY - radius;
+                            const fillHex = item.fill && item.fill !== 'transparent' ? item.fill : null;
+                            const circleOpts = {
+                                x: centerX,
+                                y: centerY,
+                                size: radius,
+                                opacity: item.opacity ?? 1.0
+                            };
+                            if (fillHex) {
+                                const fColor = hexToRgb(fillHex);
+                                circleOpts.color = rgb(fColor.r, fColor.g, fColor.b);
+                            }
+                            if (item.stroke && item.strokeWidth > 0) {
+                                const sColor = hexToRgb(item.stroke);
+                                circleOpts.borderColor = rgb(sColor.r, sColor.g, sColor.b);
+                                circleOpts.borderWidth = item.strokeWidth;
+                            }
+                            try {
+                                page.drawCircle(circleOpts);
+                            } catch (e) {
+                                page.drawRectangle({
+                                    x: item.ptX, y: pHeight - item.ptY - item.ptH,
+                                    width: item.ptW, height: item.ptH,
+                                    color: fillHex ? rgb(fColor.r, fColor.g, fColor.b) : undefined
+                                });
+                            }
+                        } else if (item.type === 'line' || item.type === 'arrow') {
+                            const startX = item.ptX;
+                            const startY = pHeight - item.ptY;
+                            const endX = item.ptX + item.ptW;
+                            const endY = pHeight - (item.ptY + item.ptH);
+                            const sColor = hexToRgb(item.stroke || '#000000');
+                            page.drawLine({
+                                start: { x: startX, y: startY },
+                                end: { x: endX, y: endY },
+                                thickness: item.strokeWidth || 2,
+                                color: rgb(sColor.r, sColor.g, sColor.b),
+                                opacity: item.opacity ?? 1.0
+                            });
+                            if (item.type === 'arrow') {
+                                const angle = Math.atan2(endY - startY, endX - startX);
+                                const headLen = Math.max(8, (item.strokeWidth || 2) * 3.5);
+                                page.drawLine({
+                                    start: { x: endX, y: endY },
+                                    end: { x: endX - headLen * Math.cos(angle - Math.PI / 6), y: endY - headLen * Math.sin(angle - Math.PI / 6) },
+                                    thickness: item.strokeWidth || 2,
+                                    color: rgb(sColor.r, sColor.g, sColor.b)
+                                });
+                                page.drawLine({
+                                    start: { x: endX, y: endY },
+                                    end: { x: endX - headLen * Math.cos(angle + Math.PI / 6), y: endY - headLen * Math.sin(angle + Math.PI / 6) },
+                                    thickness: item.strokeWidth || 2,
+                                    color: rgb(sColor.r, sColor.g, sColor.b)
+                                });
+                            }
+                        } else if (item.type === 'text') {
+                            let fontKey = item.fontFamily || 'Helvetica';
+                            if (item.bold && item.italic) fontKey = fontKey === 'Times' ? 'Times-BoldItalic' : (fontKey === 'Courier' ? 'Courier-BoldOblique' : 'Helvetica-BoldOblique');
+                            else if (item.bold) fontKey = fontKey === 'Times' ? 'Times-Bold' : (fontKey === 'Courier' ? 'Courier-Bold' : 'Helvetica-Bold');
+                            else if (item.italic) fontKey = fontKey === 'Times' ? 'Times-Italic' : (fontKey === 'Courier' ? 'Courier-Oblique' : 'Helvetica-Oblique');
+
+                            const selectedFont = embeddedFonts[fontKey] || embeddedFonts['Helvetica'];
+                            const fontSize = item.fontSize || 14;
+                            const lines = (item.text || '').split('\n');
+                            const lineHeight = fontSize * 1.25;
+
+                            if (item.bgColor && item.bgColor !== 'transparent') {
+                                const bg = hexToRgb(item.bgColor);
+                                page.drawRectangle({
+                                    x: item.ptX - 2,
+                                    y: pHeight - item.ptY - (lines.length * lineHeight) - 2,
+                                    width: Math.max(item.ptW, 20) + 4,
+                                    height: (lines.length * lineHeight) + 4,
+                                    color: rgb(bg.r, bg.g, bg.b),
+                                    opacity: 1.0
+                                });
+                            }
+
+                            const textColor = hexToRgb(item.color || '#000000');
+                            for (let l = 0; l < lines.length; l++) {
+                                const line = lines[l];
+                                const lineY = pHeight - item.ptY - (fontSize * 0.82) - (l * lineHeight);
+                                page.drawText(line, {
+                                    x: item.ptX,
+                                    y: lineY,
+                                    size: fontSize,
+                                    font: selectedFont,
+                                    color: rgb(textColor.r, textColor.g, textColor.b),
+                                    maxWidth: Math.max(item.ptW, pWidth - item.ptX)
+                                });
+                            }
+                        } else if (item.type === 'image' || item.type === 'signature' || item.type === 'stamp') {
+                            if (item.dataUrl) {
+                                const imgBytes = dataUriToUint8(item.dataUrl);
+                                let embeddedImg;
+                                if (item.dataUrl.startsWith('data:image/jpeg') || item.dataUrl.startsWith('data:image/jpg')) {
+                                    embeddedImg = await pdfLibDoc.embedJpg(imgBytes);
+                                } else {
+                                    embeddedImg = await pdfLibDoc.embedPng(imgBytes);
+                                }
+                                const x = item.ptX;
+                                const y = pHeight - item.ptY - item.ptH;
+                                page.drawImage(embeddedImg, {
+                                    x: x,
+                                    y: y,
+                                    width: item.ptW,
+                                    height: item.ptH,
+                                    opacity: item.opacity ?? 1.0
+                                });
+                            }
+                        }
+                    }
+                }
+
+                const modifiedBytes = await pdfLibDoc.save();
+                const blob = new Blob([modifiedBytes], { type: 'application/pdf' });
+                Utils.downloadBlob(blob, `${originalFileName.replace(/\.pdf$/i, '')}-edited.pdf`);
+                showStatus('✓ Precision vector PDF exported successfully!');
+                setTimeout(hideStatus, 5000);
+            } catch (err) {
+                console.error('PDF export failed:', err);
+                showStatus('Export failed: ' + err.message, true);
+            }
+        };
+    },
+
+
     // 6. Image Format Converter
     'image-converter': (container) => {
         let loadedImg = null;

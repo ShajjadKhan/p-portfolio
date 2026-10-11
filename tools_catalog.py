@@ -16,6 +16,18 @@ CATEGORIES = [
 TOOLS = [
     # --- PDF Suite ---
     {
+        "id": "pdf-editor",
+        "slug": "pdf-editor",
+        "title": "High-Accuracy PDF Editor & Signer",
+        "category": "pdf",
+        "badge": "High Accuracy",
+        "icon": "✍️📄",
+        "short_desc": "Edit PDFs with coordinate accuracy: add text, whiteout/erase, draw signatures, highlight, insert images/stamps, and export vector PDFs.",
+        "detailed_desc": "Comprehensive in-browser precision PDF editor with lossless vector export. Add custom formatted text (Helvetica, Times, Courier), erase or redact existing content with whiteout boxes, draw freehand notes and multi-color translucent highlighters, insert signatures and images, draw shapes, and export crystal-clear PDFs with sub-pixel coordinate alignment and zero quality degradation.",
+        "keywords": ["pdf editor", "edit pdf", "pdf edit", "high accuracy pdf edit", "pdf signer", "pdf signature", "pdf whiteout", "pdf redact", "add text to pdf", "pdf annotations", "fill pdf", "pdf eraser"],
+        "client_powered": True
+    },
+    {
         "id": "jpg-to-pdf",
         "slug": "jpg-to-pdf",
         "title": "JPG & Images to PDF",
