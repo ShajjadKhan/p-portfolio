@@ -708,7 +708,7 @@ const ToolRenderers = {
     },
 
     // =========================================================================
-    // High-Accuracy PDF Editor & Precision Signer
+    // High-Accuracy PDF Editor & Precision Signer (with Word-Style In-Place Text Editing)
     // =========================================================================
     'pdf-editor': (container) => {
         let currentPdfBuffer = null;
@@ -721,8 +721,10 @@ const ToolRenderers = {
         let pageWidthPt = 595.28;
         let pageHeightPt = 841.89;
 
-        let activeTool = 'select'; // select, text, whiteout, redact, draw, highlight, shape, signature, image, stamp
+        // Active tool: 'edit-text' is default Word-mode for editing existing text
+        let activeTool = 'edit-text'; // edit-text, select, text, whiteout, redact, draw, highlight, shape, signature, image, stamp
         let selectedId = null;
+        let activeTextBlock = null;
         let shapeSubtype = 'rect'; // rect, circle, line, arrow
 
         // Active tool styling properties
@@ -748,9 +750,10 @@ const ToolRenderers = {
             fill: 'transparent'
         };
 
-        // Annotations, Drawings & Rotations by page number
-        const pageAnnotations = {}; // { [pageNum]: [ items ] }
-        const pageDrawings = {};    // { [pageNum]: [ strokes ] }
+        // Data Stores by Page Number
+        const pageTextBlocks = {};  // { [pageNum]: [ { id, str, origStr, ptX, ptY, ptW, ptH, fontSize, fontFamily, color, edited } ] }
+        const pageAnnotations = {}; // { [pageNum]: [ user-added items ] }
+        const pageDrawings = {};    // { [pageNum]: [ drawing strokes ] }
         const pageRotations = {};   // { [pageNum]: rotationDeg }
 
         // Undo & Redo History
@@ -773,7 +776,7 @@ const ToolRenderers = {
                     <div class="pdf-ed-dropzone-icon">✍️📄</div>
                     <div class="pdf-ed-dropzone-title">High-Accuracy PDF Editor & Signer</div>
                     <div class="pdf-ed-dropzone-sub">
-                        Edit PDF files with pixel-perfect coordinate precision: add text, whiteout & erase, draw signatures, highlight, redact, and insert images with lossless vector export.
+                        Direct in-place text editing (Word Mode): click any existing date, number, or text in your PDF to edit directly with Backspace and keyboard, plus signatures, whiteout & annotations.
                     </div>
                     <div class="pdf-ed-dropzone-actions">
                         <button type="button" class="btn-primary" id="pdf-ed-choose-btn">Choose PDF File</button>
@@ -823,11 +826,14 @@ const ToolRenderers = {
 
                     <!-- Tool Ribbon -->
                     <div class="pdf-ed-ribbon" id="pdf-ed-tools">
-                        <button type="button" class="pdf-ed-tool-btn active" data-tool="select" title="Select, Move, and Resize Elements">
-                            <span>👆</span> Select
+                        <button type="button" class="pdf-ed-tool-btn active" data-tool="edit-text" title="Click directly on existing text/dates to edit with Backspace and typing like Word">
+                            <span>📝</span> Edit Text (Word Mode)
+                        </button>
+                        <button type="button" class="pdf-ed-tool-btn" data-tool="select" title="Select, Move, and Resize Elements">
+                            <span>👆</span> Select / Move
                         </button>
                         <div class="pdf-ed-tool-sep"></div>
-                        <button type="button" class="pdf-ed-tool-btn" data-tool="text" title="Click anywhere to add text">
+                        <button type="button" class="pdf-ed-tool-btn" data-tool="text" title="Click anywhere to add new text">
                             <span>🔤</span> Add Text
                         </button>
                         <button type="button" class="pdf-ed-tool-btn" data-tool="whiteout" title="Drag box over text to erase/whiteout">
@@ -869,6 +875,7 @@ const ToolRenderers = {
                             <div class="pdf-ed-stage-wrap" id="pdf-ed-stage-wrap">
                                 <div class="pdf-ed-stage" id="pdf-ed-stage">
                                     <canvas class="pdf-ed-base-canvas" id="pdf-ed-base-canvas"></canvas>
+                                    <div class="pdf-ed-text-layer" id="pdf-ed-text-layer"></div>
                                     <canvas class="pdf-ed-draw-canvas" id="pdf-ed-draw-canvas"></canvas>
                                     <div class="pdf-ed-anno-layer" id="pdf-ed-anno-layer"></div>
                                 </div>
@@ -881,7 +888,7 @@ const ToolRenderers = {
                         <div id="pdf-ed-hud-dims">Page: 595 x 842 pt (210.0 x 297.0 mm, A4)</div>
                         <div id="pdf-ed-hud-coords">Cursor: X: 0.0 pt, Y: 0.0 pt</div>
                         <div class="pdf-ed-hud-badge">
-                            <span>🔒</span> Sub-Pixel Lossless Vector Mapping
+                            <span>🔒</span> Word-Mode In-Place Vector Replacement
                         </div>
                     </div>
                 </div>
@@ -923,6 +930,7 @@ const ToolRenderers = {
         const viewport = container.querySelector('#pdf-ed-viewport');
         const stage = container.querySelector('#pdf-ed-stage');
         const baseCanvas = container.querySelector('#pdf-ed-base-canvas');
+        const textLayer = container.querySelector('#pdf-ed-text-layer');
         const drawCanvas = container.querySelector('#pdf-ed-draw-canvas');
         const annoLayer = container.querySelector('#pdf-ed-anno-layer');
         const hudDims = container.querySelector('#pdf-ed-hud-dims');
@@ -984,7 +992,8 @@ const ToolRenderers = {
         function saveHistory() {
             const items = pageAnnotations[currentPageNum] ? JSON.parse(JSON.stringify(pageAnnotations[currentPageNum])) : [];
             const drawings = pageDrawings[currentPageNum] ? JSON.parse(JSON.stringify(pageDrawings[currentPageNum])) : [];
-            undoStack.push({ pageNum: currentPageNum, items, drawings });
+            const textBlocks = pageTextBlocks[currentPageNum] ? JSON.parse(JSON.stringify(pageTextBlocks[currentPageNum])) : [];
+            undoStack.push({ pageNum: currentPageNum, items, drawings, textBlocks });
             redoStack.length = 0;
             if (undoStack.length > 30) undoStack.shift();
         }
@@ -994,12 +1003,14 @@ const ToolRenderers = {
             const curState = {
                 pageNum: currentPageNum,
                 items: pageAnnotations[currentPageNum] ? JSON.parse(JSON.stringify(pageAnnotations[currentPageNum])) : [],
-                drawings: pageDrawings[currentPageNum] ? JSON.parse(JSON.stringify(pageDrawings[currentPageNum])) : []
+                drawings: pageDrawings[currentPageNum] ? JSON.parse(JSON.stringify(pageDrawings[currentPageNum])) : [],
+                textBlocks: pageTextBlocks[currentPageNum] ? JSON.parse(JSON.stringify(pageTextBlocks[currentPageNum])) : []
             };
             redoStack.push(curState);
             const prev = undoStack.pop();
             pageAnnotations[prev.pageNum] = prev.items;
             pageDrawings[prev.pageNum] = prev.drawings;
+            if (prev.textBlocks) pageTextBlocks[prev.pageNum] = prev.textBlocks;
             if (prev.pageNum !== currentPageNum) {
                 currentPageNum = prev.pageNum;
             }
@@ -1011,12 +1022,14 @@ const ToolRenderers = {
             const curState = {
                 pageNum: currentPageNum,
                 items: pageAnnotations[currentPageNum] ? JSON.parse(JSON.stringify(pageAnnotations[currentPageNum])) : [],
-                drawings: pageDrawings[currentPageNum] ? JSON.parse(JSON.stringify(pageDrawings[currentPageNum])) : []
+                drawings: pageDrawings[currentPageNum] ? JSON.parse(JSON.stringify(pageDrawings[currentPageNum])) : [],
+                textBlocks: pageTextBlocks[currentPageNum] ? JSON.parse(JSON.stringify(pageTextBlocks[currentPageNum])) : []
             };
             undoStack.push(curState);
             const next = redoStack.pop();
             pageAnnotations[next.pageNum] = next.items;
             pageDrawings[next.pageNum] = next.drawings;
+            if (next.textBlocks) pageTextBlocks[next.pageNum] = next.textBlocks;
             if (next.pageNum !== currentPageNum) {
                 currentPageNum = next.pageNum;
             }
@@ -1075,7 +1088,7 @@ const ToolRenderers = {
             originalFileName = filename || 'document.pdf';
             fileNameEl.textContent = originalFileName;
 
-            showStatus('Parsing PDF structure and pages...');
+            showStatus('Parsing PDF text streams and vector geometry...');
             try {
                 if (!window.pdfjsLib) {
                     throw new Error('PDF.js library not loaded yet. Please wait a moment and try again.');
@@ -1152,7 +1165,82 @@ const ToolRenderers = {
             });
         }
 
-        // Render Active Page & Annotations
+        // Extract and Merge Text Blocks from pdf.js
+        function parsePdfTextContent(textContent, pWidthPt, pHeightPt) {
+            if (!textContent || !textContent.items || !textContent.items.length) return [];
+            const items = textContent.items;
+            const blocks = [];
+
+            for (let i = 0; i < items.length; i++) {
+                const it = items[i];
+                const str = it.str || '';
+                if (!str.trim()) continue;
+
+                const tx = it.transform[4];
+                const ty = it.transform[5];
+                const fontSize = Math.max(8, Math.round(Math.hypot(it.transform[2], it.transform[3]) || it.height || 12));
+                const ptX = tx;
+                // ty is the baseline from bottom-left
+                const ptY = pHeightPt - ty - (fontSize * 0.88);
+                const ptW = Math.max(8, it.width || (str.length * fontSize * 0.55));
+                const ptH = Math.max(fontSize * 1.15, it.height || fontSize);
+
+                blocks.push({
+                    id: `tb_${Date.now()}_${i}`,
+                    str: str,
+                    origStr: str,
+                    ptX: ptX,
+                    ptY: ptY,
+                    ptW: ptW,
+                    ptH: ptH,
+                    origPtW: ptW,
+                    origPtH: ptH,
+                    fontSize: fontSize,
+                    fontFamily: detectFontFamily(it.fontName),
+                    color: '#000000',
+                    baselineY: ty,
+                    edited: false
+                });
+            }
+
+            // Merge adjacent text items on the same baseline into phrases/dates
+            const merged = [];
+            for (let i = 0; i < blocks.length; i++) {
+                const cur = blocks[i];
+                if (!merged.length) {
+                    merged.push(cur);
+                    continue;
+                }
+                const prev = merged[merged.length - 1];
+                const sameLine = Math.abs(prev.baselineY - cur.baselineY) < (prev.fontSize * 0.35);
+                const gap = cur.ptX - (prev.ptX + prev.ptW);
+                const maxGap = prev.fontSize * 0.75;
+
+                if (sameLine && gap >= -2 && gap <= maxGap) {
+                    const needsSpace = gap > (prev.fontSize * 0.15) && !prev.str.endsWith(' ') && !cur.str.startsWith(' ');
+                    prev.str += (needsSpace ? ' ' : '') + cur.str;
+                    prev.origStr = prev.str;
+                    prev.ptW = (cur.ptX + cur.ptW) - prev.ptX;
+                    prev.origPtW = prev.ptW;
+                    prev.ptH = Math.max(prev.ptH, cur.ptH);
+                    prev.origPtH = prev.ptH;
+                } else {
+                    merged.push(cur);
+                }
+            }
+
+            return merged;
+        }
+
+        function detectFontFamily(fontName) {
+            if (!fontName) return 'Helvetica';
+            const lower = fontName.toLowerCase();
+            if (lower.includes('times') || lower.includes('serif') || lower.includes('georgia') || lower.includes('minion')) return 'Times';
+            if (lower.includes('courier') || lower.includes('mono') || lower.includes('console')) return 'Courier';
+            return 'Helvetica';
+        }
+
+        // Render Active Page & Layers
         async function renderPage(pageNum) {
             if (!pdfDoc) return;
             const page = await pdfDoc.getPage(pageNum);
@@ -1180,6 +1268,17 @@ const ToolRenderers = {
             baseCtx.clearRect(0, 0, baseCanvas.width, baseCanvas.height);
             await page.render({ canvasContext: baseCtx, viewport: scaledViewport }).promise;
 
+            // Extract & cache existing text blocks for Word Mode
+            if (!pageTextBlocks[pageNum]) {
+                const textContent = await page.getTextContent({ normalizeWhitespace: true });
+                pageTextBlocks[pageNum] = parsePdfTextContent(textContent, pageWidthPt, pageHeightPt);
+            }
+
+            // Setup Direct In-Place Text Layer
+            textLayer.style.width = displayWidth + 'px';
+            textLayer.style.height = displayHeight + 'px';
+            renderTextLayer();
+
             // Setup Draw Canvas
             drawCanvas.width = Math.round(displayWidth * dpr);
             drawCanvas.height = Math.round(displayHeight * dpr);
@@ -1195,6 +1294,104 @@ const ToolRenderers = {
             // Update HUD
             hudDims.textContent = `Page ${pageNum}: ${Math.round(pageWidthPt)} x ${Math.round(pageHeightPt)} pt (${(pageWidthPt * 0.352778).toFixed(1)} x ${(pageHeightPt * 0.352778).toFixed(1)} mm)`;
             updateThumbnailActiveState();
+        }
+
+        // Render In-Place Text Layer (Word Mode)
+        function renderTextLayer() {
+            textLayer.innerHTML = '';
+            const blocks = pageTextBlocks[currentPageNum] || [];
+
+            blocks.forEach(block => {
+                const el = document.createElement('div');
+                el.className = `pdf-text-block ${block.edited ? 'is-edited' : ''}`;
+                el.setAttribute('data-id', block.id);
+
+                const left = Math.round(block.ptX * currentZoom);
+                const top = Math.round(block.ptY * currentZoom);
+                const fontSizePx = Math.round(block.fontSize * currentZoom);
+
+                el.style.left = left + 'px';
+                el.style.top = top + 'px';
+                el.style.fontSize = fontSizePx + 'px';
+                el.style.fontFamily = block.fontFamily === 'Courier' ? 'Courier, monospace' : (block.fontFamily === 'Times' ? 'Times New Roman, serif' : 'Helvetica, Arial, sans-serif');
+                el.style.color = block.color || '#000000';
+
+                // If edited, apply opaque white background to mask original PDF text!
+                if (block.edited) {
+                    el.style.background = '#ffffff';
+                    el.style.minWidth = Math.round(Math.max(block.origPtW, block.ptW) * currentZoom) + 'px';
+                    el.style.minHeight = Math.round(block.ptH * currentZoom) + 'px';
+                }
+
+                el.textContent = block.str;
+                el.title = "Click to edit text directly with keyboard (Backspace / Type)";
+
+                // Clicking activates inline editing
+                el.onclick = (e) => {
+                    if (activeTool !== 'edit-text' && activeTool !== 'select') return;
+                    e.stopPropagation();
+                    activateInlineTextEdit(el, block);
+                };
+
+                textLayer.appendChild(el);
+            });
+        }
+
+        // Activate Direct In-Place Text Editing on Click
+        function activateInlineTextEdit(domEl, block) {
+            if (domEl.getAttribute('contenteditable') === 'true') return;
+
+            saveHistory();
+            activeTextBlock = block;
+
+            domEl.setAttribute('contenteditable', 'true');
+            domEl.classList.add('editing-active');
+            domEl.style.background = '#ffffff';
+            domEl.style.minWidth = Math.round(Math.max(block.origPtW, block.ptW) * currentZoom) + 'px';
+            domEl.style.zIndex = '100';
+
+            // Focus & Select all text for quick backspacing
+            domEl.focus();
+            const range = document.createRange();
+            range.selectNodeContents(domEl);
+            const sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(range);
+
+            showStatus(`Editing: "${block.origStr}" — Use Backspace / Keyboard to edit. Press Enter or click outside to finish.`, false);
+            updatePropertyRibbon();
+
+            function finishEdit() {
+                domEl.removeAttribute('contenteditable');
+                domEl.classList.remove('editing-active');
+                activeTextBlock = null;
+
+                const newStr = domEl.textContent.trim();
+                if (newStr !== block.origStr) {
+                    block.str = newStr;
+                    block.edited = true;
+                    domEl.classList.add('is-edited');
+                    block.ptW = Math.max(12, (block.origPtW / Math.max(1, block.origStr.length)) * Math.max(1, newStr.length));
+                    showStatus(`✓ Updated text to: "${newStr}"`, false);
+                    setTimeout(hideStatus, 3500);
+                } else if (newStr === block.origStr && !block.edited) {
+                    domEl.style.background = 'transparent';
+                }
+                updatePropertyRibbon();
+            }
+
+            domEl.onblur = finishEdit;
+
+            domEl.onkeydown = (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    domEl.blur();
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    domEl.textContent = block.str;
+                    domEl.blur();
+                }
+            };
         }
 
         function renderDrawCanvasStrokes() {
@@ -1342,8 +1539,46 @@ const ToolRenderers = {
             const sel = getSelectedItem();
             propsRibbon.innerHTML = '';
 
+            if (activeTextBlock) {
+                // Currently editing an existing PDF text block
+                propsRibbon.innerHTML = `
+                    <div class="pdf-ed-prop-item">
+                        <span class="pdf-ed-prop-label">Font</span>
+                        <select id="tb-font" class="pdf-ed-select-mini">
+                            <option value="Helvetica" ${activeTextBlock.fontFamily === 'Helvetica' ? 'selected' : ''}>Helvetica</option>
+                            <option value="Times" ${activeTextBlock.fontFamily === 'Times' ? 'selected' : ''}>Times Roman</option>
+                            <option value="Courier" ${activeTextBlock.fontFamily === 'Courier' ? 'selected' : ''}>Courier</option>
+                        </select>
+                    </div>
+                    <div class="pdf-ed-prop-item">
+                        <span class="pdf-ed-prop-label">Size</span>
+                        <select id="tb-size" class="pdf-ed-select-mini">
+                            ${[9, 10, 11, 12, 13, 14, 16, 18, 20, 24, 28, 32].map(s => `<option value="${s}" ${activeTextBlock.fontSize === s ? 'selected' : ''}>${s} pt</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="pdf-ed-prop-item">
+                        <span class="pdf-ed-prop-label">Color</span>
+                        <input type="color" id="tb-color" value="${activeTextBlock.color || '#000000'}" style="width:24px; height:24px; padding:0; border:none; background:none; cursor:pointer;">
+                    </div>
+                    <div class="pdf-ed-prop-item" style="margin-left:auto;">
+                        <button type="button" class="pdf-ed-btn-mini" id="tb-revert" title="Revert to original text">↩ Revert Original</button>
+                    </div>
+                `;
+                propsRibbon.querySelector('#tb-font').onchange = (e) => { activeTextBlock.fontFamily = e.target.value; renderTextLayer(); };
+                propsRibbon.querySelector('#tb-size').onchange = (e) => { activeTextBlock.fontSize = parseInt(e.target.value, 10); renderTextLayer(); };
+                propsRibbon.querySelector('#tb-color').onchange = (e) => { activeTextBlock.color = e.target.value; renderTextLayer(); };
+                propsRibbon.querySelector('#tb-revert').onclick = () => {
+                    activeTextBlock.str = activeTextBlock.origStr;
+                    activeTextBlock.edited = false;
+                    renderTextLayer();
+                    showStatus('Reverted to original text', false);
+                    setTimeout(hideStatus, 2000);
+                };
+                return;
+            }
+
             if (sel) {
-                // Properties for Selected Element
+                // Properties for Selected User Annotation
                 if (sel.type === 'text') {
                     propsRibbon.innerHTML = `
                         <div class="pdf-ed-prop-item">
@@ -1456,10 +1691,16 @@ const ToolRenderers = {
                 }
             } else {
                 // Properties for Active Tool
-                if (activeTool === 'select') {
+                if (activeTool === 'edit-text') {
+                    propsRibbon.innerHTML = `
+                        <span style="color:var(--accent); font-weight:600; font-size:0.78rem;">
+                            📝 Word Mode Active: Click directly on any existing date or text in the document. Press Backspace to erase, type new text, and hit Enter to save.
+                        </span>
+                    `;
+                } else if (activeTool === 'select') {
                     propsRibbon.innerHTML = `
                         <span style="color:var(--text-muted); font-size:0.78rem;">
-                            👆 Click any text, whiteout, signature, or shape to select, drag to reposition, or drag corner handles to resize.
+                            👆 Select Mode: Click and drag user-added elements (signatures, stamps, shapes) to reposition or resize.
                         </span>
                     `;
                 } else if (activeTool === 'text') {
@@ -1482,7 +1723,7 @@ const ToolRenderers = {
                             <span class="pdf-ed-prop-label">Color</span>
                             <input type="color" id="def-color" value="${textProps.color}" style="width:24px; height:24px; padding:0; border:none; background:none; cursor:pointer;">
                         </div>
-                        <span style="color:var(--text-dim); font-size:0.75rem; margin-left:0.5rem;">Click anywhere on the PDF page to place text</span>
+                        <span style="color:var(--text-dim); font-size:0.75rem; margin-left:0.5rem;">Click anywhere on the PDF page to add new text box</span>
                     `;
                     propsRibbon.querySelector('#def-font').onchange = (e) => textProps.fontFamily = e.target.value;
                     propsRibbon.querySelector('#def-size').onchange = (e) => textProps.fontSize = parseInt(e.target.value, 10);
@@ -1605,9 +1846,19 @@ const ToolRenderers = {
                 updatePropertyRibbon();
 
                 // Update cursor
-                if (activeTool === 'select') stage.style.cursor = 'default';
-                else if (activeTool === 'text') stage.style.cursor = 'text';
-                else stage.style.cursor = 'crosshair';
+                if (activeTool === 'edit-text') {
+                    stage.style.cursor = 'default';
+                    textLayer.style.pointerEvents = 'auto';
+                } else if (activeTool === 'select') {
+                    stage.style.cursor = 'default';
+                    textLayer.style.pointerEvents = 'none';
+                } else if (activeTool === 'text') {
+                    stage.style.cursor = 'text';
+                    textLayer.style.pointerEvents = 'none';
+                } else {
+                    stage.style.cursor = 'crosshair';
+                    textLayer.style.pointerEvents = 'none';
+                }
             };
         });
 
@@ -1676,7 +1927,7 @@ const ToolRenderers = {
 
             // Check if clicked on an existing annotation item
             const itemEl = e.target.closest('.pdf-anno-el');
-            if (itemEl && activeTool === 'select') {
+            if (itemEl && (activeTool === 'select' || activeTool === 'edit-text')) {
                 const id = itemEl.getAttribute('data-id');
                 selectItem(id);
                 const sel = getSelectedItem();
@@ -1691,8 +1942,8 @@ const ToolRenderers = {
                 return;
             }
 
-            // Clicked on blank area or drawing tool active
-            if (activeTool === 'select') {
+            // Clicked on blank area
+            if (activeTool === 'select' || activeTool === 'edit-text') {
                 deselectItem();
             } else if (activeTool === 'text') {
                 saveHistory();
@@ -1704,7 +1955,7 @@ const ToolRenderers = {
                     ptY: pt.ptY,
                     ptW: 180,
                     ptH: 26,
-                    text: 'Double-click to edit text',
+                    text: 'New text',
                     fontFamily: textProps.fontFamily,
                     fontSize: textProps.fontSize,
                     color: textProps.color,
@@ -1714,7 +1965,6 @@ const ToolRenderers = {
                 };
                 (pageAnnotations[currentPageNum] = pageAnnotations[currentPageNum] || []).push(newText);
                 selectItem(newText.id);
-                // Reset tool back to select
                 toolsRibbon.querySelector('[data-tool="select"]').click();
             } else if (activeTool === 'whiteout' || activeTool === 'redact' || activeTool === 'shape') {
                 saveHistory();
@@ -1788,7 +2038,7 @@ const ToolRenderers = {
             activeStroke = null;
         });
 
-        // Double Click to Edit Text In-Place
+        // Double Click to Edit Text In-Place on user annotations
         annoLayer.addEventListener('dblclick', (e) => {
             const itemEl = e.target.closest('.pdf-anno-el.type-text');
             if (!itemEl) return;
@@ -1807,8 +2057,8 @@ const ToolRenderers = {
         // Keyboard Shortcuts
         window.addEventListener('keydown', (e) => {
             if (!wsBox || wsBox.style.display === 'none') return;
-            // Ignore if active in input/textarea
-            if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+            // Ignore if active in input/textarea/contenteditable
+            if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName) || document.activeElement.getAttribute('contenteditable') === 'true') return;
 
             if (e.key === 'Delete' || e.key === 'Backspace') {
                 if (selectedId) {
@@ -1886,10 +2136,16 @@ const ToolRenderers = {
         undoBtn.onclick = undo;
         redoBtn.onclick = redo;
         clearBtn.onclick = () => {
-            if (confirm(`Clear all annotations and drawings on Page ${currentPageNum}?`)) {
+            if (confirm(`Clear all edits and annotations on Page ${currentPageNum}?`)) {
                 saveHistory();
                 pageAnnotations[currentPageNum] = [];
                 pageDrawings[currentPageNum] = [];
+                if (pageTextBlocks[currentPageNum]) {
+                    pageTextBlocks[currentPageNum].forEach(b => {
+                        b.str = b.origStr;
+                        b.edited = false;
+                    });
+                }
                 selectedId = null;
                 renderPage(currentPageNum);
                 updatePropertyRibbon();
@@ -2003,7 +2259,6 @@ const ToolRenderers = {
             modal.querySelector('#sig-modal-close').onclick = () => modal.style.display = 'none';
             modal.querySelector('#sig-cancel-btn').onclick = () => modal.style.display = 'none';
 
-            // Draw Pad Handlers
             padCanvas.onmousedown = (e) => {
                 isSigDrawing = true;
                 const rect = padCanvas.getBoundingClientRect();
@@ -2034,7 +2289,6 @@ const ToolRenderers = {
                 padCtx.clearRect(0, 0, padCanvas.width, padCanvas.height);
             };
 
-            // Tab Switching
             modal.querySelector('#tab-sig-draw').onclick = () => {
                 sigMode = 'draw';
                 modal.querySelector('#tab-sig-draw').classList.add('active');
@@ -2070,7 +2324,6 @@ const ToolRenderers = {
                 };
             });
 
-            // Crop Transparent Boundaries Helper
             function cropTransparent(canvas) {
                 const ctx = canvas.getContext('2d');
                 const w = canvas.width, h = canvas.height;
@@ -2185,7 +2438,6 @@ const ToolRenderers = {
                     const idx = parseInt(btn.getAttribute('data-idx'), 10);
                     const st = stampList[idx];
 
-                    // Render crisp badge to canvas
                     const c = document.createElement('canvas');
                     c.width = 240;
                     c.height = 80;
@@ -2229,7 +2481,7 @@ const ToolRenderers = {
         // Lossless Vector PDF Export Engine
         exportBtn.onclick = async () => {
             if (!currentPdfBuffer) return;
-            showStatus('Assembling precision vector PDF with lossless coordinates...');
+            showStatus('Assembling precision vector PDF with Word-style text replacements...');
             try {
                 const { PDFDocument, rgb, degrees, StandardFonts } = window.PDFLib;
                 const pdfLibDoc = await PDFDocument.load(currentPdfBuffer);
@@ -2259,7 +2511,44 @@ const ToolRenderers = {
                         page.setRotation(degrees((curRot + pageRotations[pageNum]) % 360));
                     }
 
-                    // 1. Export Freehand Drawings (Pen & Highlighter)
+                    // 1. Process Word-Mode Edited Text Blocks (In-Place Date & Text Replacement)
+                    const textBlocks = pageTextBlocks[pageNum] || [];
+                    const editedBlocks = textBlocks.filter(b => b.edited && b.str !== b.origStr);
+
+                    for (const b of editedBlocks) {
+                        // Mask the original text area permanently with white rectangle
+                        const maskX = b.ptX - 1;
+                        const maskY = pHeight - b.ptY - b.origPtH - 1;
+                        const maskW = Math.max(b.origPtW, b.ptW) + 3;
+                        const maskH = b.origPtH + 3;
+
+                        page.drawRectangle({
+                            x: maskX,
+                            y: maskY,
+                            width: maskW,
+                            height: maskH,
+                            color: rgb(1, 1, 1),
+                            opacity: 1.0
+                        });
+
+                        // Draw the replacement text in place
+                        if (b.str.trim()) {
+                            const fontKey = b.fontFamily || 'Helvetica';
+                            const font = embeddedFonts[fontKey] || embeddedFonts['Helvetica'];
+                            const fontSize = b.fontSize || 12;
+                            const textColor = hexToRgb(b.color || '#000000');
+
+                            page.drawText(b.str, {
+                                x: b.ptX,
+                                y: pHeight - b.ptY - (fontSize * 0.85),
+                                size: fontSize,
+                                font: font,
+                                color: rgb(textColor.r, textColor.g, textColor.b)
+                            });
+                        }
+                    }
+
+                    // 2. Export Freehand Drawings (Pen & Highlighter)
                     const drawings = pageDrawings[pageNum] || [];
                     if (drawings.length > 0) {
                         const dpr = 2; // high-res canvas
@@ -2297,7 +2586,7 @@ const ToolRenderers = {
                         });
                     }
 
-                    // 2. Export Vector Annotations
+                    // 3. Export Vector Annotations
                     const items = pageAnnotations[pageNum] || [];
                     for (const item of items) {
                         if (item.type === 'whiteout' || item.type === 'redact' || item.type === 'rect') {
@@ -2442,7 +2731,7 @@ const ToolRenderers = {
                 const modifiedBytes = await pdfLibDoc.save();
                 const blob = new Blob([modifiedBytes], { type: 'application/pdf' });
                 Utils.downloadBlob(blob, `${originalFileName.replace(/\.pdf$/i, '')}-edited.pdf`);
-                showStatus('✓ Precision vector PDF exported successfully!');
+                showStatus('✓ Precision vector PDF exported with text updates!', false);
                 setTimeout(hideStatus, 5000);
             } catch (err) {
                 console.error('PDF export failed:', err);
@@ -2452,7 +2741,7 @@ const ToolRenderers = {
     },
 
 
-    // 6. Image Format Converter
+        // 6. Image Format Converter
     'image-converter': (container) => {
         let loadedImg = null;
         let originalName = 'converted';
