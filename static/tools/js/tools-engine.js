@@ -130,6 +130,211 @@ const Utils = {
 
         container.appendChild(dropzone);
         return dropzone;
+    },
+
+    async renderCombinedPdf({
+        pdfDoc,
+        items,
+        layoutMode = 'single',
+        pageSizeName = 'auto',
+        orientation = 'auto',
+        margin = 20,
+        gap = 5,
+        showBorders = true,
+        onProgress = null
+    }) {
+        const { rgb } = window.PDFLib;
+
+        const SIZES = {
+            a4: [595.28, 841.89],
+            a3: [841.89, 1190.55],
+            a2: [1190.55, 1683.78],
+            a1: [1683.78, 2383.94],
+            letter: [612.00, 792.00]
+        };
+
+        function getBasePageSize(targetSize, count) {
+            if (targetSize && SIZES[targetSize]) {
+                return [...SIZES[targetSize]];
+            }
+            if (layoutMode === 'single') {
+                if (count >= 25) return [...SIZES.a2];
+                if (count >= 9) return [...SIZES.a3];
+                return [...SIZES.a4];
+            }
+            return [...SIZES.a4];
+        }
+
+        function applyOrientation(size, targetOrientation, count) {
+            let [w, h] = size;
+            if (targetOrientation === 'landscape') {
+                return [Math.max(w, h), Math.min(w, h)];
+            }
+            if (targetOrientation === 'portrait') {
+                return [Math.min(w, h), Math.max(w, h)];
+            }
+            // Auto orientation: for single page with >= 6 items, landscape gives optimal multi-column layout
+            if (layoutMode === 'single' && count >= 6) {
+                return [Math.max(w, h), Math.min(w, h)];
+            }
+            return [Math.min(w, h), Math.max(w, h)];
+        }
+
+        async function drawItem(targetPage, it, x, y, w, h) {
+            if (it.type === 'pdf') {
+                const [embeddedPage] = await pdfDoc.embedPdf(it.srcDoc, [it.pageIndex]);
+                targetPage.drawPage(embeddedPage, { x, y, width: w, height: h });
+            } else if (it.type === 'image' && it.embeddedImg) {
+                targetPage.drawImage(it.embeddedImg, { x, y, width: w, height: h });
+            }
+        }
+
+        // Mode 1: Standard Multi-Page Document (1 page per item)
+        if (layoutMode === 'multi') {
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                if (onProgress) {
+                    onProgress(`Placing item ${i + 1} of ${items.length}: ${item.name}...`);
+                    await new Promise(r => setTimeout(r, 10));
+                }
+                if (item.type === 'pdf') {
+                    const [copiedPage] = await pdfDoc.copyPages(item.srcDoc, [item.pageIndex]);
+                    pdfDoc.addPage(copiedPage);
+                } else {
+                    let [pW, pH] = getBasePageSize(pageSizeName, 1);
+                    [pW, pH] = applyOrientation([pW, pH], orientation, 1);
+                    const page = pdfDoc.addPage([pW, pH]);
+                    const availW = pW - margin * 2;
+                    const availH = pH - margin * 2;
+                    const fitScale = Math.min(availW / item.width, availH / item.height);
+                    const drawW = item.width * fitScale;
+                    const drawH = item.height * fitScale;
+                    const drawX = margin + (availW - drawW) / 2;
+                    const drawY = margin + (availH - drawH) / 2;
+                    page.drawImage(item.embeddedImg, { x: drawX, y: drawY, width: drawW, height: drawH });
+                }
+            }
+            return;
+        }
+
+        // Mode 2: Continuous Long Page (Single Vertical Roll)
+        if (layoutMode === 'continuous') {
+            let [baseW] = getBasePageSize(pageSizeName, items.length);
+            if (orientation === 'landscape') baseW = Math.max(...(SIZES[pageSizeName] || SIZES.a4));
+            const availW = baseW - margin * 2;
+            let totalH = margin * 2;
+            const heights = [];
+            for (const it of items) {
+                const scale = availW / it.width;
+                const h = it.height * scale;
+                heights.push(h);
+                totalH += h;
+            }
+            totalH += Math.max(0, items.length - 1) * gap;
+
+            if (onProgress) {
+                onProgress(`Building continuous vertical canvas (${Math.round(totalH)}pt tall)...`);
+                await new Promise(r => setTimeout(r, 15));
+            }
+
+            const singlePage = pdfDoc.addPage([baseW, totalH]);
+            let currentY = totalH - margin;
+
+            for (let i = 0; i < items.length; i++) {
+                const it = items[i];
+                const h = heights[i];
+                currentY -= h;
+                if (onProgress) {
+                    onProgress(`Drawing item ${i + 1} of ${items.length}: ${it.name}...`);
+                    await new Promise(r => setTimeout(r, 10));
+                }
+                await drawItem(singlePage, it, margin, currentY, availW, h);
+                currentY -= gap;
+            }
+            return;
+        }
+
+        // Mode 3: Grid / N-Up (Fit All on 1 Single Page, 2-up, 4-up, 9-up, 16-up)
+        let itemsPerSheet = items.length;
+        if (layoutMode === '2-up') itemsPerSheet = 2;
+        else if (layoutMode === '4-up') itemsPerSheet = 4;
+        else if (layoutMode === '9-up') itemsPerSheet = 9;
+        else if (layoutMode === '16-up') itemsPerSheet = 16;
+        else if (layoutMode === 'single') itemsPerSheet = items.length;
+
+        for (let chunkStart = 0; chunkStart < items.length; chunkStart += itemsPerSheet) {
+            const chunk = items.slice(chunkStart, chunkStart + itemsPerSheet);
+            const N = chunk.length;
+
+            let [pageW, pageH] = getBasePageSize(pageSizeName, items.length);
+            [pageW, pageH] = applyOrientation([pageW, pageH], orientation, N);
+
+            const targetPage = pdfDoc.addPage([pageW, pageH]);
+            const availW = pageW - margin * 2;
+            const availH = pageH - margin * 2;
+
+            // Find optimal (cols, rows) grid maximizing scale
+            let bestCols = 1;
+            let bestRows = N;
+            let bestScale = 0;
+
+            const avgItemW = chunk.reduce((acc, it) => acc + it.width, 0) / N;
+            const avgItemH = chunk.reduce((acc, it) => acc + it.height, 0) / N;
+
+            for (let c = 1; c <= N; c++) {
+                const r = Math.ceil(N / c);
+                const cellW = (availW - (c - 1) * gap) / c;
+                const cellH = (availH - (r - 1) * gap) / r;
+                if (cellW <= 0 || cellH <= 0) continue;
+                const s = Math.min(cellW / avgItemW, cellH / avgItemH);
+                if (s > bestScale) {
+                    bestScale = s;
+                    bestCols = c;
+                    bestRows = r;
+                }
+            }
+
+            const cols = bestCols;
+            const rows = bestRows;
+            const cellW = (availW - (cols - 1) * gap) / cols;
+            const cellH = (availH - (rows - 1) * gap) / rows;
+
+            for (let i = 0; i < N; i++) {
+                const item = chunk[i];
+                const globalIndex = chunkStart + i;
+                if (onProgress) {
+                    onProgress(`Placing item ${globalIndex + 1} of ${items.length} onto grid (col ${(i % cols) + 1}, row ${Math.floor(i / cols) + 1})...`);
+                    await new Promise(r => setTimeout(r, 10));
+                }
+
+                const col = i % cols;
+                const row = Math.floor(i / cols);
+
+                const cellX = margin + col * (cellW + gap);
+                const cellY = pageH - margin - (row + 1) * cellH - row * gap;
+
+                const fitScale = Math.min(cellW / item.width, cellH / item.height);
+                const drawW = item.width * fitScale;
+                const drawH = item.height * fitScale;
+                const drawX = cellX + (cellW - drawW) / 2;
+                const drawY = cellY + (cellH - drawH) / 2;
+
+                if (showBorders) {
+                    try {
+                        targetPage.drawRectangle({
+                            x: drawX - 0.5,
+                            y: drawY - 0.5,
+                            width: drawW + 1,
+                            height: drawH + 1,
+                            borderColor: rgb(0.8, 0.82, 0.86),
+                            borderWidth: 0.5
+                        });
+                    } catch (e) {}
+                }
+
+                await drawItem(targetPage, item, drawX, drawY, drawW, drawH);
+            }
+        }
     }
 };
 
@@ -143,24 +348,56 @@ const ToolRenderers = {
             <div id="dz-area"></div>
             <div id="files-list" class="files-preview-list"></div>
             <div class="controls-panel" id="pdf-controls" style="display: none; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-                <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; flex: 1;">
+                    <div class="control-group" style="min-width: 200px;">
+                        <label>Output Layout</label>
+                        <select id="pdf-layout">
+                            <option value="single">📑 Fit All on 1 Single Page (Grid / 50-in-1)</option>
+                            <option value="continuous">📜 Continuous Long Page (Vertical Roll)</option>
+                            <option value="multi" selected>📄 Multi-Page Document (1 per page)</option>
+                            <option value="2-up">2️⃣ 2 per Sheet (2-Up)</option>
+                            <option value="4-up">4️⃣ 4 per Sheet (4-Up)</option>
+                            <option value="9-up">9️⃣ 9 per Sheet (9-Up)</option>
+                        </select>
+                    </div>
                     <div class="control-group" style="min-width: 140px;">
-                        <label>Page Orientation</label>
+                        <label>Paper Size</label>
+                        <select id="pdf-pagesize">
+                            <option value="auto" selected>Auto (Smart Fit)</option>
+                            <option value="a4">A4 (Standard 595 × 842 pt)</option>
+                            <option value="a3">A3 (Large 842 × 1191 pt)</option>
+                            <option value="a2">A2 / Poster (1191 × 1684 pt)</option>
+                            <option value="a1">A1 / Giant Poster (1684 × 2384 pt)</option>
+                            <option value="letter">US Letter (612 × 792 pt)</option>
+                        </select>
+                    </div>
+                    <div class="control-group" style="min-width: 120px;">
+                        <label>Orientation</label>
                         <select id="pdf-orientation">
-                            <option value="auto">Auto (Match Image)</option>
+                            <option value="auto" selected>Auto</option>
                             <option value="portrait">Portrait</option>
                             <option value="landscape">Landscape</option>
                         </select>
                     </div>
-                    <div class="control-group" style="min-width: 140px;">
+                    <div class="control-group" style="min-width: 120px;">
                         <label>Margins</label>
                         <select id="pdf-margins">
-                            <option value="0">None (Full Bleed)</option>
+                            <option value="10">Compact (10pt)</option>
                             <option value="20" selected>Standard (20pt)</option>
                             <option value="40">Large (40pt)</option>
+                            <option value="0">None (Full Bleed)</option>
                         </select>
                     </div>
-                    <div style="font-size: 0.88rem; color: var(--text-muted); font-weight: 500;" id="pdf-stats"></div>
+                    <div class="control-group" style="min-width: 120px;">
+                        <label>Tile Spacing</label>
+                        <select id="pdf-gap">
+                            <option value="5" selected>Tight (5pt)</option>
+                            <option value="10">Standard (10pt)</option>
+                            <option value="15">Spaced (15pt)</option>
+                            <option value="0">Zero Gap</option>
+                        </select>
+                    </div>
+                    <div style="font-size: 0.88rem; color: var(--text-muted); font-weight: 500; min-width: 100%;" id="pdf-stats"></div>
                 </div>
                 <div style="display: flex; gap: 0.75rem; align-items: center; margin-left: auto;">
                     <button class="btn-secondary" id="btn-clear-pdf" type="button">Clear All</button>
@@ -275,19 +512,24 @@ const ToolRenderers = {
             btn.style.cursor = 'not-allowed';
 
             statusBox.style.color = 'var(--accent)';
-            statusBox.textContent = `Starting PDF assembly for ${filesList.length} files...`;
+            statusBox.textContent = `Preparing ${filesList.length} files...`;
 
             try {
                 const { PDFDocument } = window.PDFLib;
                 const pdfDoc = await PDFDocument.create();
+
+                const layoutMode = container.querySelector('#pdf-layout').value;
+                const pageSizeName = container.querySelector('#pdf-pagesize').value;
                 const orientation = container.querySelector('#pdf-orientation').value;
                 const margin = parseInt(container.querySelector('#pdf-margins').value, 10);
+                const gap = parseInt(container.querySelector('#pdf-gap').value, 10);
 
+                const items = [];
                 for (let i = 0; i < filesList.length; i++) {
                     const file = filesList[i];
                     const pct = Math.round(((i + 1) / filesList.length) * 100);
-                    statusBox.textContent = `Processing file ${i + 1} of ${filesList.length} (${pct}%): ${file.name}...`;
-                    await new Promise(r => setTimeout(r, 15));
+                    statusBox.textContent = `Reading file ${i + 1} of ${filesList.length} (${pct}%): ${file.name}...`;
+                    await new Promise(r => setTimeout(r, 10));
 
                     const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
                     const arrayBuffer = await Utils.readFileAsArrayBuffer(file);
@@ -295,29 +537,30 @@ const ToolRenderers = {
                     if (isPdf) {
                         const srcDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
                         const pageIndices = srcDoc.getPageIndices();
-                        const copiedPages = await pdfDoc.copyPages(srcDoc, pageIndices);
-                        for (const p of copiedPages) {
-                            pdfDoc.addPage(p);
+                        for (const pIdx of pageIndices) {
+                            const origPage = srcDoc.getPage(pIdx);
+                            const { width, height } = origPage.getSize();
+                            items.push({
+                                type: 'pdf',
+                                file,
+                                srcDoc,
+                                pageIndex: pIdx,
+                                width,
+                                height,
+                                name: `${file.name}${pageIndices.length > 1 ? ` (p.${pIdx + 1})` : ''}`
+                            });
                         }
                     } else {
-                        let embeddedImage = null;
+                        let embeddedImg = null;
                         const isPng = file.type === 'image/png' || file.name.toLowerCase().endsWith('.png');
 
                         if (isPng) {
-                            try {
-                                embeddedImage = await pdfDoc.embedPng(arrayBuffer);
-                            } catch (e) {
-                                embeddedImage = null;
-                            }
+                            try { embeddedImg = await pdfDoc.embedPng(arrayBuffer); } catch (e) {}
                         } else {
-                            try {
-                                embeddedImage = await pdfDoc.embedJpg(arrayBuffer);
-                            } catch (e) {
-                                embeddedImage = null;
-                            }
+                            try { embeddedImg = await pdfDoc.embedJpg(arrayBuffer); } catch (e) {}
                         }
 
-                        if (!embeddedImage) {
+                        if (!embeddedImg) {
                             const objectUrl = URL.createObjectURL(file);
                             try {
                                 const img = await new Promise((resolve, reject) => {
@@ -347,63 +590,44 @@ const ToolRenderers = {
 
                                 const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.92));
                                 const buf = await Utils.readFileAsArrayBuffer(blob);
-                                embeddedImage = await pdfDoc.embedJpg(buf);
+                                embeddedImg = await pdfDoc.embedJpg(buf);
                             } finally {
                                 URL.revokeObjectURL(objectUrl);
                             }
                         }
 
-                        const imgW = embeddedImage.width;
-                        const imgH = embeddedImage.height;
-                        let pageW, pageH;
-
-                        if (orientation === 'portrait') {
-                            if (imgW > imgH) {
-                                pageW = imgH + margin * 2;
-                                pageH = imgW + margin * 2;
-                            } else {
-                                pageW = imgW + margin * 2;
-                                pageH = imgH + margin * 2;
-                            }
-                        } else if (orientation === 'landscape') {
-                            if (imgH > imgW) {
-                                pageW = imgH + margin * 2;
-                                pageH = imgW + margin * 2;
-                            } else {
-                                pageW = imgW + margin * 2;
-                                pageH = imgH + margin * 2;
-                            }
-                        } else { // auto
-                            pageW = imgW + margin * 2;
-                            pageH = imgH + margin * 2;
-                        }
-
-                        const page = pdfDoc.addPage([pageW, pageH]);
-                        const availW = pageW - margin * 2;
-                        const availH = pageH - margin * 2;
-                        const fitScale = Math.min(availW / imgW, availH / imgH);
-                        const finalW = imgW * fitScale;
-                        const finalH = imgH * fitScale;
-                        const posX = margin + (availW - finalW) / 2;
-                        const posY = margin + (availH - finalH) / 2;
-
-                        page.drawImage(embeddedImage, {
-                            x: posX,
-                            y: posY,
-                            width: finalW,
-                            height: finalH
+                        items.push({
+                            type: 'image',
+                            file,
+                            embeddedImg,
+                            width: embeddedImg.width,
+                            height: embeddedImg.height,
+                            name: file.name
                         });
                     }
                 }
 
-                statusBox.textContent = `Finalizing and saving PDF (${filesList.length} files combined)...`;
+                await Utils.renderCombinedPdf({
+                    pdfDoc,
+                    items,
+                    layoutMode,
+                    pageSizeName,
+                    orientation,
+                    margin,
+                    gap,
+                    showBorders: true,
+                    onProgress: (msg) => { statusBox.textContent = msg; }
+                });
+
+                statusBox.textContent = `Compressing and saving PDF (${items.length} items)...`;
                 await new Promise(r => setTimeout(r, 20));
 
                 const pdfBytes = await pdfDoc.save({ useObjectStreams: false });
                 const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-                Utils.downloadBlob(blob, `fasttrack_combined_${Date.now()}.pdf`);
+                const layoutSuffix = layoutMode === 'single' ? '1page' : (layoutMode === 'continuous' ? 'scroll' : 'merged');
+                Utils.downloadBlob(blob, `fasttrack_${layoutSuffix}_${Date.now()}.pdf`);
                 statusBox.style.color = 'var(--accent)';
-                statusBox.textContent = `✓ Successfully generated & downloaded PDF (${filesList.length} files combined, ${Utils.formatBytes(blob.size)})!`;
+                statusBox.textContent = `✓ Successfully generated & downloaded PDF (${items.length} items in ${layoutMode === 'single' ? '1 single page' : layoutMode + ' layout'}, ${Utils.formatBytes(blob.size)})!`;
             } catch (err) {
                 console.error(err);
                 statusBox.style.color = '#ef4444';
@@ -423,10 +647,60 @@ const ToolRenderers = {
             <div id="dz-merge"></div>
             <div id="merge-list" style="margin: 1.5rem 0; display: flex; flex-direction: column; gap: 0.75rem;"></div>
             <div class="controls-panel" id="merge-controls" style="display: none; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-                <div style="font-size: 0.9rem; color: var(--text-muted); font-weight: 500;" id="merge-stats"></div>
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; flex: 1;">
+                    <div class="control-group" style="min-width: 200px;">
+                        <label>Merge Layout</label>
+                        <select id="merge-layout">
+                            <option value="single">📑 Fit All on 1 Single Page (Grid / 50-in-1)</option>
+                            <option value="continuous">📜 Continuous Long Page (Vertical Roll)</option>
+                            <option value="multi" selected>📄 Multi-Page Document (Standard Sequence)</option>
+                            <option value="2-up">2️⃣ 2 per Sheet (2-Up)</option>
+                            <option value="4-up">4️⃣ 4 per Sheet (4-Up)</option>
+                            <option value="9-up">9️⃣ 9 per Sheet (9-Up)</option>
+                        </select>
+                    </div>
+                    <div class="control-group" style="min-width: 140px;">
+                        <label>Paper Size</label>
+                        <select id="merge-pagesize">
+                            <option value="auto" selected>Auto (Smart Fit)</option>
+                            <option value="a4">A4 (Standard 595 × 842 pt)</option>
+                            <option value="a3">A3 (Large 842 × 1191 pt)</option>
+                            <option value="a2">A2 / Poster (1191 × 1684 pt)</option>
+                            <option value="a1">A1 / Giant Poster (1684 × 2384 pt)</option>
+                            <option value="letter">US Letter (612 × 792 pt)</option>
+                        </select>
+                    </div>
+                    <div class="control-group" style="min-width: 120px;">
+                        <label>Orientation</label>
+                        <select id="merge-orientation">
+                            <option value="auto" selected>Auto</option>
+                            <option value="portrait">Portrait</option>
+                            <option value="landscape">Landscape</option>
+                        </select>
+                    </div>
+                    <div class="control-group" style="min-width: 120px;">
+                        <label>Margins</label>
+                        <select id="merge-margins">
+                            <option value="10">Compact (10pt)</option>
+                            <option value="20" selected>Standard (20pt)</option>
+                            <option value="40">Large (40pt)</option>
+                            <option value="0">None (Full Bleed)</option>
+                        </select>
+                    </div>
+                    <div class="control-group" style="min-width: 120px;">
+                        <label>Tile Spacing</label>
+                        <select id="merge-gap">
+                            <option value="5" selected>Tight (5pt)</option>
+                            <option value="10">Standard (10pt)</option>
+                            <option value="15">Spaced (15pt)</option>
+                            <option value="0">Zero Gap</option>
+                        </select>
+                    </div>
+                    <div style="font-size: 0.9rem; color: var(--text-muted); font-weight: 500; min-width: 100%;" id="merge-stats"></div>
+                </div>
                 <div style="display: flex; gap: 0.75rem; align-items: center; margin-left: auto;">
                     <button class="btn-secondary" id="btn-merge-clear" type="button">Clear All</button>
-                    <button class="btn-primary" id="btn-merge" type="button">📑 Merge into Single PDF</button>
+                    <button class="btn-primary" id="btn-merge" type="button">📑 Merge & Download PDF</button>
                 </div>
             </div>
             <div id="merge-status" style="margin-top: 1rem; color: var(--accent); font-weight: 600;"></div>
@@ -457,7 +731,7 @@ const ToolRenderers = {
 
         function renderList() {
             list.innerHTML = '';
-            controls.style.display = pdfFiles.length >= 2 ? 'flex' : (pdfFiles.length === 1 ? 'flex' : 'none');
+            controls.style.display = pdfFiles.length >= 1 ? 'flex' : 'none';
             const totalBytes = pdfFiles.reduce((acc, f) => acc + (f.size || 0), 0);
             stats.textContent = `${pdfFiles.length} file${pdfFiles.length === 1 ? '' : 's'} selected (${Utils.formatBytes(totalBytes)})`;
 
@@ -510,9 +784,9 @@ const ToolRenderers = {
         }
 
         container.querySelector('#btn-merge').onclick = async () => {
-            if (pdfFiles.length < 2) {
+            if (!pdfFiles.length) {
                 statusBox.style.color = '#ef4444';
-                statusBox.textContent = 'Please select at least 2 files to merge.';
+                statusBox.textContent = 'Please select at least 1 file to merge.';
                 return;
             }
 
@@ -522,33 +796,52 @@ const ToolRenderers = {
             btn.style.cursor = 'not-allowed';
 
             statusBox.style.color = 'var(--accent)';
-            statusBox.textContent = `Merging ${pdfFiles.length} files...`;
+            statusBox.textContent = `Preparing ${pdfFiles.length} files...`;
 
             try {
                 const { PDFDocument } = window.PDFLib;
                 const mergedPdf = await PDFDocument.create();
 
+                const layoutMode = container.querySelector('#merge-layout').value;
+                const pageSizeName = container.querySelector('#merge-pagesize').value;
+                const orientation = container.querySelector('#merge-orientation').value;
+                const margin = parseInt(container.querySelector('#merge-margins').value, 10);
+                const gap = parseInt(container.querySelector('#merge-gap').value, 10);
+
+                const items = [];
                 for (let i = 0; i < pdfFiles.length; i++) {
                     const file = pdfFiles[i];
                     const pct = Math.round(((i + 1) / pdfFiles.length) * 100);
-                    statusBox.textContent = `Merging file ${i + 1} of ${pdfFiles.length} (${pct}%): ${file.name}...`;
-                    await new Promise(r => setTimeout(r, 15));
+                    statusBox.textContent = `Reading file ${i + 1} of ${pdfFiles.length} (${pct}%): ${file.name}...`;
+                    await new Promise(r => setTimeout(r, 10));
 
                     const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
                     const buf = await Utils.readFileAsArrayBuffer(file);
 
                     if (isPdf) {
                         const doc = await PDFDocument.load(buf, { ignoreEncryption: true });
-                        const pages = await mergedPdf.copyPages(doc, doc.getPageIndices());
-                        pages.forEach(p => mergedPdf.addPage(p));
-                    } else {
-                        let embeddedImage = null;
-                        if (file.type === 'image/png' || file.name.toLowerCase().endsWith('.png')) {
-                            try { embeddedImage = await mergedPdf.embedPng(buf); } catch (e) {}
-                        } else {
-                            try { embeddedImage = await mergedPdf.embedJpg(buf); } catch (e) {}
+                        const pageIndices = doc.getPageIndices();
+                        for (const pIdx of pageIndices) {
+                            const origPage = doc.getPage(pIdx);
+                            const { width, height } = origPage.getSize();
+                            items.push({
+                                type: 'pdf',
+                                file,
+                                srcDoc: doc,
+                                pageIndex: pIdx,
+                                width,
+                                height,
+                                name: `${file.name}${pageIndices.length > 1 ? ` (p.${pIdx + 1})` : ''}`
+                            });
                         }
-                        if (!embeddedImage) {
+                    } else {
+                        let embeddedImg = null;
+                        if (file.type === 'image/png' || file.name.toLowerCase().endsWith('.png')) {
+                            try { embeddedImg = await mergedPdf.embedPng(buf); } catch (e) {}
+                        } else {
+                            try { embeddedImg = await mergedPdf.embedJpg(buf); } catch (e) {}
+                        }
+                        if (!embeddedImg) {
                             const objectUrl = URL.createObjectURL(file);
                             try {
                                 const img = await new Promise((resolve, reject) => {
@@ -575,24 +868,43 @@ const ToolRenderers = {
                                 ctx.drawImage(img, 0, 0, w, h);
                                 const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.92));
                                 const jpgBuf = await Utils.readFileAsArrayBuffer(blob);
-                                embeddedImage = await mergedPdf.embedJpg(jpgBuf);
+                                embeddedImg = await mergedPdf.embedJpg(jpgBuf);
                             } finally {
                                 URL.revokeObjectURL(objectUrl);
                             }
                         }
-                        const p = mergedPdf.addPage([embeddedImage.width, embeddedImage.height]);
-                        p.drawImage(embeddedImage, { x: 0, y: 0, width: embeddedImage.width, height: embeddedImage.height });
+                        items.push({
+                            type: 'image',
+                            file,
+                            embeddedImg,
+                            width: embeddedImg.width,
+                            height: embeddedImg.height,
+                            name: file.name
+                        });
                     }
                 }
 
-                statusBox.textContent = `Saving consolidated PDF (${pdfFiles.length} files)...`;
+                await Utils.renderCombinedPdf({
+                    pdfDoc: mergedPdf,
+                    items,
+                    layoutMode,
+                    pageSizeName,
+                    orientation,
+                    margin,
+                    gap,
+                    showBorders: true,
+                    onProgress: (msg) => { statusBox.textContent = msg; }
+                });
+
+                statusBox.textContent = `Compressing and saving PDF (${items.length} items)...`;
                 await new Promise(r => setTimeout(r, 20));
 
                 const pdfBytes = await mergedPdf.save({ useObjectStreams: false });
                 const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-                Utils.downloadBlob(blob, `merged_document_${Date.now()}.pdf`);
+                const layoutSuffix = layoutMode === 'single' ? '1page' : (layoutMode === 'continuous' ? 'scroll' : 'merged');
+                Utils.downloadBlob(blob, `merged_${layoutSuffix}_${Date.now()}.pdf`);
                 statusBox.style.color = 'var(--accent)';
-                statusBox.textContent = `✓ Successfully merged ${pdfFiles.length} files into PDF (${Utils.formatBytes(blob.size)})!`;
+                statusBox.textContent = `✓ Successfully merged ${items.length} items into ${layoutMode === 'single' ? '1 single page' : layoutMode + ' layout'} (${Utils.formatBytes(blob.size)})!`;
             } catch (err) {
                 console.error(err);
                 statusBox.style.color = '#ef4444';
