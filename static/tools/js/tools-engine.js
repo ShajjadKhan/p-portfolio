@@ -87,13 +87,14 @@ const Utils = {
         });
     },
 
-    createDropzone(container, accept, multiple, onFilesDropped) {
+    createDropzone(container, accept, multiple, onFilesDropped, customSubtitle) {
         const dropzone = document.createElement('div');
         dropzone.className = 'dropzone';
+        const sub = customSubtitle || `Supported: ${accept} (Instant client-side processing)`;
         dropzone.innerHTML = `
             <div class="dropzone-icon">📁</div>
             <div class="dropzone-title">Click to browse or drag & drop files here</div>
-            <div class="dropzone-subtitle">Supported: ${accept} (Instant client-side processing)</div>
+            <div class="dropzone-subtitle">${sub}</div>
             <button type="button" class="dropzone-btn">Choose Files</button>
             <input type="file" accept="${accept}" ${multiple ? 'multiple' : ''} style="display: none;">
         `;
@@ -108,6 +109,7 @@ const Utils = {
         fileInput.addEventListener('change', (e) => {
             if (e.target.files.length) {
                 onFilesDropped(Array.from(e.target.files));
+                fileInput.value = '';
             }
         });
 
@@ -140,25 +142,29 @@ const ToolRenderers = {
         container.innerHTML = `
             <div id="dz-area"></div>
             <div id="files-list" class="files-preview-list"></div>
-            <div class="controls-panel" id="pdf-controls" style="display: none;">
-                <div class="control-group">
-                    <label>Page Orientation</label>
-                    <select id="pdf-orientation">
-                        <option value="auto">Auto (Match Image)</option>
-                        <option value="portrait">Portrait</option>
-                        <option value="landscape">Landscape</option>
-                    </select>
+            <div class="controls-panel" id="pdf-controls" style="display: none; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+                    <div class="control-group" style="min-width: 140px;">
+                        <label>Page Orientation</label>
+                        <select id="pdf-orientation">
+                            <option value="auto">Auto (Match Image)</option>
+                            <option value="portrait">Portrait</option>
+                            <option value="landscape">Landscape</option>
+                        </select>
+                    </div>
+                    <div class="control-group" style="min-width: 140px;">
+                        <label>Margins</label>
+                        <select id="pdf-margins">
+                            <option value="0">None (Full Bleed)</option>
+                            <option value="20" selected>Standard (20pt)</option>
+                            <option value="40">Large (40pt)</option>
+                        </select>
+                    </div>
+                    <div style="font-size: 0.88rem; color: var(--text-muted); font-weight: 500;" id="pdf-stats"></div>
                 </div>
-                <div class="control-group">
-                    <label>Margins</label>
-                    <select id="pdf-margins">
-                        <option value="0">None (Full Bleed)</option>
-                        <option value="20" selected>Standard (20pt)</option>
-                        <option value="40">Large (40pt)</option>
-                    </select>
-                </div>
-                <div class="control-group" style="margin-left: auto; justify-content: flex-end;">
-                    <button class="btn-primary" id="btn-create-pdf">⚡ Generate & Download PDF</button>
+                <div style="display: flex; gap: 0.75rem; align-items: center; margin-left: auto;">
+                    <button class="btn-secondary" id="btn-clear-pdf" type="button">Clear All</button>
+                    <button class="btn-primary" id="btn-create-pdf" type="button">⚡ Generate & Download PDF</button>
                 </div>
             </div>
             <div id="status-box" style="margin-top: 1rem; color: var(--accent); font-weight: 600;"></div>
@@ -169,26 +175,64 @@ const ToolRenderers = {
         const controls = container.querySelector('#pdf-controls');
         const statusBox = container.querySelector('#status-box');
 
-        Utils.createDropzone(dzArea, 'image/jpeg,image/png,image/webp', true, (newFiles) => {
-            filesList = [...filesList, ...newFiles];
+        Utils.createDropzone(
+            dzArea,
+            'image/jpeg,image/png,image/webp,image/gif,image/bmp,application/pdf,.pdf,.jpg,.jpeg,.png,.webp,.bmp',
+            true,
+            (newFiles) => {
+                filesList = [...filesList, ...newFiles];
+                renderList();
+            },
+            'Supported: JPG, PNG, WebP, BMP & PDF Documents (Instant client-side processing)'
+        );
+
+        container.querySelector('#btn-clear-pdf').onclick = () => {
+            filesList.forEach(f => {
+                if (f._previewUrl) URL.revokeObjectURL(f._previewUrl);
+            });
+            filesList = [];
             renderList();
-        });
+            statusBox.textContent = '';
+        };
 
         function renderList() {
             filesContainer.innerHTML = '';
             controls.style.display = filesList.length > 0 ? 'flex' : 'none';
 
+            const totalBytes = filesList.reduce((acc, f) => acc + (f.size || 0), 0);
+            const statsEl = container.querySelector('#pdf-stats');
+            if (statsEl) {
+                statsEl.textContent = `${filesList.length} files • ${Utils.formatBytes(totalBytes)} total`;
+            }
+
             filesList.forEach((file, index) => {
                 const card = document.createElement('div');
                 card.className = 'file-preview-card';
+                const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+
+                let thumbHtml = '';
+                if (isPdf) {
+                    thumbHtml = `
+                        <div class="file-thumbnail pdf-thumb" style="display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(239, 68, 68, 0.1); color: #ef4444; border-radius: var(--radius-sm); margin-bottom: 0.5rem; height: 120px; width: 100%;">
+                            <span style="font-size: 2.5rem; line-height: 1;">📄</span>
+                            <span style="font-size: 0.7rem; font-weight: 800; letter-spacing: 0.05em; margin-top: 0.35rem; background: rgba(239, 68, 68, 0.2); padding: 2px 7px; border-radius: 4px;">PDF</span>
+                        </div>
+                    `;
+                } else {
+                    if (!file._previewUrl) {
+                        file._previewUrl = URL.createObjectURL(file);
+                    }
+                    thumbHtml = `<img class="file-thumbnail" src="${file._previewUrl}" alt="${file.name}">`;
+                }
+
                 card.innerHTML = `
-                    <img class="file-thumbnail" src="${URL.createObjectURL(file)}" alt="Preview">
+                    ${thumbHtml}
                     <div class="file-card-name" title="${file.name}">${file.name}</div>
                     <div class="file-card-size">${Utils.formatBytes(file.size)}</div>
                     <div class="file-actions">
-                        <button class="action-mini-btn" title="Move Left" data-action="left">◀</button>
-                        <button class="action-mini-btn" title="Move Right" data-action="right">▶</button>
-                        <button class="action-mini-btn btn-del" title="Remove" data-action="del">✕</button>
+                        <button class="action-mini-btn" title="Move Left" data-action="left" type="button">◀</button>
+                        <button class="action-mini-btn" title="Move Right" data-action="right" type="button">▶</button>
+                        <button class="action-mini-btn btn-del" title="Remove" data-action="del" type="button">✕</button>
                     </div>
                 `;
 
@@ -211,7 +255,10 @@ const ToolRenderers = {
                 };
 
                 card.querySelector('[data-action="del"]').onclick = () => {
-                    filesList.splice(index, 1);
+                    const removed = filesList.splice(index, 1);
+                    if (removed[0] && removed[0]._previewUrl) {
+                        URL.revokeObjectURL(removed[0]._previewUrl);
+                    }
                     renderList();
                 };
 
@@ -221,67 +268,150 @@ const ToolRenderers = {
 
         container.querySelector('#btn-create-pdf').onclick = async () => {
             if (!filesList.length) return;
-            statusBox.textContent = 'Assembling PDF in browser...';
+
+            const btn = container.querySelector('#btn-create-pdf');
+            btn.disabled = true;
+            btn.style.opacity = '0.6';
+            btn.style.cursor = 'not-allowed';
+
+            statusBox.style.color = 'var(--accent)';
+            statusBox.textContent = `Starting PDF assembly for ${filesList.length} files...`;
+
             try {
                 const { PDFDocument } = window.PDFLib;
                 const pdfDoc = await PDFDocument.create();
                 const orientation = container.querySelector('#pdf-orientation').value;
                 const margin = parseInt(container.querySelector('#pdf-margins').value, 10);
 
-                for (const file of filesList) {
+                for (let i = 0; i < filesList.length; i++) {
+                    const file = filesList[i];
+                    const pct = Math.round(((i + 1) / filesList.length) * 100);
+                    statusBox.textContent = `Processing file ${i + 1} of ${filesList.length} (${pct}%): ${file.name}...`;
+                    await new Promise(r => setTimeout(r, 15));
+
+                    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
                     const arrayBuffer = await Utils.readFileAsArrayBuffer(file);
-                    let embeddedImage;
 
-                    if (file.type === 'image/png') {
-                        embeddedImage = await pdfDoc.embedPng(arrayBuffer);
-                    } else {
-                        // Embed as JPG or convert WebP to JPG via canvas
-                        try {
-                            embeddedImage = await pdfDoc.embedJpg(arrayBuffer);
-                        } catch (e) {
-                            // Fallback: draw through canvas to get JPG
-                            const dataUrl = await Utils.readFileAsDataURL(file);
-                            const img = new Image();
-                            await new Promise(r => { img.onload = r; img.src = dataUrl; });
-                            const c = document.createElement('canvas');
-                            c.width = img.width;
-                            c.height = img.height;
-                            const ctx = c.getContext('2d');
-                            ctx.fillStyle = '#ffffff';
-                            ctx.fillRect(0, 0, c.width, c.height);
-                            ctx.drawImage(img, 0, 0);
-                            const jpgBlob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.92));
-                            const buf = await Utils.readFileAsArrayBuffer(jpgBlob);
-                            embeddedImage = await pdfDoc.embedJpg(buf);
+                    if (isPdf) {
+                        const srcDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
+                        const pageIndices = srcDoc.getPageIndices();
+                        const copiedPages = await pdfDoc.copyPages(srcDoc, pageIndices);
+                        for (const p of copiedPages) {
+                            pdfDoc.addPage(p);
                         }
+                    } else {
+                        let embeddedImage = null;
+                        const isPng = file.type === 'image/png' || file.name.toLowerCase().endsWith('.png');
+
+                        if (isPng) {
+                            try {
+                                embeddedImage = await pdfDoc.embedPng(arrayBuffer);
+                            } catch (e) {
+                                embeddedImage = null;
+                            }
+                        } else {
+                            try {
+                                embeddedImage = await pdfDoc.embedJpg(arrayBuffer);
+                            } catch (e) {
+                                embeddedImage = null;
+                            }
+                        }
+
+                        if (!embeddedImage) {
+                            const objectUrl = URL.createObjectURL(file);
+                            try {
+                                const img = await new Promise((resolve, reject) => {
+                                    const imageEl = new Image();
+                                    const timer = setTimeout(() => reject(new Error(`Timeout decoding image "${file.name}"`)), 15000);
+                                    imageEl.onload = () => { clearTimeout(timer); resolve(imageEl); };
+                                    imageEl.onerror = () => { clearTimeout(timer); reject(new Error(`Failed to decode image "${file.name}"`)); };
+                                    imageEl.src = objectUrl;
+                                });
+
+                                let w = img.naturalWidth || img.width;
+                                let h = img.naturalHeight || img.height;
+                                const maxDim = 3840;
+                                if (w > maxDim || h > maxDim) {
+                                    const scale = Math.min(maxDim / w, maxDim / h);
+                                    w = Math.round(w * scale);
+                                    h = Math.round(h * scale);
+                                }
+
+                                const canvas = document.createElement('canvas');
+                                canvas.width = w;
+                                canvas.height = h;
+                                const ctx = canvas.getContext('2d');
+                                ctx.fillStyle = '#ffffff';
+                                ctx.fillRect(0, 0, w, h);
+                                ctx.drawImage(img, 0, 0, w, h);
+
+                                const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.92));
+                                const buf = await Utils.readFileAsArrayBuffer(blob);
+                                embeddedImage = await pdfDoc.embedJpg(buf);
+                            } finally {
+                                URL.revokeObjectURL(objectUrl);
+                            }
+                        }
+
+                        const imgW = embeddedImage.width;
+                        const imgH = embeddedImage.height;
+                        let pageW, pageH;
+
+                        if (orientation === 'portrait') {
+                            if (imgW > imgH) {
+                                pageW = imgH + margin * 2;
+                                pageH = imgW + margin * 2;
+                            } else {
+                                pageW = imgW + margin * 2;
+                                pageH = imgH + margin * 2;
+                            }
+                        } else if (orientation === 'landscape') {
+                            if (imgH > imgW) {
+                                pageW = imgH + margin * 2;
+                                pageH = imgW + margin * 2;
+                            } else {
+                                pageW = imgW + margin * 2;
+                                pageH = imgH + margin * 2;
+                            }
+                        } else { // auto
+                            pageW = imgW + margin * 2;
+                            pageH = imgH + margin * 2;
+                        }
+
+                        const page = pdfDoc.addPage([pageW, pageH]);
+                        const availW = pageW - margin * 2;
+                        const availH = pageH - margin * 2;
+                        const fitScale = Math.min(availW / imgW, availH / imgH);
+                        const finalW = imgW * fitScale;
+                        const finalH = imgH * fitScale;
+                        const posX = margin + (availW - finalW) / 2;
+                        const posY = margin + (availH - finalH) / 2;
+
+                        page.drawImage(embeddedImage, {
+                            x: posX,
+                            y: posY,
+                            width: finalW,
+                            height: finalH
+                        });
                     }
-
-                    const { width, height } = embeddedImage;
-                    let pageWidth = width + margin * 2;
-                    let pageHeight = height + margin * 2;
-
-                    if (orientation === 'portrait' && pageWidth > pageHeight) {
-                        const t = pageWidth; pageWidth = pageHeight; pageHeight = t;
-                    } else if (orientation === 'landscape' && pageHeight > pageWidth) {
-                        const t = pageWidth; pageWidth = pageHeight; pageHeight = t;
-                    }
-
-                    const page = pdfDoc.addPage([pageWidth, pageHeight]);
-                    page.drawImage(embeddedImage, {
-                        x: margin,
-                        y: margin,
-                        width: pageWidth - margin * 2,
-                        height: pageHeight - margin * 2
-                    });
                 }
 
-                const pdfBytes = await pdfDoc.save();
+                statusBox.textContent = `Finalizing and saving PDF (${filesList.length} files combined)...`;
+                await new Promise(r => setTimeout(r, 20));
+
+                const pdfBytes = await pdfDoc.save({ useObjectStreams: false });
                 const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-                Utils.downloadBlob(blob, `fasttrack_images_${Date.now()}.pdf`);
-                statusBox.textContent = '✓ PDF successfully created and downloaded!';
+                Utils.downloadBlob(blob, `fasttrack_combined_${Date.now()}.pdf`);
+                statusBox.style.color = 'var(--accent)';
+                statusBox.textContent = `✓ Successfully generated & downloaded PDF (${filesList.length} files combined, ${Utils.formatBytes(blob.size)})!`;
             } catch (err) {
                 console.error(err);
-                statusBox.textContent = 'Error creating PDF: ' + err.message;
+                statusBox.style.color = '#ef4444';
+                statusBox.textContent = '⚠️ Error creating PDF: ' + err.message;
+            } finally {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
             }
         };
     },
@@ -292,9 +422,12 @@ const ToolRenderers = {
         container.innerHTML = `
             <div id="dz-merge"></div>
             <div id="merge-list" style="margin: 1.5rem 0; display: flex; flex-direction: column; gap: 0.75rem;"></div>
-            <div class="controls-panel" id="merge-controls" style="display: none; justify-content: space-between;">
-                <div style="font-size: 0.9rem; color: var(--text-muted);" id="merge-stats"></div>
-                <button class="btn-primary" id="btn-merge">📑 Merge into Single PDF</button>
+            <div class="controls-panel" id="merge-controls" style="display: none; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                <div style="font-size: 0.9rem; color: var(--text-muted); font-weight: 500;" id="merge-stats"></div>
+                <div style="display: flex; gap: 0.75rem; align-items: center; margin-left: auto;">
+                    <button class="btn-secondary" id="btn-merge-clear" type="button">Clear All</button>
+                    <button class="btn-primary" id="btn-merge" type="button">📑 Merge into Single PDF</button>
+                </div>
             </div>
             <div id="merge-status" style="margin-top: 1rem; color: var(--accent); font-weight: 600;"></div>
         `;
@@ -305,31 +438,47 @@ const ToolRenderers = {
         const stats = container.querySelector('#merge-stats');
         const statusBox = container.querySelector('#merge-status');
 
-        Utils.createDropzone(dz, 'application/pdf', true, (files) => {
-            pdfFiles = [...pdfFiles, ...files];
+        Utils.createDropzone(
+            dz,
+            'application/pdf,image/*,.pdf,.jpg,.jpeg,.png,.webp',
+            true,
+            (files) => {
+                pdfFiles = [...pdfFiles, ...files];
+                renderList();
+            },
+            'Supported: PDF Documents & Images (Instant client-side processing)'
+        );
+
+        container.querySelector('#btn-merge-clear').onclick = () => {
+            pdfFiles = [];
             renderList();
-        });
+            statusBox.textContent = '';
+        };
 
         function renderList() {
             list.innerHTML = '';
-            controls.style.display = pdfFiles.length >= 2 ? 'flex' : 'none';
-            stats.textContent = `${pdfFiles.length} files selected for merging`;
+            controls.style.display = pdfFiles.length >= 2 ? 'flex' : (pdfFiles.length === 1 ? 'flex' : 'none');
+            const totalBytes = pdfFiles.reduce((acc, f) => acc + (f.size || 0), 0);
+            stats.textContent = `${pdfFiles.length} file${pdfFiles.length === 1 ? '' : 's'} selected (${Utils.formatBytes(totalBytes)})`;
 
             pdfFiles.forEach((f, idx) => {
                 const item = document.createElement('div');
-                item.style.cssText = 'background: var(--bg-surface); border: 1px solid var(--border-color); padding: 0.85rem 1.25rem; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: space-between;';
+                item.style.cssText = 'background: var(--bg-surface, #0d1322); border: 1px solid var(--border-dim, rgba(255,255,255,0.08)); padding: 0.85rem 1.25rem; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: space-between; gap: 1rem;';
+                const isPdf = f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf');
+                const icon = isPdf ? '📄' : '🖼️';
+
                 item.innerHTML = `
-                    <div style="display: flex; align-items: center; gap: 0.85rem;">
-                        <span style="font-size: 1.2rem;">📄</span>
-                        <div>
-                            <div style="font-weight: 600; font-size: 0.92rem;">${idx + 1}. ${f.name}</div>
+                    <div style="display: flex; align-items: center; gap: 0.85rem; min-width: 0;">
+                        <span style="font-size: 1.4rem;">${icon}</span>
+                        <div style="min-width: 0;">
+                            <div style="font-weight: 600; font-size: 0.92rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${idx + 1}. ${f.name}</div>
                             <div style="font-size: 0.75rem; color: var(--text-dim);">${Utils.formatBytes(f.size)}</div>
                         </div>
                     </div>
-                    <div style="display: flex; gap: 0.4rem;">
-                        <button class="action-mini-btn" data-act="up">▲</button>
-                        <button class="action-mini-btn" data-act="down">▼</button>
-                        <button class="action-mini-btn btn-del" data-act="del">✕</button>
+                    <div style="display: flex; gap: 0.4rem; flex-shrink: 0;">
+                        <button class="action-mini-btn" data-act="up" type="button" title="Move Up">▲</button>
+                        <button class="action-mini-btn" data-act="down" type="button" title="Move Down">▼</button>
+                        <button class="action-mini-btn btn-del" data-act="del" type="button" title="Remove">✕</button>
                     </div>
                 `;
 
@@ -361,25 +510,97 @@ const ToolRenderers = {
         }
 
         container.querySelector('#btn-merge').onclick = async () => {
-            if (pdfFiles.length < 2) return;
-            statusBox.textContent = 'Merging documents in browser memory...';
+            if (pdfFiles.length < 2) {
+                statusBox.style.color = '#ef4444';
+                statusBox.textContent = 'Please select at least 2 files to merge.';
+                return;
+            }
+
+            const btn = container.querySelector('#btn-merge');
+            btn.disabled = true;
+            btn.style.opacity = '0.6';
+            btn.style.cursor = 'not-allowed';
+
+            statusBox.style.color = 'var(--accent)';
+            statusBox.textContent = `Merging ${pdfFiles.length} files...`;
+
             try {
                 const { PDFDocument } = window.PDFLib;
                 const mergedPdf = await PDFDocument.create();
 
-                for (const file of pdfFiles) {
+                for (let i = 0; i < pdfFiles.length; i++) {
+                    const file = pdfFiles[i];
+                    const pct = Math.round(((i + 1) / pdfFiles.length) * 100);
+                    statusBox.textContent = `Merging file ${i + 1} of ${pdfFiles.length} (${pct}%): ${file.name}...`;
+                    await new Promise(r => setTimeout(r, 15));
+
+                    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
                     const buf = await Utils.readFileAsArrayBuffer(file);
-                    const doc = await PDFDocument.load(buf);
-                    const pages = await mergedPdf.copyPages(doc, doc.getPageIndices());
-                    pages.forEach(p => mergedPdf.addPage(p));
+
+                    if (isPdf) {
+                        const doc = await PDFDocument.load(buf, { ignoreEncryption: true });
+                        const pages = await mergedPdf.copyPages(doc, doc.getPageIndices());
+                        pages.forEach(p => mergedPdf.addPage(p));
+                    } else {
+                        let embeddedImage = null;
+                        if (file.type === 'image/png' || file.name.toLowerCase().endsWith('.png')) {
+                            try { embeddedImage = await mergedPdf.embedPng(buf); } catch (e) {}
+                        } else {
+                            try { embeddedImage = await mergedPdf.embedJpg(buf); } catch (e) {}
+                        }
+                        if (!embeddedImage) {
+                            const objectUrl = URL.createObjectURL(file);
+                            try {
+                                const img = await new Promise((resolve, reject) => {
+                                    const imageEl = new Image();
+                                    const timer = setTimeout(() => reject(new Error(`Timeout loading "${file.name}"`)), 15000);
+                                    imageEl.onload = () => { clearTimeout(timer); resolve(imageEl); };
+                                    imageEl.onerror = () => { clearTimeout(timer); reject(new Error(`Failed to decode image "${file.name}"`)); };
+                                    imageEl.src = objectUrl;
+                                });
+                                let w = img.naturalWidth || img.width;
+                                let h = img.naturalHeight || img.height;
+                                const maxDim = 3840;
+                                if (w > maxDim || h > maxDim) {
+                                    const scale = Math.min(maxDim / w, maxDim / h);
+                                    w = Math.round(w * scale);
+                                    h = Math.round(h * scale);
+                                }
+                                const canvas = document.createElement('canvas');
+                                canvas.width = w;
+                                canvas.height = h;
+                                const ctx = canvas.getContext('2d');
+                                ctx.fillStyle = '#ffffff';
+                                ctx.fillRect(0, 0, w, h);
+                                ctx.drawImage(img, 0, 0, w, h);
+                                const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.92));
+                                const jpgBuf = await Utils.readFileAsArrayBuffer(blob);
+                                embeddedImage = await mergedPdf.embedJpg(jpgBuf);
+                            } finally {
+                                URL.revokeObjectURL(objectUrl);
+                            }
+                        }
+                        const p = mergedPdf.addPage([embeddedImage.width, embeddedImage.height]);
+                        p.drawImage(embeddedImage, { x: 0, y: 0, width: embeddedImage.width, height: embeddedImage.height });
+                    }
                 }
 
-                const pdfBytes = await mergedPdf.save();
+                statusBox.textContent = `Saving consolidated PDF (${pdfFiles.length} files)...`;
+                await new Promise(r => setTimeout(r, 20));
+
+                const pdfBytes = await mergedPdf.save({ useObjectStreams: false });
                 const blob = new Blob([pdfBytes], { type: 'application/pdf' });
                 Utils.downloadBlob(blob, `merged_document_${Date.now()}.pdf`);
-                statusBox.textContent = '✓ Successfully merged and downloaded!';
+                statusBox.style.color = 'var(--accent)';
+                statusBox.textContent = `✓ Successfully merged ${pdfFiles.length} files into PDF (${Utils.formatBytes(blob.size)})!`;
             } catch (err) {
+                console.error(err);
+                statusBox.style.color = '#ef4444';
                 statusBox.textContent = 'Merge failed: ' + err.message;
+            } finally {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
             }
         };
     },
@@ -526,7 +747,7 @@ const ToolRenderers = {
             statusBox.textContent = 'Rebuilding PDF document...';
             try {
                 const { PDFDocument, degrees } = window.PDFLib;
-                const sourcePdf = await PDFDocument.load(currentDoc);
+                const sourcePdf = await PDFDocument.load(currentDoc, { ignoreEncryption: true });
                 const newPdf = await PDFDocument.create();
 
                 for (const item of activePages) {
@@ -581,7 +802,7 @@ const ToolRenderers = {
             try {
                 pdfBytes = await Utils.readFileAsArrayBuffer(files[0]);
                 const { PDFDocument } = window.PDFLib;
-                const doc = await PDFDocument.load(pdfBytes);
+                const doc = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
                 totalPages = doc.getPageCount();
                 pagesCountEl.textContent = `${totalPages} Pages`;
                 container.querySelector('#split-ranges').value = `1-${Math.min(totalPages, 3)}`;
@@ -624,7 +845,7 @@ const ToolRenderers = {
                 }
 
                 const { PDFDocument } = window.PDFLib;
-                const source = await PDFDocument.load(pdfBytes);
+                const source = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
                 const target = await PDFDocument.create();
 
                 const copiedPages = await target.copyPages(source, Array.from(pagesToExtract));
