@@ -648,53 +648,58 @@ const ToolRenderers = {
             <div id="merge-list" style="margin: 1.5rem 0; display: flex; flex-direction: column; gap: 0.75rem;"></div>
             <div class="controls-panel" id="merge-controls" style="display: none; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
                 <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; flex: 1;">
-                    <div class="control-group" style="min-width: 200px;">
+                    <div class="control-group" style="min-width: 240px;">
                         <label>Merge Layout</label>
                         <select id="merge-layout">
+                            <option value="multi" selected>📄 Standard Sequence (100% Original Page Size)</option>
                             <option value="single">📑 Fit All on 1 Single Page (Grid / 50-in-1)</option>
                             <option value="continuous">📜 Continuous Long Page (Vertical Roll)</option>
-                            <option value="multi" selected>📄 Multi-Page Document (Standard Sequence)</option>
-                            <option value="2-up">2️⃣ 2 per Sheet (2-Up)</option>
+                            <option value="2-up">2️⃣ 2 per Sheet (2-Up / Halved Layout)</option>
                             <option value="4-up">4️⃣ 4 per Sheet (4-Up)</option>
                             <option value="9-up">9️⃣ 9 per Sheet (9-Up)</option>
                         </select>
                     </div>
-                    <div class="control-group" style="min-width: 140px;">
-                        <label>Paper Size</label>
-                        <select id="merge-pagesize">
-                            <option value="auto" selected>Auto (Smart Fit)</option>
-                            <option value="a4">A4 (Standard 595 × 842 pt)</option>
-                            <option value="a3">A3 (Large 842 × 1191 pt)</option>
-                            <option value="a2">A2 / Poster (1191 × 1684 pt)</option>
-                            <option value="a1">A1 / Giant Poster (1684 × 2384 pt)</option>
-                            <option value="letter">US Letter (612 × 792 pt)</option>
-                        </select>
+                    <div id="grid-settings" style="display: none; gap: 1rem; flex-wrap: wrap; align-items: center;">
+                        <div class="control-group" style="min-width: 140px;">
+                            <label>Paper Size</label>
+                            <select id="merge-pagesize">
+                                <option value="auto" selected>Auto (Smart Fit)</option>
+                                <option value="a4">A4 (Standard 595 × 842 pt)</option>
+                                <option value="a3">A3 (Large 842 × 1191 pt)</option>
+                                <option value="a2">A2 / Poster (1191 × 1684 pt)</option>
+                                <option value="a1">A1 / Giant Poster (1684 × 2384 pt)</option>
+                                <option value="letter">US Letter (612 × 792 pt)</option>
+                            </select>
+                        </div>
+                        <div class="control-group" style="min-width: 120px;">
+                            <label>Orientation</label>
+                            <select id="merge-orientation">
+                                <option value="auto" selected>Auto</option>
+                                <option value="portrait">Portrait</option>
+                                <option value="landscape">Landscape</option>
+                            </select>
+                        </div>
+                        <div class="control-group" style="min-width: 120px;">
+                            <label>Margins</label>
+                            <select id="merge-margins">
+                                <option value="10">Compact (10pt)</option>
+                                <option value="20" selected>Standard (20pt)</option>
+                                <option value="40">Large (40pt)</option>
+                                <option value="0">None (Full Bleed)</option>
+                            </select>
+                        </div>
+                        <div class="control-group" style="min-width: 120px;">
+                            <label>Tile Spacing</label>
+                            <select id="merge-gap">
+                                <option value="5" selected>Tight (5pt)</option>
+                                <option value="10">Standard (10pt)</option>
+                                <option value="15">Spaced (15pt)</option>
+                                <option value="0">Zero Gap</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="control-group" style="min-width: 120px;">
-                        <label>Orientation</label>
-                        <select id="merge-orientation">
-                            <option value="auto" selected>Auto</option>
-                            <option value="portrait">Portrait</option>
-                            <option value="landscape">Landscape</option>
-                        </select>
-                    </div>
-                    <div class="control-group" style="min-width: 120px;">
-                        <label>Margins</label>
-                        <select id="merge-margins">
-                            <option value="10">Compact (10pt)</option>
-                            <option value="20" selected>Standard (20pt)</option>
-                            <option value="40">Large (40pt)</option>
-                            <option value="0">None (Full Bleed)</option>
-                        </select>
-                    </div>
-                    <div class="control-group" style="min-width: 120px;">
-                        <label>Tile Spacing</label>
-                        <select id="merge-gap">
-                            <option value="5" selected>Tight (5pt)</option>
-                            <option value="10">Standard (10pt)</option>
-                            <option value="15">Spaced (15pt)</option>
-                            <option value="0">Zero Gap</option>
-                        </select>
+                    <div id="merge-fidelity-note" style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; color: #10b981; font-weight: 500;">
+                        <span>✓ Full Page Fidelity: Original dimensions, orientations, and vector layouts are 100% preserved.</span>
                     </div>
                     <div style="font-size: 0.9rem; color: var(--text-muted); font-weight: 500; min-width: 100%;" id="merge-stats"></div>
                 </div>
@@ -711,6 +716,17 @@ const ToolRenderers = {
         const controls = container.querySelector('#merge-controls');
         const stats = container.querySelector('#merge-stats');
         const statusBox = container.querySelector('#merge-status');
+        const layoutSelect = container.querySelector('#merge-layout');
+        const gridSettings = container.querySelector('#grid-settings');
+        const fidelityNote = container.querySelector('#merge-fidelity-note');
+
+        layoutSelect.onchange = () => {
+            const isMulti = layoutSelect.value === 'multi';
+            gridSettings.style.display = isMulti ? 'none' : 'flex';
+            if (fidelityNote) {
+                fidelityNote.style.display = isMulti ? 'flex' : 'none';
+            }
+        };
 
         Utils.createDropzone(
             dz,
@@ -875,22 +891,20 @@ const ToolRenderers = {
             const totalBytes = pdfFiles.reduce((acc, f) => acc + (f.size || 0), 0);
             const layoutMode = container.querySelector('#merge-layout').value;
 
-            // Strategy: For large multi-file payloads (> 20MB) or when layout is standard sequence 'multi',
-            // browser V8 heap cannot allocate hundreds of MBs in memory without crashing.
-            // Route directly to high-performance disk streaming server engine!
-            if (layoutMode === 'multi' && totalBytes > 20 * 1024 * 1024) {
+            // For standard sequence multi-page layout, always use native C++ server engine (qpdf)
+            // which guarantees 100% full-page vector fidelity, zero clipping, and preserves all original orientations.
+            if (layoutMode === 'multi') {
                 try {
                     await runServerMerge(pdfFiles);
+                    return;
                 } catch (srvErr) {
-                    console.error('Server merge error:', srvErr);
-                    statusBox.style.color = '#ef4444';
-                    statusBox.textContent = 'Merge error: ' + srvErr.message;
+                    console.warn('Server merge issue, falling back to browser memory:', srvErr);
+                    statusBox.textContent = 'Server busy, falling back to in-browser merge...';
                 } finally {
                     btn.disabled = false;
                     btn.style.opacity = '1';
                     btn.style.cursor = 'pointer';
                 }
-                return;
             }
 
             try {

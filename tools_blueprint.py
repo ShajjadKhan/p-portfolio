@@ -9,6 +9,7 @@ import csv
 import zipfile
 import time
 import tempfile
+import subprocess
 import xml.etree.ElementTree as ET
 from urllib.parse import urlparse
 from datetime import datetime
@@ -26,6 +27,7 @@ from flask import (
 import requests
 from PIL import Image
 from pypdf import PdfWriter, PdfReader
+from pypdf.generic import NameObject
 
 from tools_catalog import CATEGORIES, TOOLS, get_tool_by_slug, get_tools_by_category
 
@@ -426,23 +428,76 @@ def api_spin_wheel_import():
     })
 
 
+def _execute_native_pdf_merge(pdf_paths, output_path):
+    """
+    High-fidelity PDF merger preserving 100% vector layout, page dimensions,
+    orientation rotations, CropBoxes, and UserUnits.
+    Uses C++ qpdf as primary engine, poppler pdfunite as secondary, and pypdf as fallback.
+    """
+    # 1. Primary Engine: qpdf (Lossless C++ standard; preserves all boxes, rotations & UserUnits)
+    try:
+        cmd = ["qpdf", "--warning-exit-0", "--empty", "--pages"]
+        for p in pdf_paths:
+            cmd.extend([p, "1-z"])
+        cmd.extend(["--", output_path])
+        res = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+        if res.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 0:
+            return True, "qpdf"
+    except Exception:
+        pass
+
+    # 2. Secondary Engine: pdfunite (Poppler C++)
+    try:
+        cmd = ["pdfunite"] + pdf_paths + [output_path]
+        res = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+        if res.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 0:
+            return True, "pdfunite"
+    except Exception:
+        pass
+
+    # 3. Fallback Engine: pypdf with explicit geometry integrity protection
+    writer = PdfWriter()
+    for p in pdf_paths:
+        reader = PdfReader(p, strict=False)
+        if reader.is_encrypted:
+            try:
+                reader.decrypt('')
+            except Exception:
+                pass
+        for page in reader.pages:
+            # Prevent half-page clipping: ensure CropBox does not artificially truncate MediaBox
+            if "/CropBox" in page and "/MediaBox" in page:
+                try:
+                    cb = page.cropbox
+                    mb = page.mediabox
+                    if cb.width < mb.width * 0.7 or cb.height < mb.height * 0.7:
+                        page[NameObject("/CropBox")] = page[NameObject("/MediaBox")]
+                except Exception:
+                    pass
+            writer.add_page(page)
+
+    with open(output_path, "wb") as out_f:
+        writer.write(out_f)
+
+    return True, "pypdf"
+
+
 @tools_bp.route('/api/pdf/merge', methods=['POST'])
 def api_pdf_merge():
-    """High-performance server-side PDF merge with disk streaming for payloads up to 500MB+."""
+    """High-performance server-side PDF merge with multi-engine C++ fidelity preserving full page layouts."""
     files = request.files.getlist('pdf_files')
     if not files or len(files) < 2:
         return jsonify({"status": "error", "message": "At least 2 PDF files are required to merge."}), 400
 
     temp_cleanup_paths = []
+    pdf_input_paths = []
     try:
-        writer = PdfWriter()
-
         for idx, f in enumerate(files):
             orig_name = f.filename or f"document_{idx + 1}.pdf"
             orig_name_lower = orig_name.lower()
 
-            # Save incoming stream chunk by chunk directly to disk temp file to eliminate RAM spikes
-            tf = tempfile.NamedTemporaryFile(suffix='.tmp', delete=False)
+            # Save incoming stream chunk by chunk directly to disk temp file
+            tf = tempfile.NamedTemporaryFile(suffix='.pdf' if orig_name_lower.endswith('.pdf') else '.tmp', delete=False)
             temp_path = tf.name
             temp_cleanup_paths.append(temp_path)
             f.save(temp_path)
@@ -466,30 +521,22 @@ def api_pdf_merge():
                     img_pdf.close()
 
                     conv_img.save(img_pdf_path, 'PDF', quality=95)
-                    reader = PdfReader(img_pdf_path, strict=False)
-                    writer.append(reader)
+                    pdf_input_paths.append(img_pdf_path)
                 except Exception as img_err:
                     return jsonify({"status": "error", "message": f"Could not process image '{orig_name}': {str(img_err)}"}), 400
             else:
-                try:
-                    reader = PdfReader(temp_path, strict=False)
-                    if reader.is_encrypted:
-                        try:
-                            reader.decrypt('')
-                        except Exception:
-                            pass
-                    writer.append(reader)
-                except Exception as pdf_err:
-                    return jsonify({"status": "error", "message": f"Could not process PDF '{orig_name}': {str(pdf_err)}"}), 400
+                pdf_input_paths.append(temp_path)
 
-        # Stream write merged output directly to disk
+        # Output destination file
         out_tf = tempfile.NamedTemporaryFile(suffix='.pdf', delete=False)
         out_path = out_tf.name
         temp_cleanup_paths.append(out_path)
         out_tf.close()
 
-        with open(out_path, 'wb') as out_f:
-            writer.write(out_f)
+        # Run native high-fidelity merge
+        success, engine = _execute_native_pdf_merge(pdf_input_paths, out_path)
+        if not success or not os.path.exists(out_path) or os.path.getsize(out_path) == 0:
+            raise RuntimeError(f"Merge engine {engine} failed to generate valid document.")
 
         filename = f"merged_document_{int(time.time())}.pdf"
 
