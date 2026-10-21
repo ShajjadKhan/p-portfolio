@@ -8,6 +8,7 @@ import io
 import csv
 import zipfile
 import time
+import tempfile
 import xml.etree.ElementTree as ET
 from urllib.parse import urlparse
 from datetime import datetime
@@ -19,7 +20,8 @@ from flask import (
     jsonify,
     send_file,
     Response,
-    abort
+    abort,
+    after_this_request
 )
 import requests
 from PIL import Image
@@ -426,30 +428,95 @@ def api_spin_wheel_import():
 
 @tools_bp.route('/api/pdf/merge', methods=['POST'])
 def api_pdf_merge():
-    """Server-side PDF merge fallback."""
+    """High-performance server-side PDF merge with disk streaming for payloads up to 500MB+."""
     files = request.files.getlist('pdf_files')
     if not files or len(files) < 2:
-        return jsonify({"status": "error", "message": "At least 2 PDF files are required."}), 400
+        return jsonify({"status": "error", "message": "At least 2 PDF files are required to merge."}), 400
 
+    temp_cleanup_paths = []
     try:
         writer = PdfWriter()
-        for f in files:
-            reader = PdfReader(f.stream)
-            for page in reader.pages:
-                writer.add_page(page)
 
-        output_stream = io.BytesIO()
-        writer.write(output_stream)
-        output_stream.seek(0)
+        for idx, f in enumerate(files):
+            orig_name = f.filename or f"document_{idx + 1}.pdf"
+            orig_name_lower = orig_name.lower()
+
+            # Save incoming stream chunk by chunk directly to disk temp file to eliminate RAM spikes
+            tf = tempfile.NamedTemporaryFile(suffix='.tmp', delete=False)
+            temp_path = tf.name
+            temp_cleanup_paths.append(temp_path)
+            f.save(temp_path)
+            tf.close()
+
+            if orig_name_lower.endswith(('.jpg', '.jpeg', '.png', '.webp')):
+                try:
+                    img = Image.open(temp_path)
+                    if img.mode in ('RGBA', 'LA', 'P'):
+                        bg = Image.new('RGB', img.size, (255, 255, 255))
+                        if img.mode == 'P':
+                            img = img.convert('RGBA')
+                        bg.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
+                        conv_img = bg
+                    else:
+                        conv_img = img.convert('RGB')
+
+                    img_pdf = tempfile.NamedTemporaryFile(suffix='.pdf', delete=False)
+                    img_pdf_path = img_pdf.name
+                    temp_cleanup_paths.append(img_pdf_path)
+                    img_pdf.close()
+
+                    conv_img.save(img_pdf_path, 'PDF', quality=95)
+                    reader = PdfReader(img_pdf_path, strict=False)
+                    writer.append(reader)
+                except Exception as img_err:
+                    return jsonify({"status": "error", "message": f"Could not process image '{orig_name}': {str(img_err)}"}), 400
+            else:
+                try:
+                    reader = PdfReader(temp_path, strict=False)
+                    if reader.is_encrypted:
+                        try:
+                            reader.decrypt('')
+                        except Exception:
+                            pass
+                    writer.append(reader)
+                except Exception as pdf_err:
+                    return jsonify({"status": "error", "message": f"Could not process PDF '{orig_name}': {str(pdf_err)}"}), 400
+
+        # Stream write merged output directly to disk
+        out_tf = tempfile.NamedTemporaryFile(suffix='.pdf', delete=False)
+        out_path = out_tf.name
+        temp_cleanup_paths.append(out_path)
+        out_tf.close()
+
+        with open(out_path, 'wb') as out_f:
+            writer.write(out_f)
 
         filename = f"merged_document_{int(time.time())}.pdf"
+
+        @after_this_request
+        def remove_temp_files(response):
+            for p in temp_cleanup_paths:
+                try:
+                    if os.path.exists(p):
+                        os.remove(p)
+                except Exception:
+                    pass
+            return response
+
         return send_file(
-            output_stream,
+            out_path,
             as_attachment=True,
             download_name=filename,
             mimetype='application/pdf'
         )
+
     except Exception as e:
+        for p in temp_cleanup_paths:
+            try:
+                if os.path.exists(p):
+                    os.remove(p)
+            except Exception:
+                pass
         return jsonify({"status": "error", "message": f"PDF merge failed: {str(e)}"}), 500
 
 

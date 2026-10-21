@@ -733,7 +733,10 @@ const ToolRenderers = {
             list.innerHTML = '';
             controls.style.display = pdfFiles.length >= 1 ? 'flex' : 'none';
             const totalBytes = pdfFiles.reduce((acc, f) => acc + (f.size || 0), 0);
-            stats.textContent = `${pdfFiles.length} file${pdfFiles.length === 1 ? '' : 's'} selected (${Utils.formatBytes(totalBytes)})`;
+            const engineBadge = totalBytes > 20 * 1024 * 1024 
+                ? '<span style="display: inline-flex; align-items: center; gap: 0.3rem; margin-left: 0.5rem; padding: 2px 8px; border-radius: 999px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 0.78rem; font-weight: 600;">⚡ Server-Accelerated Engine (Optimized for large files)</span>'
+                : '<span style="display: inline-flex; align-items: center; gap: 0.3rem; margin-left: 0.5rem; padding: 2px 8px; border-radius: 999px; background: rgba(16, 185, 129, 0.15); color: #10b981; font-size: 0.78rem; font-weight: 600;">⚡ Instant Engine</span>';
+            stats.innerHTML = `${pdfFiles.length} file${pdfFiles.length === 1 ? '' : 's'} selected (${Utils.formatBytes(totalBytes)}) ${engineBadge}`;
 
             pdfFiles.forEach((f, idx) => {
                 const item = document.createElement('div');
@@ -783,6 +786,77 @@ const ToolRenderers = {
             });
         }
 
+        async function runServerMerge(filesToMerge) {
+            return new Promise((resolve, reject) => {
+                const formData = new FormData();
+                filesToMerge.forEach((f) => {
+                    formData.append('pdf_files', f, f.name);
+                });
+
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', '/tools/api/pdf/merge', true);
+                xhr.responseType = 'blob';
+
+                xhr.upload.onprogress = (e) => {
+                    if (e.lengthComputable) {
+                        const pct = Math.round((e.loaded / e.total) * 100);
+                        const loadedStr = Utils.formatBytes(e.loaded);
+                        const totalStr = Utils.formatBytes(e.total);
+                        statusBox.style.color = 'var(--accent, #38bdf8)';
+                        statusBox.innerHTML = `
+                            <div style="display: flex; flex-direction: column; gap: 0.5rem; max-width: 480px;">
+                                <div style="display: flex; justify-content: space-between; font-size: 0.88rem;">
+                                    <span>⚡ High-speed server processing:</span>
+                                    <span><b>${pct}%</b> (${loadedStr} / ${totalStr})</span>
+                                </div>
+                                <div style="width: 100%; background: rgba(255,255,255,0.12); height: 8px; border-radius: 999px; overflow: hidden;">
+                                    <div style="background: linear-gradient(90deg, #0284c7, #38bdf8); width: ${pct}%; height: 100%; transition: width 0.15s ease;"></div>
+                                </div>
+                                <div style="font-size: 0.78rem; color: var(--text-dim, #94a3b8);">${pct < 100 ? 'Streaming files securely to server...' : 'All files received. Merging and compressing document...'}</div>
+                            </div>
+                        `;
+                    } else {
+                        statusBox.textContent = 'Uploading files to high-speed server...';
+                    }
+                };
+
+                xhr.onload = () => {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        const blob = xhr.response;
+                        const filename = `merged_document_${Date.now()}.pdf`;
+                        Utils.downloadBlob(blob, filename);
+                        statusBox.style.color = 'var(--accent, #10b981)';
+                        statusBox.innerHTML = `✓ Successfully merged ${filesToMerge.length} documents (${Utils.formatBytes(blob.size)})! Download started automatically.`;
+                        resolve(blob);
+                    } else {
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                            try {
+                                const errJson = JSON.parse(reader.result);
+                                reject(new Error(errJson.message || `Server error (${xhr.status})`));
+                            } catch (_) {
+                                reject(new Error(`Server error (${xhr.status}): ${xhr.statusText || 'Merge failed'}`));
+                            }
+                        };
+                        reader.onerror = () => reject(new Error(`Server error (${xhr.status})`));
+                        reader.readAsText(xhr.response);
+                    }
+                };
+
+                xhr.onerror = () => {
+                    reject(new Error('Network error connecting to server. Please check your connection.'));
+                };
+
+                xhr.ontimeout = () => {
+                    reject(new Error('Merge request timed out on server (5-minute limit exceeded).'));
+                };
+
+                xhr.timeout = 300000; // 5-minute timeout for large documents
+                statusBox.textContent = 'Initiating server merge...';
+                xhr.send(formData);
+            });
+        }
+
         container.querySelector('#btn-merge').onclick = async () => {
             if (!pdfFiles.length) {
                 statusBox.style.color = '#ef4444';
@@ -798,11 +872,31 @@ const ToolRenderers = {
             statusBox.style.color = 'var(--accent)';
             statusBox.textContent = `Preparing ${pdfFiles.length} files...`;
 
+            const totalBytes = pdfFiles.reduce((acc, f) => acc + (f.size || 0), 0);
+            const layoutMode = container.querySelector('#merge-layout').value;
+
+            // Strategy: For large multi-file payloads (> 20MB) or when layout is standard sequence 'multi',
+            // browser V8 heap cannot allocate hundreds of MBs in memory without crashing.
+            // Route directly to high-performance disk streaming server engine!
+            if (layoutMode === 'multi' && totalBytes > 20 * 1024 * 1024) {
+                try {
+                    await runServerMerge(pdfFiles);
+                } catch (srvErr) {
+                    console.error('Server merge error:', srvErr);
+                    statusBox.style.color = '#ef4444';
+                    statusBox.textContent = 'Merge error: ' + srvErr.message;
+                } finally {
+                    btn.disabled = false;
+                    btn.style.opacity = '1';
+                    btn.style.cursor = 'pointer';
+                }
+                return;
+            }
+
             try {
                 const { PDFDocument } = window.PDFLib;
                 const mergedPdf = await PDFDocument.create();
 
-                const layoutMode = container.querySelector('#merge-layout').value;
                 const pageSizeName = container.querySelector('#merge-pagesize').value;
                 const orientation = container.querySelector('#merge-orientation').value;
                 const margin = parseInt(container.querySelector('#merge-margins').value, 10);
@@ -906,9 +1000,21 @@ const ToolRenderers = {
                 statusBox.style.color = 'var(--accent)';
                 statusBox.textContent = `✓ Successfully merged ${items.length} items into ${layoutMode === 'single' ? '1 single page' : layoutMode + ' layout'} (${Utils.formatBytes(blob.size)})!`;
             } catch (err) {
-                console.error(err);
-                statusBox.style.color = '#ef4444';
-                statusBox.textContent = 'Merge failed: ' + err.message;
+                console.warn('Client-side merge failed:', err);
+                // If it was standard multi-page layout, automatically fallback to server!
+                if (layoutMode === 'multi') {
+                    statusBox.style.color = 'var(--accent)';
+                    statusBox.textContent = 'Client memory limit reached. Seamlessly switching to high-speed server engine...';
+                    try {
+                        await runServerMerge(pdfFiles);
+                    } catch (srvErr) {
+                        statusBox.style.color = '#ef4444';
+                        statusBox.textContent = 'Merge failed: ' + srvErr.message;
+                    }
+                } else {
+                    statusBox.style.color = '#ef4444';
+                    statusBox.textContent = 'Merge failed: ' + err.message;
+                }
             } finally {
                 btn.disabled = false;
                 btn.style.opacity = '1';
