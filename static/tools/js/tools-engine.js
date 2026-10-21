@@ -1037,6 +1037,326 @@ const ToolRenderers = {
         };
     },
 
+    // PDF Compressor & Size Reducer (No Crop)
+    'pdf-compress': (container) => {
+        let selectedFile = null;
+        let selectedLevel = 'recommended';
+        let compressedBlob = null;
+        let compressedFilename = '';
+
+        container.innerHTML = `
+            <div id="dz-compress"></div>
+
+            <div id="compress-ws" style="display: none; margin-top: 1.5rem;">
+                <!-- File Overview Card -->
+                <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg, 12px); padding: 1.25rem; display: flex; gap: 1.25rem; align-items: center; flex-wrap: wrap; margin-bottom: 1.25rem;">
+                    <div id="pdf-thumb-wrap" style="width: 75px; height: 100px; background: rgba(0,0,0,0.06); border-radius: 6px; overflow: hidden; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border-color); flex-shrink: 0; box-shadow: 0 2px 6px rgba(0,0,0,0.06);">
+                        <canvas id="pdf-thumb-canvas" style="max-width: 100%; max-height: 100%; display: none;"></canvas>
+                        <div id="pdf-thumb-placeholder" style="font-size: 2.2rem;">📄</div>
+                    </div>
+                    <div style="flex: 1; min-width: 220px;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                            <h3 id="pdf-filename" style="margin: 0; font-size: 1.1rem; word-break: break-all; color: var(--text-main);">document.pdf</h3>
+                            <span class="feature-chip" id="pdf-pages-badge" style="font-size: 0.75rem; background: rgba(59,130,246,0.15); color: #3b82f6; border: 1px solid rgba(59,130,246,0.3); padding: 2px 8px; border-radius: 12px; font-weight: 600;">... pages</span>
+                        </div>
+                        <div style="margin-top: 0.4rem; font-size: 0.88rem; color: var(--text-muted); display: flex; gap: 1.25rem; flex-wrap: wrap;">
+                            <span>Original Size: <strong id="pdf-filesize" style="color: var(--text-main);">0 MB</strong></span>
+                            <span>Engine: <strong>Ghostscript & QPDF Native</strong></span>
+                        </div>
+                    </div>
+                    <button class="btn-secondary" id="btn-change-file" type="button" style="padding: 0.5rem 0.9rem; font-size: 0.85rem;">🔄 Choose Another</button>
+                </div>
+
+                <!-- Zero-Crop Guarantee Banner -->
+                <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: var(--radius-md, 8px); padding: 0.85rem 1.1rem; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.75rem;">
+                    <span style="font-size: 1.3rem;">🛡️</span>
+                    <div style="font-size: 0.85rem; color: #10b981; line-height: 1.4;">
+                        <strong>100% Zero-Crop Guarantee:</strong> Original page dimensions (A4, Letter, A3, custom spreads), orientations, margins, vector drawings, and fonts are strictly preserved. No pages are cut, cropped, or scaled.
+                    </div>
+                </div>
+
+                <!-- Preset Level Selection Cards -->
+                <div style="margin-bottom: 1.25rem;">
+                    <label style="font-weight: 600; font-size: 0.92rem; margin-bottom: 0.75rem; display: block; color: var(--text-main);">Select Compression Preset</label>
+                    <div id="comp-options-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 0.85rem;">
+                        <!-- Option 1: Recommended -->
+                        <div class="comp-preset-card" data-level="recommended" style="border: 2px solid var(--accent, #3b82f6); background: rgba(59,130,246,0.06); padding: 1rem; border-radius: 10px; cursor: pointer; transition: all 0.2s ease;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                                <strong style="font-size: 0.95rem; color: var(--text-main);">🌟 Recommended</strong>
+                                <span style="font-size: 0.7rem; background: rgba(59,130,246,0.15); color: #3b82f6; padding: 2px 6px; border-radius: 4px; font-weight: 600;">150 DPI</span>
+                            </div>
+                            <div style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.35;">Ideal balance of high size reduction (~40-60%) and crisp visual clarity. Perfect for email & web.</div>
+                        </div>
+
+                        <!-- Option 2: Extreme -->
+                        <div class="comp-preset-card" data-level="extreme" style="border: 1px solid var(--border-color); background: var(--bg-surface); padding: 1rem; border-radius: 10px; cursor: pointer; transition: all 0.2s ease;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                                <strong style="font-size: 0.95rem; color: var(--text-main);">⚡ Extreme</strong>
+                                <span style="font-size: 0.7rem; background: rgba(239,68,68,0.15); color: #ef4444; padding: 2px 6px; border-radius: 4px; font-weight: 600;">72 DPI</span>
+                            </div>
+                            <div style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.35;">Maximum size reduction (~70-85%). Ideal for strict upload limits and small attachments.</div>
+                        </div>
+
+                        <!-- Option 3: High Quality -->
+                        <div class="comp-preset-card" data-level="high_quality" style="border: 1px solid var(--border-color); background: var(--bg-surface); padding: 1rem; border-radius: 10px; cursor: pointer; transition: all 0.2s ease;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                                <strong style="font-size: 0.95rem; color: var(--text-main);">💎 High Quality</strong>
+                                <span style="font-size: 0.7rem; background: rgba(16,185,129,0.15); color: #10b981; padding: 2px 6px; border-radius: 4px; font-weight: 600;">300 DPI</span>
+                            </div>
+                            <div style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.35;">Gentle compression (~20-35%). Maintains maximum sharpness for high-resolution printing.</div>
+                        </div>
+
+                        <!-- Option 4: Lossless -->
+                        <div class="comp-preset-card" data-level="lossless" style="border: 1px solid var(--border-color); background: var(--bg-surface); padding: 1rem; border-radius: 10px; cursor: pointer; transition: all 0.2s ease;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                                <strong style="font-size: 0.95rem; color: var(--text-main);">🛡️ Lossless Stream</strong>
+                                <span style="font-size: 0.7rem; background: rgba(168,85,247,0.15); color: #a855f7; padding: 2px 6px; border-radius: 4px; font-weight: 600;">0% Pixel Loss</span>
+                            </div>
+                            <div style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.35;">Zero downsampling. Compresses object streams and deflates Flate tables losslessly.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Button -->
+                <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
+                    <button class="btn-primary" id="btn-compress-now" type="button" style="padding: 0.85rem 2rem; font-size: 1rem; font-weight: 600;">🗜️ Compress PDF (No Crop)</button>
+                </div>
+
+                <!-- Progress Container -->
+                <div id="compress-progress-box" style="display: none; margin-top: 1.5rem; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 10px; padding: 1.25rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <span id="compress-step-label" style="font-weight: 600; font-size: 0.9rem; color: var(--text-main);">Streaming document to server...</span>
+                        <span id="compress-pct-label" style="font-weight: 700; color: var(--accent); font-size: 0.95rem;">0%</span>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.08); border-radius: 6px; height: 10px; overflow: hidden; position: relative;">
+                        <div id="compress-bar-fill" style="background: linear-gradient(90deg, #3b82f6, #10b981); height: 100%; width: 0%; transition: width 0.2s ease;"></div>
+                    </div>
+                    <div id="compress-transfer-info" style="font-size: 0.78rem; color: var(--text-dim, #94a3b8); margin-top: 0.4rem;">0 MB / 0 MB transferred</div>
+                </div>
+
+                <!-- Success / Results Card -->
+                <div id="compress-result-box" style="display: none; margin-top: 1.5rem; background: rgba(16, 185, 129, 0.06); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 12px; padding: 1.5rem;">
+                    <div style="display: flex; align-items: center; gap: 0.6rem; color: #10b981; font-weight: 700; font-size: 1.15rem; margin-bottom: 1.25rem;">
+                        <span>🎉</span>
+                        <span>PDF Compressed Successfully (Zero Crop Preserved)</span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                        <div style="background: var(--bg-surface); padding: 0.9rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.2rem;">Original Size</div>
+                            <div id="res-orig-size" style="font-size: 1.1rem; font-weight: 700; color: var(--text-main);">0 MB</div>
+                        </div>
+                        <div style="background: var(--bg-surface); padding: 0.9rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.2rem;">Compressed Size</div>
+                            <div id="res-comp-size" style="font-size: 1.1rem; font-weight: 700; color: #10b981;">0 MB</div>
+                        </div>
+                        <div style="background: var(--bg-surface); padding: 0.9rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.2rem;">Total Space Saved</div>
+                            <div id="res-savings" style="font-size: 1.1rem; font-weight: 700; color: #3b82f6;">0% (0 MB)</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 1rem; justify-content: flex-end; flex-wrap: wrap;">
+                        <button class="btn-secondary" id="btn-comp-again" type="button">🔄 Compress Another</button>
+                        <button class="btn-primary" id="btn-download-comp" type="button" style="background: linear-gradient(135deg, #10b981, #059669); border-color: #059669; font-weight: 600;">⬇️ Download Compressed PDF</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="compress-error" style="display: none; margin-top: 1rem; color: #ef4444; font-weight: 600; padding: 0.75rem 1rem; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px;"></div>
+        `;
+
+        const dz = container.querySelector('#dz-compress');
+        const ws = container.querySelector('#compress-ws');
+        const filenameEl = container.querySelector('#pdf-filename');
+        const filesizeEl = container.querySelector('#pdf-filesize');
+        const pagesBadgeEl = container.querySelector('#pdf-pages-badge');
+        const thumbCanvas = container.querySelector('#pdf-thumb-canvas');
+        const thumbPlaceholder = container.querySelector('#pdf-thumb-placeholder');
+        const btnChangeFile = container.querySelector('#btn-change-file');
+        const presetCards = container.querySelectorAll('.comp-preset-card');
+        const btnCompressNow = container.querySelector('#btn-compress-now');
+        const progressBox = container.querySelector('#compress-progress-box');
+        const stepLabel = container.querySelector('#compress-step-label');
+        const pctLabel = container.querySelector('#compress-pct-label');
+        const barFill = container.querySelector('#compress-bar-fill');
+        const transferInfo = container.querySelector('#compress-transfer-info');
+        const resultBox = container.querySelector('#compress-result-box');
+        const resOrigSize = container.querySelector('#res-orig-size');
+        const resCompSize = container.querySelector('#res-comp-size');
+        const resSavings = container.querySelector('#res-savings');
+        const btnCompAgain = container.querySelector('#btn-comp-again');
+        const btnDownloadComp = container.querySelector('#btn-download-comp');
+        const errorBox = container.querySelector('#compress-error');
+
+        function resetAll() {
+            selectedFile = null;
+            compressedBlob = null;
+            compressedFilename = '';
+            ws.style.display = 'none';
+            dz.style.display = 'block';
+            progressBox.style.display = 'none';
+            resultBox.style.display = 'none';
+            errorBox.style.display = 'none';
+            btnCompressNow.disabled = false;
+            thumbCanvas.style.display = 'none';
+            thumbPlaceholder.style.display = 'block';
+        }
+
+        btnChangeFile.onclick = resetAll;
+        btnCompAgain.onclick = resetAll;
+
+        // Preset selection
+        presetCards.forEach(card => {
+            card.onclick = () => {
+                presetCards.forEach(c => {
+                    c.style.border = '1px solid var(--border-color)';
+                    c.style.background = 'var(--bg-surface)';
+                });
+                card.style.border = '2px solid var(--accent, #3b82f6)';
+                card.style.background = 'rgba(59,130,246,0.06)';
+                selectedLevel = card.getAttribute('data-level');
+            };
+        });
+
+        // Initialize dropzone
+        Utils.createDropzone(
+            dz,
+            'application/pdf,.pdf',
+            false,
+            async (files) => {
+                if (!files || !files.length) return;
+                const file = files[0];
+                if (!file.name.toLowerCase().endsWith('.pdf') && file.type !== 'application/pdf') {
+                    errorBox.textContent = 'Please select a valid PDF file.';
+                    errorBox.style.display = 'block';
+                    return;
+                }
+
+                selectedFile = file;
+                errorBox.style.display = 'none';
+                filenameEl.textContent = file.name;
+                filesizeEl.textContent = Utils.formatBytes(file.size);
+                pagesBadgeEl.textContent = 'Counting pages...';
+
+                dz.style.display = 'none';
+                ws.style.display = 'block';
+                resultBox.style.display = 'none';
+
+                // Render page 1 thumbnail and count pages
+                try {
+                    const arrayBuffer = await Utils.readFileAsArrayBuffer(file);
+                    if (window.pdfjsLib) {
+                        const loadingTask = window.pdfjsLib.getDocument({ data: arrayBuffer });
+                        const pdfDoc = await loadingTask.promise;
+                        pagesBadgeEl.textContent = `${pdfDoc.numPages} ${pdfDoc.numPages === 1 ? 'Page' : 'Pages'}`;
+
+                        const page = await pdfDoc.getPage(1);
+                        const viewport = page.getViewport({ scale: 0.25 });
+                        thumbCanvas.width = viewport.width;
+                        thumbCanvas.height = viewport.height;
+                        const ctx = thumbCanvas.getContext('2d');
+                        await page.render({ canvasContext: ctx, viewport }).promise;
+                        thumbPlaceholder.style.display = 'none';
+                        thumbCanvas.style.display = 'block';
+                    } else {
+                        pagesBadgeEl.textContent = 'PDF Document';
+                    }
+                } catch (e) {
+                    pagesBadgeEl.textContent = 'PDF Document';
+                }
+            },
+            'Preserves 100% original page sizes, vector drawings, and fonts. Zero cropping.'
+        );
+
+        // Compress action
+        btnCompressNow.onclick = () => {
+            if (!selectedFile) return;
+
+            errorBox.style.display = 'none';
+            resultBox.style.display = 'none';
+            progressBox.style.display = 'block';
+            btnCompressNow.disabled = true;
+            barFill.style.width = '0%';
+            pctLabel.textContent = '0%';
+            stepLabel.textContent = 'Streaming document securely to engine...';
+            transferInfo.textContent = `0 MB / ${Utils.formatBytes(selectedFile.size)} transferred`;
+
+            const formData = new FormData();
+            formData.append('pdf_file', selectedFile);
+            formData.append('level', selectedLevel);
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/tools/api/pdf/compress', true);
+            xhr.responseType = 'blob';
+
+            xhr.upload.onprogress = (e) => {
+                if (e.lengthComputable) {
+                    const pct = Math.round((e.loaded / e.total) * 100);
+                    barFill.style.width = `${pct}%`;
+                    pctLabel.textContent = `${pct}%`;
+                    transferInfo.textContent = `${Utils.formatBytes(e.loaded)} / ${Utils.formatBytes(e.total)} transferred`;
+
+                    if (pct >= 100) {
+                        stepLabel.textContent = 'Applying Zero-Crop Optimization & Compressing Streams...';
+                    }
+                }
+            };
+
+            xhr.onload = () => {
+                btnCompressNow.disabled = false;
+                progressBox.style.display = 'none';
+
+                if (xhr.status === 200) {
+                    compressedBlob = xhr.response;
+                    const origBytes = parseInt(xhr.getResponseHeader('X-Original-Size') || selectedFile.size, 10);
+                    const compBytes = parseInt(xhr.getResponseHeader('X-Compressed-Size') || compressedBlob.size, 10);
+                    const savingsPct = xhr.getResponseHeader('X-Savings-Percent') || '0';
+                    const savingsBytes = parseInt(xhr.getResponseHeader('X-Savings-Bytes') || (origBytes - compBytes), 10);
+
+                    const baseName = selectedFile.name.replace(/\.pdf$/i, '');
+                    compressedFilename = `${baseName}_compressed.pdf`;
+
+                    resOrigSize.textContent = Utils.formatBytes(origBytes);
+                    resCompSize.textContent = Utils.formatBytes(compBytes);
+                    resSavings.textContent = `${savingsPct}% (${Utils.formatBytes(Math.max(0, savingsBytes))} saved)`;
+
+                    resultBox.style.display = 'block';
+                } else {
+                    try {
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                            try {
+                                const errJson = JSON.parse(reader.result);
+                                errorBox.textContent = errJson.message || 'Compression failed. Please try again.';
+                            } catch (_) {
+                                errorBox.textContent = `Server returned HTTP ${xhr.status}. Compression failed.`;
+                            }
+                            errorBox.style.display = 'block';
+                        };
+                        reader.readAsText(xhr.response);
+                    } catch (_) {
+                        errorBox.textContent = 'Compression failed. Please verify the PDF is valid.';
+                        errorBox.style.display = 'block';
+                    }
+                }
+            };
+
+            xhr.onerror = () => {
+                btnCompressNow.disabled = false;
+                progressBox.style.display = 'none';
+                errorBox.textContent = 'Network error while contacting compression engine.';
+                errorBox.style.display = 'block';
+            };
+
+            xhr.send(formData);
+        };
+
+        btnDownloadComp.onclick = () => {
+            if (compressedBlob) {
+                Utils.downloadBlob(compressedBlob, compressedFilename || 'compressed_document.pdf');
+            }
+        };
+    },
+
     // 3. PDF Page Arranger & Reorder
     'pdf-arrange': (container) => {
         let currentDoc = null;

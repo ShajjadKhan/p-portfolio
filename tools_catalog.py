@@ -52,6 +52,18 @@ TOOLS = [
         "client_powered": True
     },
     {
+        "id": "pdf-compress",
+        "slug": "pdf-compress",
+        "title": "PDF Compressor & Reducer (No Crop)",
+        "category": "pdf",
+        "badge": "Zero Crop",
+        "icon": "🗜️📄",
+        "short_desc": "Shrink PDF file size while preserving 100% of original page dimensions, aspect ratios, vector layouts, and margins with zero cropping.",
+        "detailed_desc": "Intelligent multi-tier PDF compression engine powered by Ghostscript & QPDF. Reduce bloated PDFs for email or web upload with configurable presets (Recommended, Extreme, High-Quality, or Lossless Stream Optimization). Guarantees zero page cropping or margin distortion: all page boundaries, orientations, and vector graphics remain completely intact.",
+        "keywords": ["pdf compress", "compress pdf", "reduce pdf size", "shrink pdf", "pdf compressor", "make pdf smaller", "compress pdf no crop", "optimize pdf", "pdf file size reducer"],
+        "client_powered": False
+    },
+    {
         "id": "pdf-arrange",
         "slug": "pdf-arrange",
         "title": "PDF Page Arranger & Reorder",
