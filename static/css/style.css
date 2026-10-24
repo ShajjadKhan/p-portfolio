@@ -2299,7 +2299,6 @@ body {
     .hero-section::before,
     .hero-cyber-grid,
     .hero-orbit,
-    .play-chip,
     .hero-content > *,
     .hero-title .gradient-text-emerald,
     .hero-title .gradient-text-cyan,
@@ -2310,66 +2309,3 @@ body {
         animation: none !important;
     }
 }
-
-
-/* Playable full-page tech chips */
-.playful-tech-field {
-    position: fixed;
-    inset: 0;
-    z-index: 35;
-    pointer-events: none;
-    overflow: hidden;
-    contain: layout paint;
-}
-
-.play-chip {
-    pointer-events: auto;
-    cursor: grab;
-    opacity: .78;
-    user-select: none;
-    touch-action: none;
-    transition: transform .12s ease, box-shadow .18s ease, opacity .2s ease, border-color .18s ease;
-}
-
-.play-chip:hover,
-.play-chip:focus-visible,
-.play-chip.is-dragging {
-    opacity: 1;
-    border-color: rgba(255, 255, 255, 0.32);
-    box-shadow: 0 18px 55px rgba(34, 211, 238, 0.16), 0 14px 40px rgba(0,0,0,.36), inset 0 1px rgba(255,255,255,.12);
-    outline: none;
-}
-
-.play-chip.is-dragging {
-    cursor: grabbing;
-    animation: none !important;
-    z-index: 2;
-}
-
-.play-chip.is-dropped {
-    animation: chipDropBounce .72s cubic-bezier(.2, .9, .26, 1.1) both !important;
-}
-
-@keyframes chipDropBounce {
-    0% { transform: translate3d(var(--chip-x, 0px), var(--chip-y, 0px), 0) scale(1.06) rotate(var(--chip-rot, 0deg)); }
-    62% { transform: translate3d(var(--chip-x, 0px), calc(var(--chip-y, 0px) + 34px), 0) scale(.96) rotate(var(--chip-rot, 0deg)); }
-    82% { transform: translate3d(var(--chip-x, 0px), calc(var(--chip-y, 0px) - 10px), 0) scale(1.02) rotate(var(--chip-rot, 0deg)); }
-    100% { transform: translate3d(var(--chip-x, 0px), var(--chip-y, 0px), 0) scale(1) rotate(var(--chip-rot, 0deg)); }
-}
-
-@media (max-width: 768px) {
-    .playful-tech-field {
-        z-index: 25;
-    }
-}
-
-@media (max-width: 520px) {
-    .play-chip {
-        opacity: .72;
-    }
-}
-
-.chip-flask { top: 82%; left: 62%; color: #fdba74; animation-delay: -4.5s; }
-.chip-nginx { top: 48%; left: 3%; color: #93c5fd; animation-delay: -6.2s; }
-.chip-aiops { top: 78%; left: 86%; color: #a7f3d0; animation-delay: -7.1s; }
-
