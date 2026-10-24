@@ -22,7 +22,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=2.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=2.1">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/shajjad-favicon.png') }}">
 </head>
 <body>
@@ -97,17 +97,6 @@
             </div>
         </div>
     </header>
-
-    <div class="playful-tech-field" id="playful-tech-field" aria-label="Playable tech chips">
-        <button class="play-chip chip-ai" type="button" data-chip="AI">AI</button>
-        <button class="play-chip chip-python" type="button" data-chip="Python">Python</button>
-        <button class="play-chip chip-django" type="button" data-chip="Django">Django</button>
-        <button class="play-chip chip-linux" type="button" data-chip="Linux">Linux</button>
-        <button class="play-chip chip-ux" type="button" data-chip="UX">UX</button>
-        <button class="play-chip chip-flask" type="button" data-chip="Flask">Flask</button>
-        <button class="play-chip chip-nginx" type="button" data-chip="Nginx">Nginx</button>
-        <button class="play-chip chip-aiops" type="button" data-chip="AIOps">AIOps</button>
-    </div>
 
     <main id="main-content" tabindex="-1">
         <!-- Hero Section -->
@@ -482,7 +471,8 @@
                             <div class="profile-card">
                                 <div class="avatar-wrap">
                                     <div class="avatar-ring"></div>
-                                    <img src="{{ url_for('static', filename='images/developer.png') }}" alt="Shajjad Khan" class="avatar-img">
+                                    <!-- Replace shajjad-avatar.svg with a real headshot when available. -->
+                                    <img src="{{ url_for('static', filename='images/shajjad-avatar.svg') }}" alt="Shajjad Khan" class="avatar-img" width="100" height="100" loading="lazy" decoding="async">
                                 </div>
                                 <h3 class="profile-name">Shajjad Khan</h3>
                                 <p class="profile-role">Solo Founder &amp; Systems Engineer</p>
@@ -710,6 +700,6 @@
         </div>
     </footer>
 
-    <script src="{{ url_for('static', filename='js/main.js') }}?v=1.0"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}?v=1.1"></script>
 </body>
 </html>
