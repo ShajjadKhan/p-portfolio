@@ -2,7 +2,7 @@
 
 > Official source code for **[www.shajjadkhan.com](https://www.shajjadkhan.com/)**
 
-Professional portfolio of **Shajjad Khan** — Solo Founder, Full-Stack Product Architect, and Systems Engineer. Showcasing flagship B2B enterprise procurement SaaS **[TawreedFlow](https://tawreedflow.com/)**, decentralized spatial knowledge graphs **BlockTree**, and carrier-grade telecom / network automation infrastructure.
+Professional portfolio of **Shajjad Khan** — Founder and Systems Architect. Showcasing flagship B2B enterprise procurement SaaS **[TawreedFlow](https://tawreedflow.com/)**, decentralized spatial knowledge graphs **BlockTree**, and carrier-grade telecom / network automation infrastructure.
 
 ---
 
