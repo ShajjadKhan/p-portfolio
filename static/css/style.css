@@ -1809,6 +1809,12 @@ body {
 /* ==========================================================================
    RESPONSIVE MEDIA QUERIES (ALL DEVICES)
    ========================================================================== */
+@media (max-width: 1100px) {
+    .logo-role {
+        display: none;
+    }
+}
+
 @media (max-width: 1024px) {
     .metrics-strip {
         grid-template-columns: repeat(2, 1fr);
@@ -1833,9 +1839,6 @@ body {
     }
     .mobile-menu-btn {
         display: flex;
-    }
-    .logo-role {
-        display: none;
     }
     .logo-name {
         font-size: 15px;
