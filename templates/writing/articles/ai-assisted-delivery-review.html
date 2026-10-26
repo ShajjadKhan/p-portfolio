@@ -1,0 +1,139 @@
+<p class="article-lead">
+    AI is genuinely useful in production software. It is also confidently wrong
+    in ways that look like progress. The difference between the two outcomes is
+    not the model. It is the review workflow around it.
+</p>
+
+<p>
+    I use AI for scaffolding, tests, refactors, migrations, documentation, and
+    debugging. I do not let it merge code, invent customer facts, or decide that
+    a database change is safe. Those are human responsibilities, and they stay
+    human even when the first draft is generated.
+</p>
+
+<h2>Where AI earns its keep</h2>
+
+<ul>
+    <li><strong>Scaffolding:</strong> turning a clear interface description into a first-pass module, template, or test file.</li>
+    <li><strong>Tests:</strong> proposing edge cases that a tired engineer might miss.</li>
+    <li><strong>Refactors:</strong> applying a mechanical rename or extraction across a codebase, then letting tests verify it.</li>
+    <li><strong>Migrations:</strong> drafting a schema change and the corresponding backfill, with a human reviewing the data assumptions.</li>
+    <li><strong>Documentation:</strong> turning a working change into a readable explanation for the next person.</li>
+    <li><strong>Review:</strong> summarizing a diff and flagging suspicious patterns before a human review.</li>
+</ul>
+
+<p>
+    The common thread is that these tasks have a clear correctness signal: tests
+    pass, the diff is small, the behavior is observable. AI is most useful when
+    the feedback loop is fast and the blast radius is contained.
+</p>
+
+<h2>Where it becomes dangerous</h2>
+
+<h3>Hallucinated APIs and dependencies</h3>
+
+<p>
+    Generated code can reference a function that does not exist, a library version
+    that was never released, or a configuration option that changed two years ago.
+    It looks plausible because it is syntactically fluent.
+</p>
+
+<p>
+    Run the code. Install the dependency in a clean environment. Read the actual
+    documentation for the version you are using. “It compiles in the model’s
+    imagination” is not verification.
+</p>
+
+<h3>Insecure defaults</h3>
+
+<p>
+    AI-generated code often reproduces the most common pattern, not the safest
+    one. That can mean missing authorization checks, permissive CORS, secrets in
+    logs, or string-built SQL.
+</p>
+
+<p>
+    Security review is not optional because the code was generated. If anything,
+    generated code deserves a closer look at the boundaries: authentication,
+    authorization, input validation, file handling, and outbound requests.
+</p>
+
+<h3>Invented facts and metrics</h3>
+
+<p>
+    This is especially relevant on a portfolio or marketing site. A model can
+    produce a polished case study with numbers that were never measured. That is
+    not a content shortcut; it is a credibility risk.
+</p>
+
+<p>
+    Use AI to improve the shape of a sentence, not to source a claim. Every metric,
+    client name, and testimonial needs a real origin and a human who can defend it.
+</p>
+
+<h3>Migrations that “should be fine”</h3>
+
+<p>
+    Schema changes are where confident guesses become outages. A generated
+    migration may lock a large table, drop a column that still has readers, or
+    backfill data with the wrong assumption about nulls.
+</p>
+
+<p>
+    Review migrations separately from application code. Test them against a copy
+    of realistic data. Have a rollback plan. If the change is destructive, slow
+    down.
+</p>
+
+<h2>A review-first workflow</h2>
+
+<p>
+    The workflow that works for me is deliberately boring:
+</p>
+
+<ol>
+    <li><strong>Write the acceptance criteria first.</strong> What observable behavior should be true when this is done?</li>
+    <li><strong>Write or identify the tests.</strong> If the change cannot be tested, explain why before generating code.</li>
+    <li><strong>Generate a small draft.</strong> Keep the diff narrow enough to review in one sitting.</li>
+    <li><strong>Run the tests, linters, and type checks.</strong> Fix the failures before asking a human to look.</li>
+    <li><strong>Review the diff as if a junior engineer wrote it.</strong> Check assumptions, error paths, and security boundaries.</li>
+    <li><strong>Deploy to staging.</strong> Exercise the real user flow, not just the happy-path unit test.</li>
+    <li><strong>Ship with a rollback path.</strong> Know how to revert before you need to.</li>
+</ol>
+
+<p>
+    The order matters. Generating first and inventing acceptance criteria
+    afterward is how teams end up with code that is impressive and wrong.
+</p>
+
+<div class="article-callout">
+    <strong>Practical rule:</strong> if you cannot explain the change without
+    referring to the prompt, you are not ready to deploy it.
+</div>
+
+<h2>Keep humans accountable</h2>
+
+<p>
+    A pull request should have a named human owner whether or not AI helped write
+    it. That person is responsible for the behavior in production, the tests, and
+    the rollback. “The model suggested it” is not an incident response.
+</p>
+
+<p>
+    Teams should also be clear about data handling. Do not paste customer data,
+    credentials, or private source code into a tool that retains it without an
+    approved agreement. Prompt hygiene is part of security hygiene.
+</p>
+
+<h2>AI changes the speed, not the standard</h2>
+
+<p>
+    The useful promise of AI is not that we stop reviewing code. It is that we
+    spend less time typing boilerplate and more time thinking about boundaries,
+    failure modes, and the user’s actual problem.
+</p>
+
+<p>
+    That is a good trade. It only works if the review bar stays where it was — or
+    goes higher.
+</p>

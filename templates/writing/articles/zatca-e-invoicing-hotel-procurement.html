@@ -1,0 +1,153 @@
+<p class="article-lead">
+    ZATCA e-invoicing is usually treated as a finance project. In a hotel group,
+    the data that makes an invoice compliant is created long before the invoice
+    reaches accounts payable — in the requisition, the purchase order, and the
+    goods receipt.
+</p>
+
+<p>
+    That is why integration projects stall. The finance team buys an e-invoicing
+    solution, connects it to the accounting system, and then discovers that the
+    procurement side cannot reliably answer basic questions: Which purchase order
+    does this invoice belong to? Was the item received? Is the supplier’s VAT
+    record current? Which property is the buyer?
+</p>
+
+<h2>Phase 1 and Phase 2 are different problems</h2>
+
+<p>
+    Phase 1 is about generating compliant invoice documents. Phase 2 is about
+    integrating with ZATCA’s Fatoora platform: exchanging invoice data, receiving
+    clearance or reporting responses, and handling the technical artifacts that
+    accompany a compliant invoice.
+</p>
+
+<p>
+    The exact obligations depend on the invoice type and the wave your business
+    falls into. As a working rule, standard tax invoices generally need clearance
+    before they are shared with the buyer, while simplified invoices are reported
+    within the window ZATCA specifies. Confirm the current requirements for your
+    entity and activity with ZATCA or your tax adviser; do not treat a blog post
+    as the specification.
+</p>
+
+<div class="article-callout">
+    <strong>Important:</strong> this article is an operational checklist, not tax
+    or legal advice. ZATCA requirements change by wave and invoice type. Validate
+    your implementation against the current official specification.
+</div>
+
+<h2>Where procurement data breaks compliance</h2>
+
+<h3>Supplier records are incomplete or stale</h3>
+
+<p>
+    An e-invoice needs accurate seller and buyer identifiers, addresses, and VAT
+    details. In many groups, supplier data lives in three places: a finance
+    system, a purchasing spreadsheet, and a buyer’s inbox. The e-invoicing
+    integration then fails at the worst possible moment — when an invoice is due.
+</p>
+
+<p>
+    Treat the supplier master as a controlled record. Validate VAT numbers at
+    onboarding, record the legal name and address, and define who can change
+    those fields. Keep an audit trail of changes.
+</p>
+
+<h3>Purchase orders and invoices do not reconcile</h3>
+
+<p>
+    Procurement creates a purchase order for ten items. The supplier delivers
+    eight, substitutes one, and invoices for all ten. Finance receives a compliant
+    XML document that is operationally wrong.
+</p>
+
+<p>
+    The fix is not in the e-invoicing middleware. It is in the handoff between
+    purchasing, receiving, and accounts payable. A goods receipt note that records
+    accepted, rejected, and outstanding quantities gives finance something to
+    match against. Without it, compliance becomes a document-generation exercise
+    disconnected from the underlying transaction.
+</p>
+
+<h3>Tax treatment is not captured at the item level</h3>
+
+<p>
+    Hotels buy a wide mix of goods and services: food and beverage, utilities,
+    maintenance, professional services, and guest amenities. The tax treatment
+    may differ by item or supplier. If the item master only stores a description
+    and a price, someone has to reconstruct the tax logic on every invoice.
+</p>
+
+<p>
+    Capture the tax category and any exemptions at the item or supplier level,
+    with a review path for exceptions. Make the default explicit rather than
+    implicit.
+</p>
+
+<h3>Credit notes and corrections are an afterthought</h3>
+
+<p>
+    Returns, short deliveries, and price corrections are normal in hospitality.
+    Each one may require a credit note or debit note with a reference to the
+    original invoice. If the procurement system cannot link the correction to the
+    original transaction, the finance team has to reconstruct the relationship
+    manually.
+</p>
+
+<h2>An operational readiness checklist</h2>
+
+<p>
+    Before the integration go-live, I would want clear answers to these questions:
+</p>
+
+<ul class="article-checklist">
+    <li>Is every active supplier’s legal name, address, and VAT identifier validated and owned by a named team?</li>
+    <li>Can every invoice be traced to a purchase order and a goods receipt, including partial deliveries?</li>
+    <li>Are item tax categories and exemptions stored, reviewable, and versioned?</li>
+    <li>Are credit notes and debit notes linked to the original invoice?</li>
+    <li>Is there a single invoice sequence per entity, with no gaps caused by retries or manual overrides?</li>
+    <li>Are clearance and reporting responses stored alongside the invoice, not just the final PDF?</li>
+    <li>Is there an exception queue for rejected, warning, or timed-out submissions?</li>
+    <li>Can the team replay a failed submission without creating a duplicate invoice?</li>
+    <li>Are roles separated between preparer, approver, and submitter?</li>
+    <li>Is there a tested archive for XML, QR artifacts, and acknowledgement responses?</li>
+</ul>
+
+<h2>Integration patterns that hold up</h2>
+
+<p>
+    Keep one system of record for the commercial transaction and one integration
+    boundary for ZATCA. In most hotel groups, the accounting or ERP system remains
+    the invoice system of record; procurement supplies the purchase order, receipt,
+    and supplier data.
+</p>
+
+<p>
+    The integration should be idempotent. A timeout does not mean the invoice was
+    rejected, and a retry should not create a second invoice. Store the request
+    identifier, the response, and the final status. Make the failure modes visible
+    to an operator who can act on them.
+</p>
+
+<p>
+    Test with realistic hotel data: multi-property buyers, mixed tax categories,
+    partial deliveries, supplier corrections, and Arabic names. A demo invoice
+    with one line item will not expose the problems your team will face in the
+    first week.
+</p>
+
+<h2>Compliance is a data discipline</h2>
+
+<p>
+    The organizations that struggle with ZATCA are rarely struggling with XML.
+    They are struggling with the quality of the commercial data behind the XML.
+    Fix the supplier master, the item master, and the receiving process, and the
+    compliance layer becomes much less dramatic.
+</p>
+
+<p>
+    Treat e-invoicing as the last mile of a procurement process, not a separate
+    universe. That is the difference between a project that goes live and a
+    process that stays live.
+</p>
