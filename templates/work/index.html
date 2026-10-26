@@ -1,0 +1,59 @@
+{% extends 'work/base.html' %}
+
+{% block title %}Case Studies &amp; Production Architectures — Shajjad Khan{% endblock %}
+{% block meta_desc %}In-depth architectural breakdowns of production platforms designed and deployed by Shajjad Khan: enterprise SaaS, spatial graphs, telecom billing, and carrier IoT.{% endblock %}
+{% block canonical %}https://www.shajjadkhan.com/work{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="work-header">
+        <div class="work-breadcrumb">
+            <a href="/">Home</a>
+            <span class="work-breadcrumb-sep">/</span>
+            <span>Case Studies</span>
+        </div>
+        <h1 class="work-title">Architectural Deep Dives &amp; Production Case Studies</h1>
+        <p class="work-tagline">
+            Practical breakdowns of production systems: technical constraints, database schemas, concurrency models, protocol integrations, and measured operational outcomes.
+        </p>
+    </div>
+
+    <div class="work-grid">
+        {% for cs in case_studies %}
+        <a href="/work/{{ cs.slug }}" class="work-card {% if cs.featured %}work-card-flagship{% endif %}">
+            <div>
+                <div class="work-card-header">
+                    <span class="work-card-badge {% if cs.featured %}badge-emerald{% elif 'Telecom' in cs.category %}badge-gold{% else %}badge-cyan{% endif %}">
+                        {{ cs.category }}
+                    </span>
+                    <span style="font-family: var(--font-mono, monospace); font-size: 0.8rem; color: var(--text-dim, #7a8aa0);">{{ cs.year }}</span>
+                </div>
+                <h2 class="work-card-title">{{ cs.title }}</h2>
+                <p class="work-card-desc">{{ cs.tagline }}</p>
+                <div class="work-tech-strip">
+                    {% for tech in cs.tech_stack[:5] %}
+                    <span class="work-tech-pill">{{ tech }}</span>
+                    {% endfor %}
+                    {% if cs.tech_stack|length > 5 %}
+                    <span class="work-tech-pill">+{{ cs.tech_stack|length - 5 }} more</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="work-card-footer">
+                <span>Read Full Case Study</span>
+                <svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-arrow-right"></use></svg>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+
+    <div class="work-cta-box">
+        <h3>Need an Architect to Build or Audit Your System?</h3>
+        <p>I partner with hotel groups, telecom operators, and founders to design and ship mission-critical software with production rigor.</p>
+        <a href="/#contact" class="btn btn-emerald-sm">
+            <span>Start an Advisory Inquiry</span>
+            <svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-arrow-right"></use></svg>
+        </a>
+    </div>
+</div>
+{% endblock %}

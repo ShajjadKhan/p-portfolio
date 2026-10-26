@@ -18,6 +18,7 @@ from flask import Flask, render_template, request, jsonify, redirect, Response, 
 from tools_blueprint import tools_bp
 from tools_catalog import TOOLS
 from articles import ARTICLES, get_article
+from case_studies import CASE_STUDIES, get_case_study
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -138,6 +139,32 @@ def home():
         year=datetime.datetime.now().year,
         tools_url='/tools'
     )
+
+@app.route('/work')
+def work():
+    """Case studies index: architectural deep dives and production outcomes."""
+    return render_template(
+        'work/index.html',
+        case_studies=CASE_STUDIES,
+        year=datetime.datetime.now().year,
+        tools_url='/tools'
+    )
+
+
+@app.route('/work/<slug>')
+def work_case_study(slug):
+    """Individual case study page."""
+    cs = get_case_study(slug)
+    if not cs:
+        abort(404)
+    return render_template(
+        'work/case_study.html',
+        cs=cs,
+        case_studies=CASE_STUDIES,
+        year=datetime.datetime.now().year,
+        tools_url='/tools'
+    )
+
 
 @app.route('/writing')
 def writing():
@@ -362,13 +389,15 @@ def sitemap():
         )
 
     add(f"{SITE_URL}/", "weekly", "1.0")
+    add(f"{SITE_URL}/work", "weekly", "0.9")
+    for cs in CASE_STUDIES:
+        add(f"{SITE_URL}/work/{cs['slug']}", "monthly", "0.8")
     add(f"{SITE_URL}/writing", "weekly", "0.8", ARTICLES[0]["date"])
     for article in ARTICLES:
         add(f"{SITE_URL}/writing/{article['slug']}", "monthly", "0.7", article["date"])
     add(f"{SITE_URL}/tools", "daily", "0.9")
 
-    # Case study and about pages are homepage sections today.
-    # Add their dedicated URLs here when P3-1 ships.
+    # About is currently a homepage section.
     seen = set()
     for tool in TOOLS:
         slug = tool.get('slug')

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Engineering Case Studies — Shajjad Khan{% endblock %}</title>
+    <meta name="description" content="{% block meta_desc %}In-depth architectural breakdowns of production platforms: GCC hotel procurement SaaS, 2D spatial matrices, telecom automation, and carrier-grade IoT fleet management.{% endblock %}">
+    <meta name="author" content="Shajjad Khan">
+    <link rel="canonical" href="{% block canonical %}https://www.shajjadkhan.com/work{% endblock %}">
+
+    <!-- Open Graph / Social Media -->
+    <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+    <meta property="og:site_name" content="Shajjad Khan">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:url" content="{% block og_url %}https://www.shajjadkhan.com/work{% endblock %}">
+    <meta property="og:title" content="{{ self.title()|trim }}">
+    <meta property="og:description" content="{{ self.meta_desc()|trim }}">
+    <meta property="og:image" content="{% block og_image %}https://www.shajjadkhan.com/static/images/og-shajjadkhan.png{% endblock %}">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Shajjad Khan — Systems Architecture and Production Platforms">
+
+    <!-- Twitter / X -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ self.title()|trim }}">
+    <meta name="twitter:description" content="{{ self.meta_desc()|trim }}">
+    <meta name="twitter:image" content="{% block twitter_image %}https://www.shajjadkhan.com/static/images/og-shajjadkhan.png{% endblock %}">
+    <meta name="twitter:image:alt" content="Shajjad Khan — Systems Architecture and Production Platforms">
+
+    <!-- Self-hosted fonts -->
+    <link rel="preload" href="{{ url_for('static', filename='fonts/space-grotesk-latin.woff2') }}" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/fonts.css') }}?v=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=2.5">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/work.css') }}?v=1.0">
+    <meta name="theme-color" content="#050811">
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='images/apple-touch-icon.png') }}">
+    <link rel="manifest" href="/manifest.webmanifest">
+    {% include 'partials/site-schema.html' %}
+    {% block schema %}{% endblock %}
+</head>
+<body class="work-page">
+    {% include 'partials/icon-sprite.html' %}
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+
+    <header class="navbar-fixed" id="navbar">
+        <div class="nav-container">
+            <a href="/" class="brand-logo" aria-label="Shajjad Khan Homepage">
+                <div class="logo-mark">
+                    <picture class="brand-logo-picture">
+                        <source type="image/avif" srcset="{{ url_for('static', filename='images/shajjad-logo-dark-68.avif') }}">
+                        <source type="image/webp" srcset="{{ url_for('static', filename='images/shajjad-logo-dark-68.webp') }}">
+                        <img src="{{ url_for('static', filename='images/shajjad-logo-dark-68.png') }}" alt="" class="brand-logo-img" width="34" height="22" decoding="async">
+                    </picture>
+                </div>
+                <div class="logo-meta">
+                    <span class="brand-name">Shajjad Khan</span>
+                    <span class="brand-role desktop-only">Founder &amp; Systems Architect</span>
+                </div>
+            </a>
+
+            <nav class="nav-links" id="nav-links" aria-label="Main Navigation">
+                <div class="nav-links-inner">
+                    <a href="/#flagship" class="nav-link nav-link-flagship">
+                        <span>TawreedFlow</span>
+                        <span class="nav-badge-flagship">SaaS</span>
+                    </a>
+                    <a href="/work" class="nav-link active">Case Studies</a>
+                    <a href="/writing" class="nav-link">Writing</a>
+                    <a href="/#about" class="nav-link">About</a>
+                    <a href="/#contact" class="nav-link">Contact</a>
+                </div>
+
+                <div class="mobile-drawer-actions">
+                    <div class="mobile-drawer-divider"></div>
+                    <a href="{{ tools_url }}" target="_blank" rel="noopener" class="btn-mobile-tools">
+                        <div class="mobile-tools-icon">
+                            <svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-grid-3x3-gap-fill"></use></svg>
+                        </div>
+                        <div class="mobile-tools-text">
+                            <span class="mobile-tools-title">FastTrack Tools Suite</span>
+                            <span class="mobile-tools-sub">50+ Free Developer &amp; PDF Utilities ↗</span>
+                        </div>
+                        <svg class="bi-icon mobile-tools-arrow" aria-hidden="true" focusable="false"><use href="#bi-arrow-up-right"></use></svg>
+                    </a>
+                    <a href="/#contact" class="btn-mobile-contact">
+                        <svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-chat-dots-fill"></use></svg>
+                        <span>Start Advisory Inquiry</span>
+                    </a>
+                </div>
+            </nav>
+
+            <div class="nav-actions">
+                <a href="{{ tools_url }}" target="_blank" rel="noopener" class="nav-tools-pill desktop-nav-item" title="Open 50+ FastTrack Tools">
+                    <svg class="bi-icon tools-pill-icon" aria-hidden="true" focusable="false"><use href="#bi-grid-3x3-gap-fill"></use></svg>
+                    <span class="tools-pill-label">50+ Tools</span>
+                    <svg class="bi-icon tools-pill-arrow" aria-hidden="true" focusable="false"><use href="#bi-arrow-up-right"></use></svg>
+                </a>
+                <a href="/#contact" class="nav-cta-btn desktop-nav-item">
+                    <span>Let's Talk</span>
+                    <svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-arrow-right"></use></svg>
+                </a>
+                <button type="button" class="mobile-menu-btn" id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-controls="nav-links" aria-expanded="false">
+                    <span class="bar bar-top"></span>
+                    <span class="bar bar-mid"></span>
+                    <span class="bar bar-bot"></span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main id="main-content" class="work-main">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <div class="container footer-content">
+            <div class="footer-left">
+                <div class="footer-brand">
+                    <picture class="brand-logo-picture">
+                        <source type="image/avif" srcset="{{ url_for('static', filename='images/shajjad-logo-dark-68.avif') }}">
+                        <source type="image/webp" srcset="{{ url_for('static', filename='images/shajjad-logo-dark-68.webp') }}">
+                        <img src="{{ url_for('static', filename='images/shajjad-logo-dark-68.png') }}" alt="" class="footer-logo-img" width="34" height="22" loading="lazy" decoding="async">
+                    </picture>
+                    <div class="footer-brand-text">
+                        <span class="footer-name">Shajjad Khan</span>
+                        <span class="footer-tagline">Founder &amp; Systems Architect</span>
+                    </div>
+                </div>
+                <p class="footer-copy">
+                    &copy; {{ year }} Shajjad Khan. Architecting mission-critical platforms from Riyadh to global infrastructure.
+                </p>
+            </div>
+            <div class="footer-right">
+                <div class="footer-links">
+                    <a href="/work"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-layers-fill"></use></svg> Case Studies</a>
+                    <a href="https://tawreedflow.com" target="_blank" rel="noopener"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-shield-check"></use></svg> TawreedFlow</a>
+                    <a href="{{ tools_url }}" target="_blank" rel="noopener"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-grid-3x3-gap-fill"></use></svg> FastTrack Tools</a>
+                    <a href="/writing"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-pencil-square"></use></svg> Writing</a>
+                    <a href="#main-content"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-arrow-up"></use></svg> Top</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}?v=1.3"></script>
+</body>
+</html>
