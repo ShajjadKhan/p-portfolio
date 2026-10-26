@@ -11,7 +11,7 @@ Professional portfolio of **Shajjad Khan** — Founder and Systems Architect. Sh
 1. **[TawreedFlow (توريد)](https://tawreedflow.com/)**
    - Enterprise B2B multi-tenant procurement & supply chain SaaS purpose-built for GCC luxury hotels and hospitality (Saudi Arabia, UAE, Qatar).
    - Replaces un-audited WhatsApp purchasing with end-to-end requisitions, multi-level approvals, automated RFQs, quotation comparison with substitute item flags, PO issuance, and WhatsApp / WebPush dispatch.
-   - Live production in enterprise hotel networks (including Marriott integration).
+   - Live production across GCC luxury hotels and regional procurement operations.
    - Stack: Python / Django 6.0, PostgreSQL/MySQL, Celery, Redis, VAPID WebPush, WhatsApp Cloud API, Linux.
 
 2. **BlockTree Spatial Matrix**
@@ -37,7 +37,7 @@ Professional portfolio of **Shajjad Khan** — Founder and Systems Architect. Sh
 - **Backend**: Python 3.12, Flask, SQLite3 (inquiries store)
 - **Frontend**: Semantic HTML5, Modern CSS3 (Grid & Flexbox), Vanilla JavaScript (ES6+)
 - **Typography**: Space Grotesk, Inter, JetBrains Mono
-- **Deployment Port**: `9191` (hosted on `tserver`)
+- **Deployment**: Gunicorn daemon on port `9191` reverse-proxied behind Nginx on production (`shajjadkhan.com`)
 - **Domain**: `www.shajjadkhan.com`
 
 ---
