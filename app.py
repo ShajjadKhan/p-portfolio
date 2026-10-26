@@ -166,6 +166,17 @@ def work_case_study(slug):
     )
 
 
+@app.route('/compare')
+@app.route('/compare/tawreedflow-vs-whatsapp-excel')
+def compare_tawreedflow():
+    """Commercial comparison landing page: TawreedFlow vs WhatsApp & Excel."""
+    return render_template(
+        'compare/tawreedflow_vs_whatsapp.html',
+        year=datetime.datetime.now().year,
+        tools_url='/tools'
+    )
+
+
 @app.route('/writing')
 def writing():
     """Writing index: practical notes on procurement, architecture, and delivery."""
@@ -392,6 +403,7 @@ def sitemap():
     add(f"{SITE_URL}/work", "weekly", "0.9")
     for cs in CASE_STUDIES:
         add(f"{SITE_URL}/work/{cs['slug']}", "monthly", "0.8")
+    add(f"{SITE_URL}/compare/tawreedflow-vs-whatsapp-excel", "monthly", "0.8", "2026-10-26")
     add(f"{SITE_URL}/writing", "weekly", "0.8", ARTICLES[0]["date"])
     for article in ARTICLES:
         add(f"{SITE_URL}/writing/{article['slug']}", "monthly", "0.7", article["date"])
