@@ -11,10 +11,23 @@
 
     <!-- Open Graph / Social Media -->
     <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Shajjad Khan">
+    <meta property="og:locale" content="en_US">
     <meta property="og:url" content="https://www.shajjadkhan.com/">
     <meta property="og:title" content="Shajjad Khan — Founder &amp; Systems Architect">
     <meta property="og:description" content="Founder and systems architect behind TawreedFlow, a live multi-tenant procurement platform for GCC hotels, and 50+ production web tools.">
-    <meta property="og:image" content="{{ url_for('static', filename='images/shajjad-logo-light.png') }}">
+    <meta property="og:image" content="https://www.shajjadkhan.com/static/images/og-shajjadkhan.png">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Shajjad Khan — procurement and operations software for GCC hotels">
+
+    <!-- Twitter / X -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Shajjad Khan — Founder &amp; Systems Architect">
+    <meta name="twitter:description" content="Founder and systems architect behind TawreedFlow, a live multi-tenant procurement platform for GCC hotels, and 50+ production web tools.">
+    <meta name="twitter:image" content="https://www.shajjadkhan.com/static/images/og-shajjadkhan.png">
+    <meta name="twitter:image:alt" content="Shajjad Khan — procurement and operations software for GCC hotels">
 
     <!-- Google Fonts & Bootstrap Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -23,7 +36,31 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=2.3">
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/shajjad-favicon.png') }}">
+    <meta name="theme-color" content="#050811">
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='images/apple-touch-icon.png') }}">
+    <link rel="manifest" href="/manifest.webmanifest">
+    {% include 'partials/site-schema.html' %}
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "ProfessionalService",
+      "@id": "https://www.shajjadkhan.com/#professional-service",
+      "name": "Shajjad Khan — Systems Architecture & Software Consulting",
+      "url": "https://www.shajjadkhan.com/",
+      "description": "Systems architecture and software consulting for procurement, operations, and hospitality teams across the GCC.",
+      "founder": { "@id": "https://www.shajjadkhan.com/#person" },
+      "areaServed": [
+        { "@type": "Country", "name": "Saudi Arabia" },
+        { "@type": "Country", "name": "United Arab Emirates" },
+        { "@type": "Country", "name": "Qatar" },
+        { "@type": "Country", "name": "Kuwait" },
+        { "@type": "Country", "name": "Bahrain" },
+        { "@type": "Country", "name": "Oman" }
+      ]
+    }
+    </script>
 </head>
 <body>
     <a class="skip-link" href="#main-content">Skip to main content</a>
