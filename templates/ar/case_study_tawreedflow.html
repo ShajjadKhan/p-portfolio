@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>دراسة حالة توريد فلو: أتمتة مشتريات الفنادق والربط مع زاتكا — سجاد خان</title>
+    <meta name="description" content="دراسة معمارية متعمقة لمنصة توريد فلو (TawreedFlow): أتمتة مشتريات الفنادق متعددة الفروع، مطابقة الفواتير ثلاثية الأطراف، والربط مع المرحلة الثانية لـ ZATCA.">
+    <meta name="author" content="Shajjad Khan">
+    <link rel="canonical" href="https://www.shajjadkhan.com/ar/work/tawreedflow">
+
+    <!-- Bidirectional hreflang -->
+    <link rel="alternate" hreflang="ar" href="https://www.shajjadkhan.com/ar/work/tawreedflow">
+    <link rel="alternate" hreflang="en" href="https://www.shajjadkhan.com/work/tawreedflow">
+    <link rel="alternate" hreflang="x-default" href="https://www.shajjadkhan.com/work/tawreedflow">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="سجاد خان">
+    <meta property="og:locale" content="ar_SA">
+    <meta property="og:url" content="https://www.shajjadkhan.com/ar/work/tawreedflow">
+    <meta property="og:title" content="دراسة حالة منصة توريد فلو (TawreedFlow) — سجاد خان">
+    <meta property="og:description" content="دراسة معمارية متعمقة لأتمتة دورة مشتريات الفنادق والمجموعات الفندقية والربط مع هيئة الزكاة والضريبة والجمارك.">
+    <meta property="og:image" content="https://www.shajjadkhan.com/static/images/tawreedflow-hero.png">
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=2.7">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/work.css') }}?v=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rtl.css') }}?v=1.0">
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
+    <link rel="manifest" href="/manifest.webmanifest">
+
+    <!-- Schema.org TechArticle -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "TechArticle",
+      "headline": "دراسة حالة توريد فلو: أتمتة مشتريات الفنادق والربط مع زاتكا",
+      "description": "هندسة وبناء منصة سحابية متعددة المستأجرين لإدارة سلاسل إمداد الفنادق والمطابقة الثلاثية الذكية.",
+      "author": {
+        "@type": "Person",
+        "name": "سجاد خان",
+        "url": "https://www.shajjadkhan.com/ar"
+      },
+      "url": "https://www.shajjadkhan.com/ar/work/tawreedflow",
+      "inLanguage": "ar"
+    }
+    </script>
+</head>
+<body class="rtl-mode">
+    {% include 'partials/icon-sprite.html' %}
+
+    <header class="navbar-fixed" id="navbar">
+        <div class="nav-container">
+            <a href="/ar" class="brand-logo" aria-label="الرئيسية">
+                <div class="logo-mark">
+                    <picture class="brand-logo-picture">
+                        <source type="image/avif" srcset="{{ url_for('static', filename='images/shajjad-logo-dark-68.avif') }}">
+                        <source type="image/webp" srcset="{{ url_for('static', filename='images/shajjad-logo-dark-68.webp') }}">
+                        <img src="{{ url_for('static', filename='images/shajjad-logo-dark-68.png') }}" alt="" class="brand-logo-img" width="34" height="22">
+                    </picture>
+                </div>
+                <div class="logo-meta">
+                    <span class="logo-name">سجاد خان</span>
+                    <span class="logo-role"><span class="status-pulse-dot"></span> مهندس نظم سحابية</span>
+                </div>
+            </a>
+
+            <div class="nav-actions">
+                <a href="/work/tawreedflow" class="lang-switch-pill" title="Read in English" hreflang="en">
+                    <span class="lang-flag">🌐</span>
+                    <span class="lang-text">English</span>
+                </a>
+                <a href="/ar#contact" class="nav-cta-btn desktop-nav-item">
+                    <span>تواصل الآن</span>
+                    <svg class="bi-icon icon-forward" aria-hidden="true" focusable="false"><use href="#bi-arrow-right"></use></svg>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container" style="padding-top: 100px; padding-bottom: 80px;">
+        <div class="work-header">
+            <div class="work-breadcrumb">
+                <a href="/ar">الرئيسية</a>
+                <span class="sep">/</span>
+                <a href="/ar#flagship">المشاريع</a>
+                <span class="sep">/</span>
+                <span class="current">دراسة حالة منصة "توريد فلو"</span>
+            </div>
+
+            <div style="display: inline-block; padding: 4px 12px; border-radius: 9999px; background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); font-size: 0.8rem; font-weight: 700; margin-bottom: 16px;">
+                المنصة الرائدة · قطاع الضيافة وسلاسل الإمداد
+            </div>
+
+            <h1 style="font-size: clamp(2.2rem, 4vw, 3.2rem); font-weight: 800; color: #ffffff; margin-bottom: 16px;">
+                أتمتة مشتريات الفنادق الخليجية عبر منصة "توريد فلو" (TawreedFlow)
+            </h1>
+            <p style="font-size: 1.15rem; color: #cbd5e1; line-height: 1.7; max-width: 860px;">
+                كيف نجحت منصة سحابية متعددة المستأجرين في استبدال محادثات الواتساب ومطابقة فواتير الموردين ثلاثياً وتحقيق الامتثال التام للمرحلة الثانية للفوترة الإلكترونية لهيئة الزكاة والضريبة والجمارك (ZATCA).
+            </p>
+        </div>
+
+        <!-- Metrics Strip -->
+        <div class="benchmark-metrics-grid" style="margin: 36px 0;">
+            <div class="benchmark-stat-card">
+                <div class="benchmark-stat-label">سرعة إصدار أوامر الشراء</div>
+                <div class="benchmark-stat-val gradient-text-gold">4.2d → 3.5h</div>
+                <div class="benchmark-stat-desc">تقليص دورة الشراء بنسبة 95% عبر سلاسل الاعتماد المؤتمتة.</div>
+            </div>
+            <div class="benchmark-stat-card">
+                <div class="benchmark-stat-label">التوفير المالي المحقق</div>
+                <div class="benchmark-stat-val gradient-text-cyan">+180,000 ر.س</div>
+                <div class="benchmark-stat-desc">متوسط الوفر السنوي لكل فندق عبر إيقاف تسرب الأسعار والهدر.</div>
+            </div>
+            <div class="benchmark-stat-card">
+                <div class="benchmark-stat-label">دقة مطابقة الفواتير</div>
+                <div class="benchmark-stat-val" style="color: #34d399;">94% أقل نزاعات</div>
+                <div class="benchmark-stat-desc">التحقق اللحظي بين أمر الشراء وسند استلام الرصيف وفاتورة المورد.</div>
+            </div>
+            <div class="benchmark-stat-card">
+                <div class="benchmark-stat-label">الامتثال لمنظومة زاتكا</div>
+                <div class="benchmark-stat-val" style="color: #fbbf24;">100% Phase 2</div>
+                <div class="benchmark-stat-desc">توليد الفواتير المشفرة ورموز الاستجابة السريعة (QR) لحظياً.</div>
+            </div>
+        </div>
+
+        <!-- Section 1: Operational Challenge -->
+        <div class="work-section" style="margin-top: 40px;">
+            <h2 class="work-section-title">1. التحدي التشغيلي: فوضى الواتساب وتسرب الأسعار</h2>
+            <div class="work-text" style="color: #cbd5e1; line-height: 1.8; font-size: 1.05rem;">
+                <p>
+                    تعتمد أغلب الفنادق في منطقة الخليج على تطبيقات المراسلة الفورية مثل واتساب وجداول إكسل لإدارة طلبات التوريد اليومية لقسم الأغذية والمشروبات (F&amp;B) واللوازم التشغيلية (OS&amp;E). ينتج عن هذا الأسلوب اليدوي ثلاث مشكلات جوهرية تهدد ربحية الفندق:
+                </p>
+                <ul>
+                    <li><strong>غياب الرقابة السعرية:</strong> يقوم الموردون بزيادة أسعار الأصناف الاستهلاكية تدريجياً دون انتباه مديري المشتريات، نظراً لعدم وجود مرجع أسعار موحد ومقارن.</li>
+                    <li><strong>تأخر الموافقات:</strong> تستغرق دورة اعتماد طلب الشراء من الشيف التنفيذي وحتى المدير المالي والمدير العام عدة أيام، مما يؤدي لنقص المواد الحيوية.</li>
+                    <li><strong>استلام بضائع ناقصة دون توثيق:</strong> توقيع موظفي الرصيف على أذون استلام دون مطابقتها مع الكميات المطلوبة فعلياً، واكتشاف الخلل بعد فوات الأوان عند وصول المطالبة المالية.</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Section 2: Technical Architecture -->
+        <div class="work-section">
+            <h2 class="work-section-title">2. الحل المعماري لمنصة "توريد فلو"</h2>
+            <div class="work-text" style="color: #cbd5e1; line-height: 1.8; font-size: 1.05rem;">
+                <p>
+                    تم تصميم منصة <strong>توريد فلو (TawreedFlow)</strong> كبنية تحتية سحابية متعددة المستأجرين (Multi-Tenant Architecture) تضمن العزل التام لبيانات كل فندق، مع توفير بوابة موحدة للموردين لتقديم عروض الأسعار بصورة رقمية منظمة.
+                </p>
+                <div style="background: rgba(14, 22, 40, 0.7); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 24px; margin: 24px 0;">
+                    <h3 style="color: #f59e0b; font-size: 1.25rem; margin-bottom: 12px;">المطابقة الثلاثية لرصيف الاستلام (3-Way Matching):</h3>
+                    <p>
+                        يطبق النظام خوارزمية تحقق تلقائية تقارن ثلاثة مستندات قبل الإذن بصرف المستحقات:
+                    </p>
+                    <ol style="margin-right: 20px; line-height: 1.8;">
+                        <li><strong>أمر الشراء الأصلي (PO):</strong> المحدد للكميات والأسعار المتفق عليها سلفاً.</li>
+                        <li><strong>إذن استلام البضاعة (GRN):</strong> المسجل على رصيف الاستلام عبر الأجهزة اللوحية أو الهاتف.</li>
+                        <li><strong>فاتورة المورد الضريبية (Tax Invoice):</strong> التي لا تُعتمد إذا تجاوزت نسبة الانحراف المالي المسموح بها (0%).</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 3: ZATCA Phase 2 -->
+        <div class="work-section">
+            <h2 class="work-section-title">3. التكامل والامتثال مع المرحلة الثانية للفوترة (ZATCA Phase 2)</h2>
+            <div class="work-text" style="color: #cbd5e1; line-height: 1.8; font-size: 1.05rem;">
+                <p>
+                    وفقاً للوائح هيئة الزكاة والضريبة والجمارك في المملكة، يدمج النظام محركاً داخلياً للربط والتكامل المباشر مع منصة "فاتورة"، يقوم بالمهام التالية تلقائياً:
+                </p>
+                <ul>
+                    <li>توليد المعرف الفريد عالمياً (UUID) لكل فاتورة ضريبية وسند مدين/دائن.</li>
+                    <li>إنشاء التوقيع الرقمي التشفيري (Cryptographic Stamp) وحساب قيمة التجزئة (Hash Value).</li>
+                    <li>إنشاء ملفات XML UBL 2.1 المطابقة تماماً للاشتراطات الفنية المعتمدة.</li>
+                    <li>تشفير وطباعة رمز الاستجابة السريعة (QR Code) المتضمن الطابع الزمني والقيمة الضريبية.</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Navigation CTAs -->
+        <div style="margin-top: 56px; padding-top: 36px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
+            <a href="/ar#contact" class="btn btn-primary">
+                <span>طلب استشارة أو عرض حي للمنصة</span>
+                <svg class="bi-icon icon-forward" aria-hidden="true" focusable="false"><use href="#bi-arrow-right"></use></svg>
+            </a>
+            <a href="/calculator/hotel-procurement-roi" class="btn btn-outline-sm">
+                <svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-sliders"></use></svg>
+                <span>حاسبة التوفير المالي التقديري</span>
+            </a>
+            <a href="/benchmark/gcc-hotel-procurement-benchmark-2026" class="btn btn-outline-sm">
+                <svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-file-earmark-pdf-fill"></use></svg>
+                <span>تقرير مؤشرات المشتريات الفندقية 2026</span>
+            </a>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container footer-content" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; padding: 32px 0;">
+            <div style="color: #94a3b8; font-size: 0.9rem;">
+                © {{ year }} سجاد خان. دراسة حالة منصة توريد فلو · الرياض، المملكة العربية السعودية
+            </div>
+            <div style="display: flex; gap: 16px; align-items: center; font-size: 0.9rem;">
+                <a href="/work/tawreedflow" style="color: #cbd5e1; text-decoration: none;">Read in English</a>
+                <span style="color: #475569;">|</span>
+                <a href="/ar" style="color: #38bdf8; text-decoration: none;">الصفحة الرئيسية</a>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

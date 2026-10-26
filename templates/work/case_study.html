@@ -5,6 +5,10 @@
 {% block canonical %}https://www.shajjadkhan.com/work/{{ cs.slug }}{% endblock %}
 
 {% block schema %}
+{% if cs.slug == 'tawreedflow' %}
+<link rel="alternate" hreflang="en" href="https://www.shajjadkhan.com/work/tawreedflow">
+<link rel="alternate" hreflang="ar" href="https://www.shajjadkhan.com/ar/work/tawreedflow">
+{% endif %}
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -37,6 +41,14 @@
             <span class="work-breadcrumb-sep">/</span>
             <span>{{ cs.short_title }}</span>
         </div>
+        {% if cs.slug == 'tawreedflow' %}
+        <div style="margin: 14px 0 6px;">
+            <a href="/ar/work/tawreedflow" class="lang-switch-pill" hreflang="ar" dir="rtl" style="font-size: 0.85rem;">
+                <span class="lang-flag">🇸🇦</span>
+                <span class="lang-text">اقرأ دراسة الحالة باللغة العربية (Arabic Version) →</span>
+            </a>
+        </div>
+        {% endif %}
         <h1 class="work-title">{{ cs.title }}</h1>
         <p class="work-tagline">{{ cs.tagline }}</p>
 

@@ -220,6 +220,26 @@ def benchmark_download():
     )
 
 
+@app.route('/ar')
+def arabic_home():
+    """Executive Arabic landing page: Systems Architecture, Flagship SaaS, Trust & Engagement."""
+    return render_template(
+        'ar/index.html',
+        year=datetime.datetime.now().year,
+        tools_url='/tools'
+    )
+
+
+@app.route('/ar/work/tawreedflow')
+def arabic_case_study_tawreedflow():
+    """Arabic case study: TawreedFlow hotel procurement and ZATCA Phase 2 automation."""
+    return render_template(
+        'ar/case_study_tawreedflow.html',
+        year=datetime.datetime.now().year,
+        tools_url='/tools'
+    )
+
+
 @app.route('/writing')
 def writing():
     """Writing index: practical notes on procurement, architecture, and delivery."""
@@ -495,6 +515,8 @@ def sitemap():
     add(f"{SITE_URL}/compare/tawreedflow-vs-whatsapp-excel", "monthly", "0.8", "2026-10-26")
     add(f"{SITE_URL}/calculator/hotel-procurement-roi", "monthly", "0.8", "2026-10-26")
     add(f"{SITE_URL}/benchmark/gcc-hotel-procurement-benchmark-2026", "monthly", "0.8", "2026-10-26")
+    add(f"{SITE_URL}/ar", "weekly", "0.9", "2026-10-26")
+    add(f"{SITE_URL}/ar/work/tawreedflow", "monthly", "0.8", "2026-10-26")
     add(f"{SITE_URL}/writing", "weekly", "0.8", ARTICLES[0]["date"])
     for article in ARTICLES:
         add(f"{SITE_URL}/writing/{article['slug']}", "monthly", "0.7", article["date"])
