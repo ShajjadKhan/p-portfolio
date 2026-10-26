@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 1. Mobile Navigation Drawer & Toggle
     const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
     const navLinks = document.getElementById('nav-links');
-    const mobileMenuQuery = window.matchMedia('(max-width: 860px)');
+    const mobileMenuQuery = window.matchMedia('(max-width: 1100px)');
     const backgroundForInert = document.querySelectorAll('main, footer, .brand-logo');
 
     function setBackgroundInert(isInert) {
