@@ -1,0 +1,128 @@
+/* ==========================================================================
+   Arabic RTL Stylesheet for Shajjad Khan Portfolio
+   ========================================================================== */
+
+html[dir="rtl"],
+body[dir="rtl"],
+.rtl-mode {
+    direction: rtl;
+    text-align: right;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Geeza Pro', 'Al Bayan', Tahoma, sans-serif;
+}
+
+/* Typography refinements for Arabic script */
+html[dir="rtl"] h1,
+html[dir="rtl"] h2,
+html[dir="rtl"] h3,
+html[dir="rtl"] h4,
+html[dir="rtl"] .hero-title,
+html[dir="rtl"] .section-title {
+    letter-spacing: normal;
+    line-height: 1.35;
+}
+
+html[dir="rtl"] .hero-description,
+html[dir="rtl"] .work-text,
+html[dir="rtl"] p {
+    line-height: 1.8;
+}
+
+/* Navigation RTL Layout */
+html[dir="rtl"] .nav-container {
+    flex-direction: row-reverse;
+}
+
+html[dir="rtl"] .nav-links-inner {
+    flex-direction: row-reverse;
+}
+
+html[dir="rtl"] .nav-actions {
+    flex-direction: row-reverse;
+}
+
+html[dir="rtl"] .logo-mark {
+    margin-right: 0;
+    margin-left: 12px;
+}
+
+/* Breadcrumb & Separator */
+html[dir="rtl"] .work-breadcrumb {
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+}
+
+html[dir="rtl"] .work-breadcrumb .sep {
+    transform: scaleX(-1);
+}
+
+/* Language Switcher Button */
+.lang-switch-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 9999px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    background: rgba(245, 158, 11, 0.12);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.lang-switch-pill:hover {
+    background: rgba(245, 158, 11, 0.25);
+    border-color: #f59e0b;
+    color: #ffffff;
+    transform: translateY(-1px);
+}
+
+.lang-flag {
+    font-size: 1.1rem;
+    line-height: 1;
+}
+
+/* Reversible Icons */
+html[dir="rtl"] .icon-forward,
+html[dir="rtl"] .bi-arrow-right,
+html[dir="rtl"] .tools-pill-arrow {
+    transform: scaleX(-1);
+}
+
+/* Table alignments */
+html[dir="rtl"] .benchmark-table th,
+html[dir="rtl"] .benchmark-table td,
+html[dir="rtl"] .table th,
+html[dir="rtl"] .table td {
+    text-align: right;
+}
+
+/* Form input adjustments */
+html[dir="rtl"] input,
+html[dir="rtl"] textarea,
+html[dir="rtl"] select {
+    text-align: right;
+    direction: rtl;
+}
+
+/* Card borders and accent strips */
+html[dir="rtl"] .feature-card,
+html[dir="rtl"] .trust-card,
+html[dir="rtl"] .model-card {
+    text-align: right;
+}
+
+html[dir="rtl"] .metric-card {
+    text-align: right;
+}
+
+/* FAQ details accordion */
+html[dir="rtl"] .faq-summary {
+    text-align: right;
+}
+
+html[dir="rtl"] .faq-icon {
+    margin-right: 0;
+    margin-left: 14px;
+}
