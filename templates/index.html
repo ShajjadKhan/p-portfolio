@@ -767,8 +767,10 @@
                             <div class="profile-card">
                                 <div class="avatar-wrap">
                                     <div class="avatar-ring"></div>
-                                    <!-- Replace shajjad-avatar.svg with a real headshot when available. -->
-                                    <img src="{{ url_for('static', filename='images/shajjad-avatar.svg') }}" alt="Shajjad Khan" class="avatar-img" width="100" height="100" loading="lazy" decoding="async">
+                                    <picture>
+                                        <source type="image/webp" srcset="{{ url_for('static', filename='images/shajjad-portrait.webp') }}">
+                                        <img src="{{ url_for('static', filename='images/shajjad-portrait.jpg') }}" alt="Shajjad Khan" class="avatar-img" width="100" height="100" loading="lazy" decoding="async">
+                                    </picture>
                                 </div>
                                 <h3 class="profile-name">Shajjad Khan</h3>
                                 <p class="profile-role">Founder &amp; Systems Architect</p>

@@ -100,9 +100,21 @@
             <div class="hero-bg-glow"></div>
             <div class="container hero-container">
                 <div class="hero-content">
-                    <div class="status-pill hero-status-pill">
-                        <span class="status-pulse-dot"></span>
-                        <span>متاح للمشاريع والاستشارات المعمارية في المملكة ودول الخليج</span>
+                    <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px; flex-wrap: wrap;">
+                        <div class="avatar-wrap" style="width: 80px; height: 80px; margin-bottom: 0;">
+                            <div class="avatar-ring"></div>
+                            <picture>
+                                <source type="image/webp" srcset="{{ url_for('static', filename='images/shajjad-portrait.webp') }}">
+                                <img src="{{ url_for('static', filename='images/shajjad-portrait.jpg') }}" alt="سجاد خان" class="avatar-img" width="80" height="80" loading="lazy" decoding="async">
+                            </picture>
+                        </div>
+                        <div>
+                            <div class="status-pill hero-status-pill" style="margin-bottom: 4px;">
+                                <span class="status-pulse-dot"></span>
+                                <span>متاح للمشاريع والاستشارات المعمارية في المملكة والخليج</span>
+                            </div>
+                            <div style="color: #94a3b8; font-size: 0.85rem;">سجاد خان · مؤسس ومهندس نظم سحابية</div>
+                        </div>
                     </div>
 
                     <h1 class="hero-title">
