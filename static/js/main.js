@@ -299,21 +299,47 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     }
+
+    // 7. Engagement CTAs: Auto-select Project Type & focus contact form
+    const engagementCtas = document.querySelectorAll('.engagement-cta');
+    const projectTypeSelect = document.getElementById('contact-project-type');
+    const nameInput = document.getElementById('contact-name');
+
+    engagementCtas.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const desiredType = btn.getAttribute('data-project-type');
+            if (desiredType && projectTypeSelect) {
+                for (let i = 0; i < projectTypeSelect.options.length; i++) {
+                    if (projectTypeSelect.options[i].value === desiredType) {
+                        projectTypeSelect.selectedIndex = i;
+                        break;
+                    }
+                }
+            }
+            if (nameInput) {
+                setTimeout(() => {
+                    nameInput.focus();
+                }, 350);
+            }
+        });
+    });
 });
 
 // Global copy email helper
 function copyPortfolioEmail() {
-    const email = 'shajjadkhan.me@hotmail.com';
+    const email = 'hello@shajjadkhan.com';
     navigator.clipboard.writeText(email).then(() => {
         const btn = document.getElementById('copy-email-btn');
         if (btn) {
             const original = btn.innerHTML;
-            btn.innerHTML = '<svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-check2"></use></svg> <span>Copied!</span>';
+            btn.innerHTML = '<svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-check2"></use></svg> <span>Copied hello@!</span>';
             btn.style.color = '#10b981';
             setTimeout(() => {
                 btn.innerHTML = original;
                 btn.style.color = '';
             }, 2500);
         }
+    }).catch(() => {
+        window.location.href = `mailto:${email}`;
     });
 }
