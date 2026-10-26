@@ -13,7 +13,7 @@ import json
 import re
 from email.utils import format_datetime
 from xml.sax.saxutils import escape
-from flask import Flask, render_template, request, jsonify, redirect, Response, abort
+from flask import Flask, render_template, request, jsonify, redirect, Response, abort, send_from_directory
 
 from tools_blueprint import tools_bp
 from tools_catalog import TOOLS
@@ -195,6 +195,28 @@ def calculator_roi():
         'calculator/roi.html',
         year=datetime.datetime.now().year,
         tools_url='/tools'
+    )
+
+
+@app.route('/benchmark')
+@app.route('/benchmark/gcc-hotel-procurement-benchmark-2026')
+def benchmark_report():
+    """Gated 2026 GCC Hotel Procurement & Operations Technology Benchmark Report."""
+    return render_template(
+        'benchmark/gcc_hotel_procurement_report.html',
+        year=datetime.datetime.now().year,
+        tools_url='/tools'
+    )
+
+
+@app.route('/benchmark/gcc-hotel-procurement-benchmark-2026/download')
+def benchmark_download():
+    """Serve the downloadable PDF benchmark report."""
+    return send_from_directory(
+        os.path.join(app.root_path, 'static', 'docs'),
+        'GCC-Hotel-Procurement-Benchmark-Report-2026.pdf',
+        as_attachment=True,
+        mimetype='application/pdf'
     )
 
 
@@ -472,6 +494,7 @@ def sitemap():
         add(f"{SITE_URL}/work/{cs['slug']}", "monthly", "0.8")
     add(f"{SITE_URL}/compare/tawreedflow-vs-whatsapp-excel", "monthly", "0.8", "2026-10-26")
     add(f"{SITE_URL}/calculator/hotel-procurement-roi", "monthly", "0.8", "2026-10-26")
+    add(f"{SITE_URL}/benchmark/gcc-hotel-procurement-benchmark-2026", "monthly", "0.8", "2026-10-26")
     add(f"{SITE_URL}/writing", "weekly", "0.8", ARTICLES[0]["date"])
     for article in ARTICLES:
         add(f"{SITE_URL}/writing/{article['slug']}", "monthly", "0.7", article["date"])

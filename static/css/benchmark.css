@@ -1,0 +1,271 @@
+/* ==========================================================================
+   GCC Hotel Procurement Benchmark Report Stylesheet
+   ========================================================================== */
+
+.benchmark-page {
+    background-color: var(--bg-primary, #050811);
+    color: var(--text-primary, #f1f5f9);
+    min-height: 100vh;
+}
+
+.benchmark-header {
+    margin-bottom: 40px;
+    padding-bottom: 30px;
+    border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+}
+
+.benchmark-title {
+    font-size: clamp(2.1rem, 4.5vw, 3.2rem);
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    margin-bottom: 16px;
+    color: #ffffff;
+}
+
+.benchmark-tagline {
+    font-size: clamp(1.1rem, 2vw, 1.25rem);
+    line-height: 1.6;
+    color: var(--text-secondary, #cbd5e1);
+    max-width: 860px;
+}
+
+/* Metric Pills Grid */
+.benchmark-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin: 32px 0 40px;
+}
+
+.benchmark-stat-card {
+    background: var(--surface-1, rgba(14, 22, 40, 0.7));
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+    border-radius: 12px;
+    padding: 20px;
+    transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.benchmark-stat-card:hover {
+    border-color: rgba(245, 158, 11, 0.4);
+    transform: translateY(-2px);
+}
+
+.benchmark-stat-val {
+    font-size: clamp(1.6rem, 3vw, 2.2rem);
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 6px;
+}
+
+.benchmark-stat-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted, #94a3b8);
+    margin-bottom: 4px;
+}
+
+.benchmark-stat-desc {
+    font-size: 0.85rem;
+    color: var(--text-secondary, #cbd5e1);
+    line-height: 1.4;
+}
+
+/* Benchmark Comparison Table */
+.benchmark-table-wrapper {
+    overflow-x: auto;
+    margin: 32px 0 48px;
+    border-radius: 14px;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+    background: var(--surface-1, rgba(14, 22, 40, 0.7));
+}
+
+.benchmark-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+    text-align: left;
+}
+
+.benchmark-table th {
+    background: rgba(10, 16, 30, 0.95);
+    color: #ffffff;
+    font-weight: 700;
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.benchmark-table td {
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    color: #cbd5e1;
+    vertical-align: middle;
+}
+
+.benchmark-table tr:hover td {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.badge-impact {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+/* Gate Lead Box */
+.benchmark-gate-card {
+    background: linear-gradient(145deg, rgba(17, 24, 39, 0.95), rgba(15, 23, 42, 0.98));
+    border: 2px solid rgba(245, 158, 11, 0.4);
+    border-radius: 16px;
+    padding: 36px;
+    margin: 40px 0;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4);
+}
+
+.benchmark-gate-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.benchmark-gate-desc {
+    color: #cbd5e1;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 24px;
+    max-width: 720px;
+}
+
+.benchmark-form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.benchmark-input {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 8px;
+    background: rgba(10, 16, 30, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    font-size: 0.95rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.benchmark-input:focus {
+    outline: none;
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+}
+
+.benchmark-btn-download {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 14px 28px;
+    background: #f59e0b;
+    color: #050811;
+    font-weight: 700;
+    font-size: 1rem;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease;
+    width: 100%;
+}
+
+.benchmark-btn-download:hover {
+    background: #d97706;
+    transform: translateY(-1px);
+}
+
+/* Unlocked View */
+.benchmark-unlocked-panel {
+    display: none;
+    background: rgba(16, 185, 129, 0.08);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: 12px;
+    padding: 24px;
+    margin-top: 20px;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.benchmark-download-link-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    background: rgba(15, 23, 42, 0.8);
+    padding: 16px 20px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: 16px;
+}
+
+/* Failure Modes Cards */
+.failure-modes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    margin: 32px 0 40px;
+}
+
+.failure-mode-card {
+    background: var(--surface-1, rgba(14, 22, 40, 0.7));
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    border-radius: 12px;
+    padding: 24px;
+}
+
+.failure-mode-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #f87171;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.failure-mode-desc {
+    font-size: 0.9rem;
+    color: #cbd5e1;
+    line-height: 1.55;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .benchmark-gate-card {
+        padding: 24px 18px;
+    }
+    .benchmark-form-grid {
+        grid-template-columns: 1fr;
+    }
+    .benchmark-download-link-box {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
