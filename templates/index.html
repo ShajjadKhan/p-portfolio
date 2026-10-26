@@ -34,7 +34,7 @@
     <link rel="preload" href="{{ url_for('static', filename='fonts/space-grotesk-latin.woff2') }}" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/fonts.css') }}?v=1.0">
     
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=2.6">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=2.7">
     <meta name="theme-color" content="#050811">
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32.png') }}">
@@ -429,14 +429,40 @@
                 <div class="projects-grid">
                     <!-- Project 1: BlockTree Matrix -->
                     <div class="project-card">
+                        <div class="project-visual-wrap">
+                            <img src="{{ url_for('static', filename='images/projects/blocktree-preview.svg') }}"
+                                 alt="BlockTree 2D Spatial Editorial Hypergraph architecture and physics loop"
+                                 class="project-visual-img"
+                                 width="800" height="420"
+                                 loading="lazy" decoding="async">
+                            <div class="project-visual-overlay">
+                                <span class="project-metric-pill"><svg class="bi-icon text-cyan" aria-hidden="true" focusable="false"><use href="#bi-cpu-fill"></use></svg> &lt;15ms Collision Loop</span>
+                            </div>
+                        </div>
                         <div class="project-header">
                             <div class="project-badge bg-cyan-subtle text-cyan"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-diagram-3-fill"></use></svg> SPATIAL GRAPH</div>
-                            <span class="project-year">2026</span>
+                            <span class="project-year">2026 Production</span>
                         </div>
                         <h3 class="project-title">BlockTree Editorial Matrix</h3>
                         <p class="project-summary">
-                            A spatial newsletter and branching discourse platform featuring a 2D canvas navigation matrix, 360° virtual joystick physics, verified author registration, and a Microsoft Word-style rich typography studio with live side-by-side Markdown preview.
+                            A spatial newsletter and branching discourse platform featuring a 2D canvas navigation matrix, 360° virtual joystick physics, verified author registration, and a rich typography studio with live side-by-side Markdown preview.
                         </p>
+                        
+                        <div class="project-outcome-strip">
+                            <div class="project-outcome-item">
+                                <span class="outcome-val text-cyan">360°</span>
+                                <span class="outcome-label">Joystick Physics</span>
+                            </div>
+                            <div class="project-outcome-item">
+                                <span class="outcome-val text-emerald">RFC 6238</span>
+                                <span class="outcome-label">TOTP 2FA Shield</span>
+                            </div>
+                            <div class="project-outcome-item">
+                                <span class="outcome-val text-cyan">WAL Mode</span>
+                                <span class="outcome-label">Concurrent SQLite</span>
+                            </div>
+                        </div>
+
                         <ul class="project-highlights">
                             <li>Dynamic 2D radial collision physics preventing sibling overlap.</li>
                             <li>Multi-tier security: Pre-driver regex SQLi filters, PBKDF2 dummy hashing, and RFC 6238 TOTP 2FA.</li>
@@ -449,10 +475,26 @@
                             <span class="tech-pill">HTML5 Canvas</span>
                             <span class="tech-pill">Panzoom</span>
                         </div>
+                        <div class="project-card-actions">
+                            <a href="/work/blocktree" class="btn btn-outline-sm btn-project-action">
+                                <span>Read Case Study</span>
+                                <svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-arrow-right"></use></svg>
+                            </a>
+                        </div>
                     </div>
 
                     <!-- Project 2: FastTrack Tools Platform -->
                     <div class="project-card">
+                        <div class="project-visual-wrap">
+                            <img src="{{ url_for('static', filename='images/projects/fasttrack-preview.svg') }}"
+                                 alt="FastTrack Tools client-side RAM sandbox and Web Workers pipeline"
+                                 class="project-visual-img"
+                                 width="800" height="420"
+                                 loading="lazy" decoding="async">
+                            <div class="project-visual-overlay">
+                                <span class="project-metric-pill"><svg class="bi-icon text-emerald" aria-hidden="true" focusable="false"><use href="#bi-shield-check"></use></svg> 50+ In-Browser Tools</span>
+                            </div>
+                        </div>
                         <div class="project-header">
                             <div class="project-badge bg-cyan-subtle text-cyan"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-tools"></use></svg> UTILITY ECOSYSTEM</div>
                             <span class="project-year">v2.0 Active</span>
@@ -461,6 +503,22 @@
                         <p class="project-summary">
                             A standalone high-velocity utility platform engineered for 100% client-side data privacy. Allows users to process PDFs, compress images, calculate business margins, inspect AutoCAD DWG/DXF blueprints, and audit SEO sitemaps directly in-browser with zero server lag.
                         </p>
+
+                        <div class="project-outcome-strip">
+                            <div class="project-outcome-item">
+                                <span class="outcome-val text-emerald">50+</span>
+                                <span class="outcome-label">Browser Tools</span>
+                            </div>
+                            <div class="project-outcome-item">
+                                <span class="outcome-val text-cyan">0 B</span>
+                                <span class="outcome-label">Server Uploads</span>
+                            </div>
+                            <div class="project-outcome-item">
+                                <span class="outcome-val text-emerald">100%</span>
+                                <span class="outcome-label">Client Privacy</span>
+                            </div>
+                        </div>
+
                         <ul class="project-highlights">
                             <li>100% client-side privacy: Files never leave user RAM; zero third-party cloud storage exposure.</li>
                             <li>Comprehensive catalog: DWG/CAD viewer, high-accuracy PDF editor & annotator, PDF merge/split, WebP/PNG conversions, QR generation, and XML sitemap inspection.</li>
@@ -474,18 +532,31 @@
                             <span class="tech-pill">Web Workers</span>
                             <span class="tech-pill">PDF.js</span>
                             <span class="tech-pill">PDF-Lib</span>
-                            <span class="tech-pill">REST APIs</span>
                         </div>
-                        <div style="margin-top: 18px;">
-                            <a href="{{ tools_url }}" class="btn btn-cyan-block">
+                        <div class="project-card-actions">
+                            <a href="/work/fasttrack" class="btn btn-outline-sm btn-project-action">
+                                <span>Case Study</span>
+                                <svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-arrow-right"></use></svg>
+                            </a>
+                            <a href="{{ tools_url }}" target="_blank" rel="noopener" class="btn btn-cyan-sm btn-project-action">
+                                <span>Launch Tools (50) ↗</span>
                                 <svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-tools"></use></svg>
-                                <span>Launch FastTrack Tools Suite (50 Utilities) →</span>
                             </a>
                         </div>
                     </div>
 
                     <!-- Project 3: ISP Telecom & Radius Billing Engine -->
                     <div class="project-card">
+                        <div class="project-visual-wrap">
+                            <img src="{{ url_for('static', filename='images/projects/isp-telecom-preview.svg') }}"
+                                 alt="ISP Telecom MikroTik RouterOS API and FreeRADIUS AAA architecture"
+                                 class="project-visual-img"
+                                 width="800" height="420"
+                                 loading="lazy" decoding="async">
+                            <div class="project-visual-overlay">
+                                <span class="project-metric-pill"><svg class="bi-icon text-gold" aria-hidden="true" focusable="false"><use href="#bi-hdd-network-fill"></use></svg> RouterOS API 8728</span>
+                            </div>
+                        </div>
                         <div class="project-header">
                             <div class="project-badge bg-gold-subtle text-gold"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-hdd-network-fill"></use></svg> TELECOM / NETWORKING</div>
                             <span class="project-year">Production</span>
@@ -494,6 +565,22 @@
                         <p class="project-summary">
                             High-throughput subscriber management, automated bandwidth provisioning, and radius accounting platform built for regional internet service providers.
                         </p>
+
+                        <div class="project-outcome-strip">
+                            <div class="project-outcome-item">
+                                <span class="outcome-val text-gold">1.2 Gbps</span>
+                                <span class="outcome-label">Shaped Throughput</span>
+                            </div>
+                            <div class="project-outcome-item">
+                                <span class="outcome-val text-emerald">Zero-Loss</span>
+                                <span class="outcome-label">RADIUS Accounting</span>
+                            </div>
+                            <div class="project-outcome-item">
+                                <span class="outcome-val text-gold">Real-time</span>
+                                <span class="outcome-label">Queue Automation</span>
+                            </div>
+                        </div>
+
                         <ul class="project-highlights">
                             <li>Real-time RouterOS API automation for dynamic queue shaping and user disconnects.</li>
                             <li>Automated WhatsApp payment reminders and automated gateway invoice dispatch.</li>
@@ -506,18 +593,50 @@
                             <span class="tech-pill">MikroTik API</span>
                             <span class="tech-pill">FreeRADIUS</span>
                         </div>
+                        <div class="project-card-actions">
+                            <a href="/work/isp" class="btn btn-outline-sm btn-project-action">
+                                <span>Read Case Study</span>
+                                <svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-arrow-right"></use></svg>
+                            </a>
+                        </div>
                     </div>
 
                     <!-- Project 4: GenieACS / CWMP TR-069 Fleet Management -->
                     <div class="project-card">
+                        <div class="project-visual-wrap">
+                            <img src="{{ url_for('static', filename='images/projects/genieacs-preview.svg') }}"
+                                 alt="GenieACS CWMP TR-069 Auto Configuration Server and device fleet telemetry"
+                                 class="project-visual-img"
+                                 width="800" height="420"
+                                 loading="lazy" decoding="async">
+                            <div class="project-visual-overlay">
+                                <span class="project-metric-pill"><svg class="bi-icon text-emerald" aria-hidden="true" focusable="false"><use href="#bi-router-fill"></use></svg> TR-069 Standard</span>
+                            </div>
+                        </div>
                         <div class="project-header">
                             <div class="project-badge bg-emerald-subtle text-emerald"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-router-fill"></use></svg> IOT &amp; HARDWARE</div>
                             <span class="project-year">Production</span>
                         </div>
                         <h3 class="project-title">GenieACS TR-069 Fleet Management</h3>
                         <p class="project-summary">
-                            Carrier-grade auto-configuration server (ACS) orchestrating remote provisioning, firmware upgrades, and real-time monitoring across thousands of subscriber CPE routers and GPON ONUs.
+                            Carrier-grade auto-configuration server (ACS) orchestrating remote provisioning, firmware upgrades, and real-time monitoring across subscriber CPE routers and GPON ONUs.
                         </p>
+
+                        <div class="project-outcome-strip">
+                            <div class="project-outcome-item">
+                                <span class="outcome-val text-emerald">Zero-Touch</span>
+                                <span class="outcome-label">CPE Provisioning</span>
+                            </div>
+                            <div class="project-outcome-item">
+                                <span class="outcome-val text-cyan">CWMP</span>
+                                <span class="outcome-label">TR-069 Protocol</span>
+                            </div>
+                            <div class="project-outcome-item">
+                                <span class="outcome-val text-emerald">Staged</span>
+                                <span class="outcome-label">Firmware Rollouts</span>
+                            </div>
+                        </div>
+
                         <ul class="project-highlights">
                             <li>Zero-touch provisioning profiles triggered upon customer fiber activation.</li>
                             <li>Real-time Wi-Fi diagnostics, signal power analysis, and fault detection.</li>
@@ -530,10 +649,26 @@
                             <span class="tech-pill">TR-069 CWMP</span>
                             <span class="tech-pill">Debian Linux</span>
                         </div>
+                        <div class="project-card-actions">
+                            <a href="/work/genieacs" class="btn btn-outline-sm btn-project-action">
+                                <span>Read Case Study</span>
+                                <svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-arrow-right"></use></svg>
+                            </a>
+                        </div>
                     </div>
 
                     <!-- Project 5: Enterprise HR & Payroll SaaS -->
                     <div class="project-card">
+                        <div class="project-visual-wrap">
+                            <img src="{{ url_for('static', filename='images/projects/enterprise-hr-preview.svg') }}"
+                                 alt="Enterprise HR multi-branch biometric attendance synchronization and automated payroll"
+                                 class="project-visual-img"
+                                 width="800" height="420"
+                                 loading="lazy" decoding="async">
+                            <div class="project-visual-overlay">
+                                <span class="project-metric-pill"><svg class="bi-icon text-cyan" aria-hidden="true" focusable="false"><use href="#bi-people-fill"></use></svg> Biometric Sync</span>
+                            </div>
+                        </div>
                         <div class="project-header">
                             <div class="project-badge bg-cyan-subtle text-cyan"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-people-fill"></use></svg> OPERATIONS SAAS</div>
                             <span class="project-year">Production</span>
@@ -542,6 +677,22 @@
                         <p class="project-summary">
                             End-to-end human resource management suite providing multi-branch employee records, biometric attendance synchronization, multi-tier leave approval hierarchies, and automated payroll pay slip calculation.
                         </p>
+
+                        <div class="project-outcome-strip">
+                            <div class="project-outcome-item">
+                                <span class="outcome-val text-cyan">Multi-Branch</span>
+                                <span class="outcome-label">Biometric Sync</span>
+                            </div>
+                            <div class="project-outcome-item">
+                                <span class="outcome-val text-gold">RBAC Matrix</span>
+                                <span class="outcome-label">Hierarchical Leaves</span>
+                            </div>
+                            <div class="project-outcome-item">
+                                <span class="outcome-val text-emerald">100%</span>
+                                <span class="outcome-label">Reconciled Payroll</span>
+                            </div>
+                        </div>
+
                         <ul class="project-highlights">
                             <li>Automated salary computation factoring overtime, deductions, and tax compliance.</li>
                             <li>Biometric clock-in data ingestion with shift scheduling algorithms.</li>
@@ -553,6 +704,12 @@
                             <span class="tech-pill">PostgreSQL</span>
                             <span class="tech-pill">TailwindCSS</span>
                             <span class="tech-pill">REST APIs</span>
+                        </div>
+                        <div class="project-card-actions">
+                            <a href="/work/hr" class="btn btn-outline-sm btn-project-action">
+                                <span>Read Case Study</span>
+                                <svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-arrow-right"></use></svg>
+                            </a>
                         </div>
                     </div>
                 </div>
