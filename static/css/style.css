@@ -505,6 +505,37 @@ body {
     transform: translate(2px, -2px);
 }
 
+/* Language Switcher Pill */
+.lang-switch-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 14px;
+    border-radius: 9999px;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: var(--font-heading);
+    background: rgba(245, 158, 11, 0.12);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    text-decoration: none;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.lang-switch-pill:hover {
+    background: rgba(245, 158, 11, 0.25);
+    border-color: #f59e0b;
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(245, 158, 11, 0.25);
+}
+
+.lang-switch-pill .bi-icon {
+    width: 14px;
+    height: 14px;
+    fill: currentColor;
+}
+
 /* Executive CTA Button */
 .nav-cta-btn {
     display: inline-flex;

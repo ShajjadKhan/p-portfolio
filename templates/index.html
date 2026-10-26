@@ -37,7 +37,7 @@
     <link rel="preload" href="{{ url_for('static', filename='fonts/space-grotesk-latin.woff2') }}" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/fonts.css') }}?v=1.0">
     
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=2.7">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=2.8">
     <meta name="theme-color" content="#050811">
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32.png') }}">
@@ -177,16 +177,17 @@
                         <svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-chat-dots-fill"></use></svg>
                         <span>Start Advisory Inquiry</span>
                     </a>
-                    <a href="/ar" class="btn-mobile-contact" style="background: rgba(245, 158, 11, 0.12); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.35); text-align: center; justify-content: center;" hreflang="ar" dir="rtl">
-                        <span>🇸🇦 النسخة العربية (Arabic)</span>
+                    <a href="/ar" class="btn-mobile-contact" style="background: rgba(245, 158, 11, 0.12); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.35); text-align: center; justify-content: center; gap: 8px;" hreflang="ar">
+                        <svg class="bi-icon" style="width: 16px; height: 16px;" aria-hidden="true" focusable="false"><use href="#bi-globe"></use></svg>
+                        <span>النسخة العربية (Arabic)</span>
                     </a>
                 </div>
             </nav>
 
             <!-- Right Executive Actions -->
             <div class="nav-actions">
-                <a href="/ar" class="lang-switch-pill desktop-nav-item" title="النسخة العربية (Arabic Version)" hreflang="ar" dir="rtl">
-                    <span class="lang-flag">🇸🇦</span>
+                <a href="/ar" class="lang-switch-pill desktop-nav-item" title="النسخة العربية (Arabic Version)" hreflang="ar">
+                    <svg class="bi-icon" style="width: 14px; height: 14px;" aria-hidden="true" focusable="false"><use href="#bi-globe"></use></svg>
                     <span class="lang-text">العربية</span>
                 </a>
                 <a href="{{ tools_url }}" target="_blank" rel="noopener" class="nav-tools-pill desktop-nav-item" title="Open 50+ FastTrack Tools (Separate Utilities Platform)">
@@ -1305,7 +1306,6 @@
                     <a href="/writing"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-pencil-square"></use></svg> Writing</a>
                     <a href="https://github.com/ShajjadKhan" target="_blank" rel="noopener"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-github"></use></svg> GitHub</a>
                     <a href="https://www.linkedin.com/in/shajjadkhan/" target="_blank" rel="noopener"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-linkedin"></use></svg> LinkedIn</a>
-                    <a href="/ar" hreflang="ar" dir="rtl" style="color: #f59e0b;"><span style="font-size: 0.95rem;">🇸🇦</span> العربية</a>
                     <a href="#hero"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-arrow-up"></use></svg> Top</a>
                 </div>
             </div>
