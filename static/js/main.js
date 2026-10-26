@@ -216,6 +216,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     formFields.classList.add('d-none');
                     formSuccess.classList.remove('d-none');
                     formSuccess.focus();
+                    trackEvent('contact_submit', { project_type: projectType, has_company: Boolean(company), has_phone: Boolean(phone) });
                 } else {
                     showAlert(result.message || 'Error sending inquiry. Please try again.', 'error');
                 }
@@ -323,11 +324,65 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
+    // 8. Conversion Link Click Delegation
+    document.addEventListener('click', (e) => {
+        const link = e.target.closest('a');
+        if (!link) return;
+        const href = link.getAttribute('href') || '';
+
+        if (href.includes('tawreedflow.com')) {
+            trackEvent('outbound_tawreedflow', href);
+        } else if (href.includes('cal.com')) {
+            trackEvent('booking_click', href);
+        } else if (href.includes('wa.me')) {
+            trackEvent('whatsapp_click', href);
+        } else if (href === '/tools' || href.startsWith('/tools/')) {
+            trackEvent('tools_launch', href);
+        } else if (href.startsWith('/work/')) {
+            trackEvent('case_study_click', href);
+        } else if (href.startsWith('/writing/')) {
+            trackEvent('writing_read', href);
+        } else if (href.includes('github.com')) {
+            trackEvent('github_click', href);
+        } else if (href.includes('linkedin.com')) {
+            trackEvent('linkedin_click', href);
+        }
+    });
 });
+
+// Privacy-first, cookieless event tracker (sendBeacon with fetch fallback)
+function trackEvent(eventName, eventData) {
+    if (!eventName) return;
+    try {
+        const payload = JSON.stringify({
+            event_name: eventName,
+            event_data: typeof eventData === 'object' ? JSON.stringify(eventData) : String(eventData || ''),
+            path: window.location.pathname,
+            referrer: document.referrer || ''
+        });
+
+        if (navigator.sendBeacon) {
+            const blob = new Blob([payload], { type: 'application/json' });
+            navigator.sendBeacon('/api/event', blob);
+        } else {
+            fetch('/api/event', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: payload,
+                keepalive: true
+            }).catch(() => {});
+        }
+    } catch (e) {
+        // Silent fail: never interrupt user interaction
+    }
+}
+window.trackEvent = trackEvent;
 
 // Global copy email helper
 function copyPortfolioEmail() {
     const email = 'hello@shajjadkhan.com';
+    trackEvent('email_copy', email);
     navigator.clipboard.writeText(email).then(() => {
         const btn = document.getElementById('copy-email-btn');
         if (btn) {
