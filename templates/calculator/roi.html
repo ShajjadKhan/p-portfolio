@@ -1,0 +1,197 @@
+{% extends 'work/base.html' %}
+
+{% block title %}GCC Hotel Procurement ROI &amp; Savings Calculator — TawreedFlow{% endblock %}
+{% block meta_desc %}Calculate how much your hotel group saves by eliminating rogue spend, un-audited WhatsApp purchasing, and manual spreadsheet PO compilation with TawreedFlow.{% endblock %}
+{% block canonical %}https://www.shajjadkhan.com/calculator/hotel-procurement-roi{% endblock %}
+
+{% block schema %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/calculator.css') }}?v=1.0">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "Hotel Procurement ROI & Savings Calculator",
+  "applicationCategory": "BusinessApplication",
+  "operatingSystem": "All",
+  "url": "https://www.shajjadkhan.com/calculator/hotel-procurement-roi",
+  "author": {
+    "@type": "Person",
+    "name": "Shajjad Khan"
+  },
+  "description": "Interactive financial model calculating annual savings and labor efficiency gains for GCC luxury hotel groups upgrading to TawreedFlow procurement SaaS."
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="container calc-container">
+    <div class="calc-header">
+        <div class="work-breadcrumb">
+            <a href="/">Home</a>
+            <span class="work-breadcrumb-sep">/</span>
+            <a href="/work">Work</a>
+            <span class="work-breadcrumb-sep">/</span>
+            <a href="/work/tawreedflow">TawreedFlow</a>
+            <span class="work-breadcrumb-sep">/</span>
+            <span>ROI Calculator</span>
+        </div>
+        <h1 class="calc-title">Hotel Procurement ROI Calculator</h1>
+        <p class="calc-tagline">
+            Estimate your group's annual cost savings, recovered rogue spend, and administrative hours saved by transitioning from WhatsApp and spreadsheets to automated multi-tenant software.
+        </p>
+    </div>
+
+    <div class="calc-grid">
+        <!-- Controls Panel -->
+        <div class="calc-panel">
+            <h2 class="calc-section-title">
+                <svg class="bi-icon text-emerald" aria-hidden="true" focusable="false"><use href="#bi-sliders"></use></svg>
+                <span>Operational Parameters</span>
+            </h2>
+
+            <!-- Currency Selector -->
+            <div class="calc-group">
+                <div class="calc-label-row">
+                    <label for="calc-currency" class="calc-label">Operating Currency</label>
+                </div>
+                <select id="calc-currency" class="calc-currency-select" aria-label="Operating Currency">
+                    <option value="SAR" selected>SAR — Saudi Riyal</option>
+                    <option value="AED">AED — UAE Dirham</option>
+                    <option value="QAR">QAR — Qatari Riyal</option>
+                    <option value="USD">USD — US Dollar</option>
+                </select>
+            </div>
+
+            <!-- Number of Properties -->
+            <div class="calc-group">
+                <div class="calc-label-row">
+                    <label for="calc-properties" class="calc-label">Hotel Properties Managed</label>
+                    <span id="calc-properties-display" class="calc-value-display">2 Properties</span>
+                </div>
+                <input type="range" id="calc-properties" class="calc-slider" min="1" max="15" value="2" step="1" aria-label="Hotel Properties Managed">
+                <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-dim, #7a8aa0); margin-top: 6px;">
+                    <span>1 Boutique Hotel</span>
+                    <span>15 Group Properties</span>
+                </div>
+            </div>
+
+            <!-- Monthly Operational Spend -->
+            <div class="calc-group">
+                <div class="calc-label-row">
+                    <label for="calc-spend" class="calc-label">Avg. Monthly Spend per Property</label>
+                    <span id="calc-spend-display" class="calc-value-display">SAR 150,000</span>
+                </div>
+                <input type="range" id="calc-spend" class="calc-slider" min="30000" max="800000" value="150000" step="10000" aria-label="Monthly Spend per Property">
+                <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-dim, #7a8aa0); margin-top: 6px;">
+                    <span>30k (Small Ops)</span>
+                    <span>800k (Luxury Resort)</span>
+                </div>
+            </div>
+
+            <!-- Baseline Workflow Mode -->
+            <div class="calc-group">
+                <div class="calc-label-row">
+                    <span class="calc-label">Current Operational Baseline</span>
+                </div>
+                <div class="calc-radio-group">
+                    <label class="calc-radio-label active">
+                        <input type="radio" name="workflow_mode" value="manual" class="calc-radio-input" checked>
+                        <span>WhatsApp &amp; Excel Sheets</span>
+                    </label>
+                    <label class="calc-radio-label">
+                        <input type="radio" name="workflow_mode" value="hybrid" class="calc-radio-input">
+                        <span>Partial ERP / Legacy System</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Real-Time Results Panel -->
+        <div class="calc-results-card">
+            <div class="calc-hero-stat">
+                <div class="calc-hero-label">Estimated Annual Financial Recovery</div>
+                <div id="calc-total-savings" class="calc-hero-number">SAR 216,000</div>
+                <div class="calc-hero-sub">Annual bottom-line profit recovered across your properties</div>
+            </div>
+
+            <div class="calc-breakdown-list">
+                <div class="calc-breakdown-item">
+                    <div>
+                        <span class="calc-breakdown-title">Eliminated Rogue &amp; Off-Contract Spend</span>
+                        <span class="calc-breakdown-desc">Enforcing standardized item masters and budget thresholds</span>
+                    </div>
+                    <span id="calc-rogue-savings" class="calc-breakdown-val">SAR 144,000</span>
+                </div>
+
+                <div class="calc-breakdown-item">
+                    <div>
+                        <span class="calc-breakdown-title">Automated Quote Normalization Savings</span>
+                        <span class="calc-breakdown-desc">Comparative RFQ bidding and substitute item detection</span>
+                    </div>
+                    <span id="calc-volume-savings" class="calc-breakdown-val">SAR 54,000</span>
+                </div>
+
+                <div class="calc-breakdown-item">
+                    <div>
+                        <span class="calc-breakdown-title">Administrative Labor Hours Recovered</span>
+                        <span class="calc-breakdown-desc">Eliminating paper filing, manual PO drafting, and phone chasing</span>
+                    </div>
+                    <span id="calc-labor-savings" class="calc-breakdown-val">SAR 18,000</span>
+                </div>
+
+                <div class="calc-breakdown-item">
+                    <div>
+                        <span class="calc-breakdown-title">Monthly Time Saved by Team</span>
+                        <span class="calc-breakdown-desc">Chefs, GMs, Purchasing Coordinators, and Accounting</span>
+                    </div>
+                    <span id="calc-hours-saved" class="calc-breakdown-val" style="color: var(--accent-cyan, #06b6d4);">92 hrs / mo</span>
+                </div>
+            </div>
+
+            <!-- Lead Capture Box -->
+            <div class="calc-lead-box">
+                <div class="calc-lead-title">Request a Tailored Property Savings Audit</div>
+                <p class="calc-lead-desc">
+                    Get an itemized audit report demonstrating how TawreedFlow integrates into your specific properties:
+                </p>
+
+                <form id="calc-lead-form" class="calc-lead-form">
+                    <div class="calc-lead-row">
+                        <input type="text" id="calc-lead-name" class="calc-lead-input" placeholder="Your Name *" required>
+                        <input type="email" id="calc-lead-email" class="calc-lead-input" placeholder="Work Email *" required>
+                    </div>
+                    <div class="calc-lead-row">
+                        <input type="text" id="calc-lead-hotel" class="calc-lead-input" placeholder="Hotel / Organization">
+                        <input type="tel" id="calc-lead-phone" class="calc-lead-input" placeholder="WhatsApp / Phone">
+                    </div>
+                    <button type="submit" class="calc-lead-btn">
+                        <svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-envelope-paper-fill"></use></svg>
+                        <span>Send Me Custom ROI Analysis</span>
+                    </button>
+                    <div id="calc-lead-status" class="calc-lead-status"></div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Methodology Note -->
+    <div class="calc-method-note">
+        <h4>About this Calculation Methodology</h4>
+        <p>
+            This model uses conservative benchmarks derived from operational rollouts in GCC hotel properties. Manual purchasing workflows consistently experience 8%–14% financial leakage through un-audited pricing drift, missed delivery shortfalls, and off-contract procurement. TawreedFlow addresses these leakage points through mandatory item masters, side-by-side automated RFQ price normalization, and 3-way dock delivery receipt verification.
+        </p>
+    </div>
+
+    <!-- Navigation / Context Links -->
+    <div style="margin-top: 40px; display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
+        <a href="/compare/tawreedflow-vs-whatsapp-excel" class="btn" style="background: rgba(255,255,255,0.06); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.12);">
+            <span>← Compare vs. WhatsApp &amp; Excel</span>
+        </a>
+        <a href="/work/tawreedflow" class="btn" style="background: rgba(255,255,255,0.06); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.12);">
+            <span>Read Architectural Case Study →</span>
+        </a>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/calculator.js') }}?v=1.0"></script>
+{% endblock %}
