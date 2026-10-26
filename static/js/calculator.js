@@ -123,6 +123,13 @@
                     leadStatus.className = 'calc-lead-status success';
                     leadStatus.textContent = '✓ Report request received! Shajjad will email your customized audit breakdown within 24 hours.';
                     leadForm.reset();
+                    if (window.trackEvent) {
+                        window.trackEvent('calculator_report_request', {
+                            properties: propertiesSlider.value,
+                            currency: currencySelect.value,
+                            monthly_spend: spendSlider.value
+                        });
+                    }
                 } else {
                     throw new Error('Server error');
                 }

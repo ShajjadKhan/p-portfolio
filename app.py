@@ -61,6 +61,16 @@ def init_db():
             is_read INTEGER DEFAULT 0
         )
     """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS analytics_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            event_name TEXT NOT NULL,
+            event_data TEXT,
+            path TEXT,
+            referrer TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
     # Migration for databases created before the optional phone field existed.
     cursor.execute("PRAGMA table_info(inquiries)")
     columns = {row[1] for row in cursor.fetchall()}
@@ -284,9 +294,9 @@ def contact_submit():
     
     name = (data.get('name') or '').strip()
     email = (data.get('email') or '').strip()
-    company = (data.get('company') or '').strip()
+    company = (data.get('company') or data.get('organization') or '').strip()
     phone = (data.get('phone') or '').strip()
-    project_type = (data.get('project_type') or 'General Inquiry').strip()
+    project_type = (data.get('project_type') or data.get('service') or 'General Inquiry').strip()
     message = (data.get('message') or '').strip()
     honeypot = (data.get('website') or '').strip()
 
@@ -353,6 +363,52 @@ def contact_submit():
         }), 500
     finally:
         conn.close()
+
+@app.route('/api/event', methods=['POST'])
+def track_event():
+    """Privacy-first first-party analytics event ingestion (cookieless, PDPL/GDPR compliant)."""
+    data = request.get_json(silent=True) or request.form or {}
+    event_name = (data.get('event_name') or data.get('event') or '').strip()[:64]
+    if not event_name:
+        return jsonify({"status": "error", "message": "Missing event name"}), 400
+
+    event_data = str(data.get('event_data') or data.get('data') or '')[:512]
+    path = (data.get('path') or request.headers.get('Referer', '') or '')[:256]
+    referrer = (data.get('referrer') or '')[:256]
+
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO analytics_events (event_name, event_data, path, referrer) VALUES (?, ?, ?, ?)",
+            (event_name, event_data, path, referrer)
+        )
+        conn.commit()
+        conn.close()
+        return jsonify({"status": "success", "event": event_name}), 201
+    except Exception as e:
+        return jsonify({"status": "error", "message": "Failed to record event"}), 500
+
+@app.route('/api/event/stats')
+def event_stats():
+    """Summary counts of conversion events (public aggregate counts for monitoring)."""
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT event_name, COUNT(*) as count 
+            FROM analytics_events 
+            GROUP BY event_name 
+            ORDER BY count DESC
+        """)
+        rows = cursor.fetchall()
+        conn.close()
+        return jsonify({
+            "status": "success",
+            "events": {row['event_name']: row['count'] for row in rows}
+        })
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/robots.txt')
 def robots():
