@@ -177,6 +177,17 @@ def compare_tawreedflow():
     )
 
 
+@app.route('/calculator')
+@app.route('/calculator/hotel-procurement-roi')
+def calculator_roi():
+    """Interactive GCC hotel procurement ROI and cost savings calculator."""
+    return render_template(
+        'calculator/roi.html',
+        year=datetime.datetime.now().year,
+        tools_url='/tools'
+    )
+
+
 @app.route('/writing')
 def writing():
     """Writing index: practical notes on procurement, architecture, and delivery."""
@@ -404,6 +415,7 @@ def sitemap():
     for cs in CASE_STUDIES:
         add(f"{SITE_URL}/work/{cs['slug']}", "monthly", "0.8")
     add(f"{SITE_URL}/compare/tawreedflow-vs-whatsapp-excel", "monthly", "0.8", "2026-10-26")
+    add(f"{SITE_URL}/calculator/hotel-procurement-roi", "monthly", "0.8", "2026-10-26")
     add(f"{SITE_URL}/writing", "weekly", "0.8", ARTICLES[0]["date"])
     for article in ARTICLES:
         add(f"{SITE_URL}/writing/{article['slug']}", "monthly", "0.7", article["date"])
