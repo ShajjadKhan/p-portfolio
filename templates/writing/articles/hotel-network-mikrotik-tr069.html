@@ -1,0 +1,150 @@
+<p class="article-lead">
+    A hotel network is not a single Wi-Fi problem. It is a set of overlapping
+    networks with different users, different security requirements, and very
+    little tolerance for downtime: guest internet, property management systems,
+    point-of-sale terminals, back-office workstations, CCTV, and building systems.
+</p>
+
+<p>
+    In a single property, a capable administrator can keep this running with
+    local knowledge. Across a group, that knowledge has to become a repeatable
+    operating model. MikroTik gives you the routing and wireless primitives;
+    TR-069 gives you a way to manage customer-premises equipment at scale. The
+    hard part is the discipline between them.
+</p>
+
+<h2>Design the network as separate planes</h2>
+
+<p>
+    Before choosing hardware, separate the traffic by purpose:
+</p>
+
+<ul>
+    <li><strong>Guest:</strong> untrusted devices, captive portal, bandwidth limits, client isolation.</li>
+    <li><strong>Corporate:</strong> staff laptops and phones, authenticated access, access to business systems.</li>
+    <li><strong>Operations:</strong> PMS, POS, printers, and other devices that may have strict vendor requirements.</li>
+    <li><strong>Management:</strong> routers, switches, access points, and the ACS. Never exposed to guests.</li>
+    <li><strong>Physical security:</strong> CCTV and access control, often with its own retention and privacy rules.</li>
+</ul>
+
+<p>
+    VLANs are the usual implementation, but the labels matter more than the tags.
+    A flat network with a guest SSID on top is not segmentation. It is a guest
+    SSID sharing a broadcast domain with the PMS.
+</p>
+
+<h2>MikroTik: keep the configuration reproducible</h2>
+
+<p>
+    MikroTik RouterOS is powerful and easy to change. That combination is useful
+    in a lab and dangerous in production. The operating model should make the
+    intended configuration reproducible:
+</p>
+
+<ul>
+    <li>Keep a versioned configuration export for every router and switch.</li>
+    <li>Use a golden template for common roles: edge router, distribution switch, access switch.</li>
+    <li>Document every deviation from the template and why it exists.</li>
+    <li>Back up before changes, and test the restore path, not just the backup.</li>
+    <li>Use scheduled scripts for routine tasks, but log what they do.</li>
+</ul>
+
+<p>
+    For wireless, CAPsMAN can centralize access-point management. For routing,
+    keep firewall rules and NAT explicit. Avoid accumulating years of “temporary”
+    rules that nobody can explain; they become both a security risk and a
+    troubleshooting tax.
+</p>
+
+<h2>TR-069: manage the devices, not just the radios</h2>
+
+<p>
+    TR-069 (CPE WAN Management Protocol) lets an auto-configuration server (ACS)
+    provision, monitor, and upgrade customer-premises equipment. In a hotel group,
+    the “CPE” may be an access point, a router, or a guest-room device, depending
+    on the topology.
+</p>
+
+<p>
+    The value is zero-touch provisioning. A new property should not require an
+    engineer to manually configure every device. The ACS can apply a profile,
+    verify connectivity, and report firmware and status back to a central view.
+</p>
+
+<p>
+    The risks are equally real. An ACS with broad write access is a high-value
+    target. If it is compromised, an attacker can change device configuration
+    across the estate. Treat it as a management plane:
+</p>
+
+<ul>
+    <li>Restrict network access to the ACS and require strong authentication.</li>
+    <li>Use least-privilege accounts and audit configuration changes.</li>
+    <li>Sign or verify firmware where the vendor supports it.</li>
+    <li>Stage firmware upgrades by property or model, not everywhere at once.</li>
+    <li>Keep a rollback profile for devices that fail an upgrade.</li>
+</ul>
+
+<p>
+    TR-069 is mature but not universal. Newer deployments may use TR-369/USP,
+    which is designed for more dynamic management and cloud-native integrations.
+    The operating principles are the same: authenticated management, staged
+    rollout, and a rollback path.
+</p>
+
+<h2>What to monitor</h2>
+
+<p>
+    A network dashboard that only shows “up” is not monitoring. The signals that
+    matter in hospitality include:
+</p>
+
+<ul>
+    <li>WAN latency, packet loss, and failover events per property.</li>
+    <li>Access-point uptime, client counts, and channel utilization.</li>
+    <li>Guest portal authentication failures and bandwidth saturation.</li>
+    <li>PMS, POS, and back-office reachability from the operations VLAN.</li>
+    <li>Firmware versions and configuration drift against the golden template.</li>
+    <li>ACS job failures and devices that have not checked in.</li>
+</ul>
+
+<p>
+    Alert on symptoms that affect guests or revenue, not on every interface flap.
+    A noisy alerting system gets muted, and then the real outage arrives silently.
+</p>
+
+<h2>Change management is the real product</h2>
+
+<p>
+    The difference between a network that scales and one that consumes the IT team
+    is not the brand of router. It is whether changes are repeatable.
+</p>
+
+<ol>
+    <li>Define the standard design for each property type.</li>
+    <li>Build a lab or staging environment for configuration changes.</li>
+    <li>Test the change on one property with a rollback plan.</li>
+    <li>Roll out in batches, with a named owner and a maintenance window.</li>
+    <li>Record the result and update the template.</li>
+</ol>
+
+<p>
+    This is unglamorous work. It is also what lets a small team support a growing
+    estate without relying on the one person who remembers why a firewall rule
+    exists.
+</p>
+
+<h2>Treat the network like production software</h2>
+
+<p>
+    Hotel guests notice the Wi-Fi before they notice the lobby art. The operations
+    team notices the network when the PMS cannot reach the front desk. Both are
+    production concerns.
+</p>
+
+<p>
+    MikroTik and TR-069 are enabling tools, not an operating model. The model is
+    segmentation, reproducible configuration, authenticated management, staged
+    change, and monitoring that reflects the business. Build that, and the
+    hardware becomes replaceable — which is exactly what you want.
+</p>

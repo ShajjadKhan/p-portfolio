@@ -1,0 +1,179 @@
+<p class="article-lead">
+    A hotel group is not one tenant with many users. It is a hierarchy: a company,
+    a set of properties, departments inside each property, and people who may
+    work across several of them. The architecture has to reflect that hierarchy
+    without letting one property see another property’s data.
+</p>
+
+<p>
+    Django gives you the tools to build this well. It also gives you enough rope
+    to build a system where a missing filter exposes the whole group. The
+    difference is not the framework. It is the tenant model and the enforcement
+    around it.
+</p>
+
+<h2>Start with the hierarchy, not the database</h2>
+
+<p>
+    Before choosing shared tables or separate schemas, model the business
+    relationships explicitly:
+</p>
+
+<ul>
+    <li><strong>Organization</strong> — the legal or management entity that owns the relationship.</li>
+    <li><strong>Property</strong> — a hotel or operating unit with its own departments and budgets.</li>
+    <li><strong>Department</strong> — the cost center where requests originate.</li>
+    <li><strong>Membership</strong> — a user’s role and scope, which may cover one property, several properties, or the whole organization.</li>
+</ul>
+
+<p>
+    The membership table is where most designs go wrong. A user is not simply an
+    “admin” or a “department head.” They are a department head <em>at a property</em>,
+    possibly with additional rights at another property. The role and the scope
+    must be separate fields.
+</p>
+
+<h2>Three tenancy models and their tradeoffs</h2>
+
+<h3>Shared database, shared tables</h3>
+
+<p>
+    Every row carries an organization or property identifier. Queries are scoped
+    in application code, backed by database constraints and indexes.
+</p>
+
+<p>
+    This is the default I would choose for most mid-sized hotel groups. It is the
+    cheapest to operate, the easiest to report across properties, and the simplest
+    to migrate. The risk is a missing filter. That risk has to be handled with
+    discipline, not optimism.
+</p>
+
+<h3>Shared database, schema per tenant</h3>
+
+<p>
+    Each property or organization gets its own PostgreSQL schema. Django can
+    support this with libraries such as <code>django-tenants</code>, or with a
+    custom router.
+</p>
+
+<p>
+    This improves isolation and makes per-tenant backups straightforward. It also
+    complicates cross-property reporting, migrations, and connection management.
+    For a group that needs strong separation between owners or jurisdictions, it
+    can be the right trade. For a single operating company with shared reporting,
+    it often adds more complexity than it removes.
+</p>
+
+<h3>Database per tenant</h3>
+
+<p>
+    Maximum isolation, maximum operational overhead. This model makes sense when
+    tenants are large enough to justify dedicated infrastructure, or when a
+    contract requires physical separation. It is usually a poor fit for a growing
+    group with dozens of small properties.
+</p>
+
+<div class="article-callout">
+    <strong>Rule of thumb:</strong> choose the least complex model that satisfies
+    your isolation and reporting requirements. “We might need it later” is not a
+    requirement; a documented regulatory or contractual constraint is.
+</div>
+
+<h2>Make tenant context explicit</h2>
+
+<p>
+    The most dangerous pattern is trusting a tenant identifier from the client.
+    A request should never be able to say “show me property 42” and get property
+    42 unless the authenticated user has a membership that includes it.
+</p>
+
+<p>
+    Resolve the active context on the server:
+</p>
+
+<ol>
+    <li>Authenticate the user.</li>
+    <li>Load their memberships and permitted scopes.</li>
+    <li>Resolve the requested property or organization from the URL or session.</li>
+    <li>Reject the request if the scope is not permitted.</li>
+    <li>Attach the resolved scope to the request for the rest of the pipeline.</li>
+</ol>
+
+<p>
+    Middleware can attach the active organization and property, but middleware
+    alone is not enforcement. Every queryset that touches tenant data needs a
+    scoped manager or an explicit filter. The best systems make the unscoped
+    query the awkward one.
+</p>
+
+<h2>Use the database as a second line of defense</h2>
+
+<p>
+    Application code is where authorization lives, but the database should still
+    enforce the shape of the data:
+</p>
+
+<ul>
+    <li>Composite unique constraints such as <code>(property, request_number)</code>.</li>
+    <li>Foreign keys that include the tenant where practical.</li>
+    <li>Indexes that lead with the tenant column for common queries.</li>
+    <li>Check constraints for status transitions and positive quantities.</li>
+</ul>
+
+<p>
+    These constraints do not replace authorization. They prevent a bug from
+    creating data that cannot be reconciled later.
+</p>
+
+<h2>Background jobs and reporting are part of the tenant boundary</h2>
+
+<p>
+    Tenant isolation is usually tested on web requests and forgotten in async
+    work. A nightly job that recalculates budgets must know which property it is
+    operating on. An export must not quietly include every property because the
+    filter was omitted in a management command.
+</p>
+
+<p>
+    Pass the tenant context explicitly into jobs. Do not rely on a global variable
+    that happens to be set in the web process. For reporting, build a separate
+    read path with its own authorization checks rather than reusing an unscoped
+    model manager.
+</p>
+
+<h2>Test for leakage, not just for features</h2>
+
+<p>
+    Every multi-tenant system needs tests that try to break the boundary:
+</p>
+
+<ul class="article-checklist">
+    <li>A user from Property A requests a record from Property B by ID.</li>
+    <li>A user with access to two properties switches context and sees only the active one.</li>
+    <li>A department head cannot approve a request outside their department scope.</li>
+    <li>An export respects the same filters as the on-screen list.</li>
+    <li>A background job for one property does not update another.</li>
+    <li>An admin user’s broader access is explicit and audited, not accidental.</li>
+</ul>
+
+<p>
+    These tests are cheap compared with the cost of a cross-property data leak.
+    Make them part of the definition of done for every new model and endpoint.
+</p>
+
+<h2>Isolation is a product feature</h2>
+
+<p>
+    Hotel groups do not buy “multi-tenancy.” They buy confidence that a general
+    manager sees their property, a cluster director sees their cluster, and group
+    finance sees the consolidated view — without anyone seeing more than they
+    should.
+</p>
+
+<p>
+    The architecture is successful when that confidence is designed in, enforced
+    in code, checked by the database, and tested continuously. Django makes the
+    application pleasant to build. The tenant model is what makes it safe to
+    operate.
+</p>

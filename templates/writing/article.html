@@ -1,0 +1,95 @@
+{% extends "writing/base.html" %}
+
+{% block title %}{{ article.title }} — Shajjad Khan{% endblock %}
+{% block meta_desc %}{{ article.description }}{% endblock %}
+{% block canonical %}https://www.shajjadkhan.com/writing/{{ article.slug }}{% endblock %}
+{% block og_type %}article{% endblock %}
+{% block og_url %}https://www.shajjadkhan.com/writing/{{ article.slug }}{% endblock %}
+
+{% block schema %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": {{ article.title|tojson }},
+  "description": {{ article.description|tojson }},
+  "datePublished": "{{ article.date }}",
+  "dateModified": "{{ article.date }}",
+  "articleSection": {{ article.category|tojson }},
+  "keywords": {{ article.keywords|join(', ')|tojson }},
+  "author": {
+    "@type": "Person",
+    "@id": "https://www.shajjadkhan.com/#person",
+    "name": "Shajjad Khan",
+    "url": "https://www.shajjadkhan.com/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "@id": "https://www.shajjadkhan.com/#organization",
+    "name": "Shajjad Khan",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://www.shajjadkhan.com/static/images/icon-512.png"
+    }
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://www.shajjadkhan.com/writing/{{ article.slug }}"
+  },
+  "image": "https://www.shajjadkhan.com/static/images/og-shajjadkhan.png"
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<article class="article-shell">
+    <header class="article-header">
+        <div class="container article-header-inner">
+            <a class="article-back" href="/writing">← All writing</a>
+            <div class="writing-meta article-meta">
+                <span class="writing-category">{{ article.category }}</span>
+                <span>{{ article.date_display }}</span>
+                <span>{{ article.reading_time }} min read</span>
+            </div>
+            <h1>{{ article.title }}</h1>
+            <p class="article-deck">{{ article.description }}</p>
+            <div class="article-byline">
+                By <strong>Shajjad Khan</strong>
+                <span aria-hidden="true">·</span>
+                Founder &amp; Systems Architect
+            </div>
+        </div>
+    </header>
+
+    <div class="container article-layout">
+        <div class="article-body">
+            {% include 'writing/articles/' ~ article.slug ~ '.html' %}
+        </div>
+
+        <aside class="article-aside" aria-label="Article sidebar">
+            <div class="article-aside-card">
+                <span class="article-aside-label">Written by</span>
+                <strong>Shajjad Khan</strong>
+                <p>Founder and systems architect behind TawreedFlow, a live multi-tenant procurement platform for GCC hotels.</p>
+                <a href="/#contact">Discuss a project <span aria-hidden="true">→</span></a>
+            </div>
+            <div class="article-aside-card">
+                <span class="article-aside-label">More writing</span>
+                <ul class="article-aside-list">
+                    {% for other in articles if other.slug != article.slug %}
+                    <li><a href="/writing/{{ other.slug }}">{{ other.title }}</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </aside>
+    </div>
+
+    <footer class="container article-footer">
+        <a href="/writing">← Back to all writing</a>
+        <a href="/writing/rss.xml">
+            <svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-rss-fill"></use></svg>
+            Subscribe via RSS
+        </a>
+    </footer>
+</article>
+{% endblock %}

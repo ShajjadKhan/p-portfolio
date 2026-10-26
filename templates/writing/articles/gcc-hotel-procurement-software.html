@@ -1,0 +1,174 @@
+<p class="article-lead">
+    Most hotel groups do not outgrow spreadsheets because the spreadsheet is bad.
+    They outgrow it because procurement is a coordination problem, and a file
+    cannot hold the state of a request, the authority of an approver, and the
+    evidence of a delivery at the same time.
+</p>
+
+<p>
+    A single property can run purchasing through email, WhatsApp, and a shared
+    workbook for a long time. The cracks appear when the group adds properties,
+    centralizes purchasing, or has to explain a spend decision months later.
+    At that point the question is no longer “where is the spreadsheet?” It is
+    “which version is true, who approved it, what was actually delivered, and
+    which property is paying for it?”
+</p>
+
+<h2>1. A request has no single state</h2>
+
+<p>
+    In a spreadsheet workflow, a requisition can be “submitted” in one inbox,
+    “approved” in a WhatsApp thread, “ordered” in a supplier email, and
+    “received” in a delivery note that never reaches finance. Each person holds
+    a different fragment of the truth.
+</p>
+
+<p>
+    Software fixes this by giving every request one explicit lifecycle. A
+    practical state machine looks something like this:
+</p>
+
+<ul>
+    <li><strong>Draft</strong> — the department is still building the request.</li>
+    <li><strong>Submitted</strong> — the request is locked and routed for approval.</li>
+    <li><strong>Approved</strong> or <strong>rejected</strong> — an authorized person has made a decision.</li>
+    <li><strong>Ordered</strong> — purchasing has issued a purchase order to a supplier.</li>
+    <li><strong>Partially received</strong> or <strong>received</strong> — goods or services have been accepted.</li>
+    <li><strong>Closed</strong> — the invoice is matched and the request is complete.</li>
+</ul>
+
+<p>
+    The value is not the labels. The value is that every transition has an actor,
+    a timestamp, and a reason. When a request is stuck, everyone can see where it
+    is stuck and who needs to act.
+</p>
+
+<h2>2. The item master is the silent failure</h2>
+
+<p>
+    Free-text item names are harmless in a small operation and corrosive in a
+    group. One property orders “A4 paper 80gsm,” another orders “copy paper A4,”
+    and a third orders a supplier SKU that nobody recognizes. Spend reporting
+    becomes a taxonomy project instead of a report.
+</p>
+
+<p>
+    A usable item master does not need to be perfect on day one. It needs three
+    properties:
+</p>
+
+<ul>
+    <li><strong>One canonical item</strong> with a stable identifier and unit of measure.</li>
+    <li><strong>Supplier mappings</strong> so the same item can be bought from different vendors under different names.</li>
+    <li><strong>A review path</strong> for new items, so the catalog grows deliberately instead of absorbing every typo.</li>
+</ul>
+
+<p>
+    The unit of measure matters more than most teams expect. Eggs by the tray,
+    by the piece, and by the kilogram are not interchangeable. If the system does
+    not normalize units, every comparison and every budget check is suspect.
+</p>
+
+<h2>3. Approvals do not match authority</h2>
+
+<p>
+    A spreadsheet approval is usually a name in a cell. Real authority is more
+    complicated: a department head may approve up to one threshold, a property
+    general manager another, and group finance above that. People go on leave.
+    Roles change. A property may be added to someone’s responsibilities without
+    changing their job title.
+</p>
+
+<p>
+    The software model should separate <strong>people</strong>, <strong>roles</strong>,
+    and <strong>scope</strong>. A user can be a department head at one property,
+    an approver for two others, and a viewer at the group level. Approval rules
+    should be evaluated against that scope, not against a hard-coded job title.
+</p>
+
+<div class="article-callout">
+    <strong>Design test:</strong> can the system explain why a specific person
+    received a specific approval request? If the answer requires reading code,
+    the approval model is too implicit.
+</div>
+
+<h2>4. Receiving is where the audit trail dies</h2>
+
+<p>
+    Many procurement systems stop at the purchase order. The operational reality
+    continues: the supplier delivers half the order, substitutes one item, and
+    promises the rest next week. The invoice arrives for the full amount.
+</p>
+
+<p>
+    A goods receipt note (GRN) closes that gap. It records what was actually
+    accepted, what was rejected, and what remains outstanding. Three-way matching
+    — purchase order, receipt, and invoice — is not an accounting nicety. It is
+    the control that prevents paying for goods that never arrived.
+</p>
+
+<p>
+    Partial deliveries deserve first-class handling. A system that can only mark
+    an order “received” or “not received” forces staff to lie to it, and the
+    audit trail becomes fiction.
+</p>
+
+<h2>5. Reporting arrives too late to change a decision</h2>
+
+<p>
+    Month-end spend reports are useful for accounting and nearly useless for
+    operations. By the time the report arrives, the overspend has happened.
+</p>
+
+<p>
+    The reports that change behavior are closer to the work:
+</p>
+
+<ul>
+    <li>Requests waiting on approval, grouped by approver and age.</li>
+    <li>Orders past their expected delivery date, grouped by supplier.</li>
+    <li>Items received but not invoiced, and invoices without a receipt.</li>
+    <li>Spend against budget by property, department, and category.</li>
+    <li>Suppliers with repeated rejections, substitutions, or late deliveries.</li>
+</ul>
+
+<p>
+    These are exception reports. They tell someone what to do next. A dashboard
+    that only shows totals invites people to admire the problem.
+</p>
+
+<h2>6. What to build first</h2>
+
+<p>
+    The temptation is to start with a large supplier portal or an analytics suite.
+    The higher-leverage sequence is less glamorous:
+</p>
+
+<ol>
+    <li>Make the request lifecycle explicit and auditable.</li>
+    <li>Create a small, governed item master with supplier mappings.</li>
+    <li>Model approval authority by role and property scope.</li>
+    <li>Add receiving, including partial and rejected deliveries.</li>
+    <li>Expose exception queues before building executive dashboards.</li>
+</ol>
+
+<p>
+    Mobile matters throughout. Department heads and storekeepers are rarely at a
+    desk when a delivery arrives. If receiving takes five minutes on a phone,
+    people will use it. If it takes twenty, they will sign the paper and reconcile
+    later — which is how the audit trail disappears.
+</p>
+
+<h2>The real deliverable is a reliable handoff</h2>
+
+<p>
+    Hotel procurement software earns its place when it makes handoffs visible:
+    department to purchasing, purchasing to supplier, supplier to receiving,
+    receiving to finance. The dashboard is a view of those handoffs, not a
+    substitute for them.
+</p>
+
+<p>
+    A spreadsheet can hold numbers. It cannot hold accountability. That is the
+    gap worth closing.
+</p>

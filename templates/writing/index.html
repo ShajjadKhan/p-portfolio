@@ -1,0 +1,113 @@
+{% extends "writing/base.html" %}
+
+{% block title %}Writing — Shajjad Khan{% endblock %}
+{% block meta_desc %}Practical notes on procurement software, hospitality operations, multi-tenant architecture, AI-assisted delivery, and distributed infrastructure.{% endblock %}
+{% block canonical %}https://www.shajjadkhan.com/writing{% endblock %}
+{% block og_url %}https://www.shajjadkhan.com/writing{% endblock %}
+
+{% block schema %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  "name": "Writing — Shajjad Khan",
+  "url": "https://www.shajjadkhan.com/writing",
+  "description": "Practical notes on procurement software, hospitality operations, multi-tenant architecture, AI-assisted delivery, and distributed infrastructure.",
+  "isPartOf": { "@id": "https://www.shajjadkhan.com/#website" },
+  "mainEntity": {
+    "@type": "ItemList",
+    "itemListElement": [
+      {% for article in articles %}
+      {
+        "@type": "ListItem",
+        "position": {{ loop.index }},
+        "url": "https://www.shajjadkhan.com/writing/{{ article.slug }}",
+        "name": {{ article.title|tojson }}
+      }{% if not loop.last %},{% endif %}
+      {% endfor %}
+    ]
+  }
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<section class="writing-hero">
+    <div class="container writing-hero-inner">
+        <div class="section-badge">
+            <svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-pencil-square"></use></svg>
+            Writing
+        </div>
+        <h1>Notes from building software that runs real operations.</h1>
+        <p class="writing-hero-deck">
+            Practical lessons from procurement platforms, multi-property operations,
+            and the infrastructure behind them. No growth-hacking threads, no invented
+            case studies — just the tradeoffs that show up in production.
+        </p>
+        <div class="writing-hero-actions">
+            <a class="writing-rss-link" href="/writing/rss.xml">
+                <svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-rss-fill"></use></svg>
+                Subscribe via RSS
+            </a>
+            <span class="writing-count">{{ articles|length }} articles</span>
+        </div>
+    </div>
+</section>
+
+<section class="writing-index" aria-label="Articles">
+    <div class="container">
+        {% set featured = articles[0] %}
+        <a class="writing-featured" href="/writing/{{ featured.slug }}">
+            <div class="writing-featured-copy">
+                <div class="writing-meta">
+                    <span class="writing-category">{{ featured.category }}</span>
+                    <span>{{ featured.date_display }}</span>
+                    <span>{{ featured.reading_time }} min read</span>
+                </div>
+                <h2>{{ featured.title }}</h2>
+                <p>{{ featured.description }}</p>
+                <span class="writing-read">Read the article <span aria-hidden="true">→</span></span>
+            </div>
+            <div class="writing-featured-mark" aria-hidden="true">
+                <span>01</span>
+                <svg class="bi-icon"><use href="#bi-quote"></use></svg>
+            </div>
+        </a>
+
+        <div class="writing-section-head">
+            <h2>All writing</h2>
+            <span>Updated {{ articles[0].date_display }}</span>
+        </div>
+
+        <div class="writing-grid">
+            {% for article in articles[1:] %}
+            <a class="writing-card" href="/writing/{{ article.slug }}">
+                <div class="writing-meta">
+                    <span class="writing-category">{{ article.category }}</span>
+                    <span>{{ article.reading_time }} min read</span>
+                </div>
+                <h3>{{ article.title }}</h3>
+                <p>{{ article.description }}</p>
+                <div class="writing-card-foot">
+                    <span>{{ article.date_display }}</span>
+                    <span class="writing-read">Read <span aria-hidden="true">→</span></span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="writing-cta">
+    <div class="container writing-cta-inner">
+        <div>
+            <span class="writing-cta-label">Have a system that needs this kind of thinking?</span>
+            <h2>Let’s talk about the operation, not just the stack.</h2>
+        </div>
+        <a class="btn btn-emerald-lg" href="/#contact">
+            <svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-chat-dots-fill"></use></svg>
+            <span>Let’s Talk</span>
+        </a>
+    </div>
+</section>
+{% endblock %}

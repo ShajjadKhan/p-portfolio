@@ -11,11 +11,13 @@ import sqlite3
 import datetime
 import json
 import re
+from email.utils import format_datetime
 from xml.sax.saxutils import escape
-from flask import Flask, render_template, request, jsonify, redirect, Response
+from flask import Flask, render_template, request, jsonify, redirect, Response, abort
 
 from tools_blueprint import tools_bp
 from tools_catalog import TOOLS
+from articles import ARTICLES, get_article
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -136,6 +138,72 @@ def home():
         year=datetime.datetime.now().year,
         tools_url='/tools'
     )
+
+@app.route('/writing')
+def writing():
+    """Writing index: practical notes on procurement, architecture, and delivery."""
+    return render_template(
+        'writing/index.html',
+        articles=ARTICLES,
+        year=datetime.datetime.now().year,
+        tools_url='/tools'
+    )
+
+
+@app.route('/writing/<slug>')
+def writing_article(slug):
+    """Individual article page."""
+    article = get_article(slug)
+    if not article:
+        abort(404)
+    return render_template(
+        'writing/article.html',
+        article=article,
+        articles=ARTICLES,
+        year=datetime.datetime.now().year,
+        tools_url='/tools'
+    )
+
+
+@app.route('/writing/rss.xml')
+def writing_rss():
+    """RSS 2.0 feed for the writing section."""
+    def rfc822(date_string):
+        published = datetime.datetime.strptime(date_string, '%Y-%m-%d').replace(
+            tzinfo=datetime.timezone.utc
+        )
+        return format_datetime(published)
+
+    items = []
+    for article in ARTICLES:
+        link = f"{SITE_URL}/writing/{article['slug']}"
+        items.append(
+            "    <item>\n"
+            f"      <title>{escape(article['title'])}</title>\n"
+            f"      <link>{escape(link)}</link>\n"
+            f"      <guid isPermaLink=\"true\">{escape(link)}</guid>\n"
+            f"      <pubDate>{rfc822(article['date'])}</pubDate>\n"
+            f"      <category>{escape(article['category'])}</category>\n"
+            f"      <description>{escape(article['description'])}</description>\n"
+            "    </item>"
+        )
+
+    xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">\n'
+        '  <channel>\n'
+        '    <title>Shajjad Khan — Writing</title>\n'
+        f'    <link>{SITE_URL}/writing</link>\n'
+        f'    <atom:link href="{SITE_URL}/writing/rss.xml" rel="self" type="application/rss+xml" />\n'
+        '    <description>Practical notes on procurement software, hospitality operations, and systems architecture.</description>\n'
+        '    <language>en</language>\n'
+        f'    <lastBuildDate>{rfc822(ARTICLES[0]["date"])}</lastBuildDate>\n'
+        + "\n".join(items)
+        + "\n  </channel>\n"
+        "</rss>\n"
+    )
+    return Response(xml, mimetype='application/rss+xml')
+
 
 @app.route('/ads.txt')
 def ads_txt():
@@ -283,21 +351,24 @@ def sitemap():
     """Sitemap covering the homepage, tools catalog, and every live tool page."""
     entries = []
 
-    def add(loc, changefreq, priority):
+    def add(loc, changefreq, priority, lastmod=None):
         entries.append(
             f"  <url>\n"
             f"    <loc>{escape(loc)}</loc>\n"
-            f"    <lastmod>{SITEMAP_LASTMOD}</lastmod>\n"
+            f"    <lastmod>{lastmod or SITEMAP_LASTMOD}</lastmod>\n"
             f"    <changefreq>{changefreq}</changefreq>\n"
             f"    <priority>{priority}</priority>\n"
             f"  </url>"
         )
 
     add(f"{SITE_URL}/", "weekly", "1.0")
+    add(f"{SITE_URL}/writing", "weekly", "0.8", ARTICLES[0]["date"])
+    for article in ARTICLES:
+        add(f"{SITE_URL}/writing/{article['slug']}", "monthly", "0.7", article["date"])
     add(f"{SITE_URL}/tools", "daily", "0.9")
 
-    # Case study, about, and writing pages are homepage sections today.
-    # Add their dedicated URLs here when P3-1/P3-2 ship.
+    # Case study and about pages are homepage sections today.
+    # Add their dedicated URLs here when P3-1 ships.
     seen = set()
     for tool in TOOLS:
         slug = tool.get('slug')
