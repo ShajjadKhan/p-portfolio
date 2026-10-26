@@ -49,6 +49,7 @@ def init_db():
             name TEXT NOT NULL,
             email TEXT NOT NULL,
             company TEXT,
+            phone TEXT,
             project_type TEXT,
             message TEXT NOT NULL,
             ip_address TEXT,
@@ -57,6 +58,11 @@ def init_db():
             is_read INTEGER DEFAULT 0
         )
     """)
+    # Migration for databases created before the optional phone field existed.
+    cursor.execute("PRAGMA table_info(inquiries)")
+    columns = {row[1] for row in cursor.fetchall()}
+    if 'phone' not in columns:
+        cursor.execute("ALTER TABLE inquiries ADD COLUMN phone TEXT")
     conn.commit()
     conn.close()
 
@@ -69,7 +75,57 @@ def add_security_headers(response):
     response.headers['X-Frame-Options'] = 'SAMEORIGIN'
     response.headers['X-XSS-Protection'] = '1; mode=block'
     response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    response.headers['Strict-Transport-Security'] = 'max-age=31536000'
+    response.headers['Permissions-Policy'] = (
+        'camera=(), microphone=(), geolocation=(), payment=(), usb=(), '
+        'accelerometer=(), gyroscope=(), magnetometer=()'
+    )
     response.headers['Server'] = 'ShajjadKhan-Platform/2.0'
+
+    if request.path.startswith('/tools'):
+        # AdSense injects inline scripts and loads from Google ad domains.
+        response.headers['Content-Security-Policy'] = (
+            "default-src 'self'; "
+            "base-uri 'self'; "
+            "object-src 'none'; "
+            "frame-ancestors 'self'; "
+            "form-action 'self'; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' "
+            "https://pagead2.googlesyndication.com https://*.googlesyndication.com "
+            "https://*.google.com https://*.doubleclick.net https://*.googleadservices.com "
+            "https://*.adtrafficquality.google https://*.gstatic.com; "
+            "style-src 'self' 'unsafe-inline' https://*.google.com https://*.googlesyndication.com; "
+            "img-src 'self' data: blob: https:; "
+            "font-src 'self' data:; "
+            "connect-src 'self' https://pagead2.googlesyndication.com "
+            "https://*.googlesyndication.com https://*.google.com https://*.doubleclick.net "
+            "https://*.googleadservices.com https://*.adtrafficquality.google https://*.gstatic.com; "
+            "frame-src https://*.google.com https://*.googlesyndication.com "
+            "https://*.doubleclick.net https://*.googleadservices.com "
+            "https://*.adtrafficquality.google https://*.gstatic.com; "
+            "worker-src 'self' blob:; "
+            "manifest-src 'self'; "
+            "media-src 'self'; "
+            "upgrade-insecure-requests"
+        )
+    else:
+        # The portfolio is ad-free and self-hosts every font, icon, and script.
+        response.headers['Content-Security-Policy'] = (
+            "default-src 'self'; "
+            "base-uri 'self'; "
+            "object-src 'none'; "
+            "frame-ancestors 'self'; "
+            "form-action 'self'; "
+            "script-src 'self'; "
+            "style-src 'self' 'unsafe-inline'; "
+            "img-src 'self' data:; "
+            "font-src 'self'; "
+            "connect-src 'self'; "
+            "worker-src 'self' blob:; "
+            "manifest-src 'self'; "
+            "media-src 'self'; "
+            "upgrade-insecure-requests"
+        )
     return response
 
 @app.route('/')
@@ -112,14 +168,30 @@ def contact_submit():
     name = (data.get('name') or '').strip()
     email = (data.get('email') or '').strip()
     company = (data.get('company') or '').strip()
+    phone = (data.get('phone') or '').strip()
     project_type = (data.get('project_type') or 'General Inquiry').strip()
     message = (data.get('message') or '').strip()
-    
+    honeypot = (data.get('website') or '').strip()
+
+    # Hidden field: humans never see it. Return a normal success response to bots.
+    if honeypot:
+        return jsonify({
+            "status": "success",
+            "message": "Thank you! Your message has been received."
+        })
+
     # Validation
     if not name or not email or not message:
         return jsonify({
             "status": "error",
             "message": "Please fill in your Name, Email, and Message."
+        }), 400
+
+    if len(name) > 80 or len(email) > 100 or len(company) > 100 or len(phone) > 40 \
+            or len(project_type) > 80 or len(message) > 3000:
+        return jsonify({
+            "status": "error",
+            "message": "One or more fields are too long. Please shorten them and try again."
         }), 400
         
     email_regex = r"^[^@\s]+@[^@\s]+\.[^@\s]+$"
@@ -129,28 +201,41 @@ def contact_submit():
             "message": "Please enter a valid email address."
         }), 400
 
-    ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
+    forwarded = request.headers.get('X-Forwarded-For', '')
+    ip_address = (forwarded.split(',')[0].strip() if forwarded else request.remote_addr) or 'unknown'
     user_agent = request.headers.get('User-Agent', '')[:250]
 
+    conn = get_db()
     try:
-        conn = get_db()
         cursor = conn.cursor()
+        cursor.execute(
+            "SELECT COUNT(*) FROM inquiries WHERE ip_address = ? "
+            "AND created_at >= datetime('now', '-10 minutes')",
+            (ip_address,)
+        )
+        if cursor.fetchone()[0] >= 3:
+            return jsonify({
+                "status": "error",
+                "message": "Too many inquiries from this connection. Please try again in a few minutes or email directly."
+            }), 429
+
         cursor.execute("""
-            INSERT INTO inquiries (name, email, company, project_type, message, ip_address, user_agent)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (name, email, company, project_type, message, ip_address, user_agent))
+            INSERT INTO inquiries (name, email, company, phone, project_type, message, ip_address, user_agent)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, (name, email, company, phone, project_type, message, ip_address, user_agent))
         conn.commit()
-        conn.close()
         
         return jsonify({
             "status": "success",
             "message": f"Thank you, {name}! Your message has been received. Shajjad Khan will respond promptly."
         })
-    except Exception as e:
+    except Exception:
         return jsonify({
             "status": "error",
             "message": "Unable to save inquiry at this moment. Please try again or email directly."
         }), 500
+    finally:
+        conn.close()
 
 @app.route('/robots.txt')
 def robots():

@@ -164,6 +164,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // 3. Contact Form AJAX Submission
     const contactForm = document.getElementById('contact-form');
     const formAlert = document.getElementById('form-alert');
+    const formFields = document.getElementById('form-fields');
+    const formSuccess = document.getElementById('form-success');
+    const formResetBtn = document.getElementById('form-reset-btn');
     const submitBtn = document.getElementById('contact-submit-btn');
 
     if (contactForm) {
@@ -173,8 +176,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const name = document.getElementById('contact-name').value.trim();
             const email = document.getElementById('contact-email').value.trim();
             const company = document.getElementById('contact-company').value.trim();
+            const phone = document.getElementById('contact-phone').value.trim();
             const projectType = document.getElementById('contact-project-type').value;
             const message = document.getElementById('contact-message').value.trim();
+            const website = document.getElementById('contact-website').value.trim();
 
             if (!name || !email || !message) {
                 showAlert('Please fill in all required fields (Name, Email, Message).', 'error');
@@ -184,7 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Set loading state
             submitBtn.disabled = true;
             const originalBtnHtml = submitBtn.innerHTML;
-            submitBtn.innerHTML = '<i class="bi bi-arrow-repeat spin"></i> <span>Sending Message...</span>';
+            submitBtn.innerHTML = '<svg class="bi-icon spin" aria-hidden="true" focusable="false"><use href="#bi-arrow-repeat"></use></svg> <span>Sending Message...</span>';
 
             try {
                 const response = await fetch('/api/contact', {
@@ -196,16 +201,21 @@ document.addEventListener('DOMContentLoaded', () => {
                         name: name,
                         email: email,
                         company: company,
+                        phone: phone,
                         project_type: projectType,
-                        message: message
+                        message: message,
+                        website: website
                     })
                 });
 
                 const result = await response.json();
 
                 if (response.ok && result.status === 'success') {
-                    showAlert(result.message || 'Inquiry sent successfully!', 'success');
                     contactForm.reset();
+                    formAlert.classList.add('d-none');
+                    formFields.classList.add('d-none');
+                    formSuccess.classList.remove('d-none');
+                    formSuccess.focus();
                 } else {
                     showAlert(result.message || 'Error sending inquiry. Please try again.', 'error');
                 }
@@ -216,6 +226,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 submitBtn.innerHTML = originalBtnHtml;
             }
         });
+    }
+
+    if (formResetBtn) {
+        formResetBtn.addEventListener('click', () => {
+            contactForm.reset();
+            formSuccess.classList.add('d-none');
+            formFields.classList.remove('d-none');
+            document.getElementById('contact-name').focus();
+        });
+    }
+
+    const copyEmailBtn = document.getElementById('copy-email-btn');
+    if (copyEmailBtn) {
+        copyEmailBtn.addEventListener('click', copyPortfolioEmail);
     }
 
     function showAlert(msg, type) {
@@ -284,7 +308,7 @@ function copyPortfolioEmail() {
         const btn = document.getElementById('copy-email-btn');
         if (btn) {
             const original = btn.innerHTML;
-            btn.innerHTML = '<i class="bi bi-check2"></i> <span>Copied!</span>';
+            btn.innerHTML = '<svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-check2"></use></svg> <span>Copied!</span>';
             btn.style.color = '#10b981';
             setTimeout(() => {
                 btn.innerHTML = original;
