@@ -29,13 +29,11 @@
     <meta name="twitter:image" content="https://www.shajjadkhan.com/static/images/og-shajjadkhan.png">
     <meta name="twitter:image:alt" content="Shajjad Khan — procurement and operations software for GCC hotels">
 
-    <!-- Google Fonts & Bootstrap Icons -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Self-hosted fonts: no third-party font or icon requests. -->
+    <link rel="preload" href="{{ url_for('static', filename='fonts/space-grotesk-latin.woff2') }}" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/fonts.css') }}?v=1.0">
     
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=2.3">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=2.4">
     <meta name="theme-color" content="#050811">
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32.png') }}">
@@ -63,6 +61,7 @@
     </script>
 </head>
 <body>
+    {% include 'partials/icon-sprite.html' %}
     <a class="skip-link" href="#main-content">Skip to main content</a>
 
     <!-- Executive Sticky Navigation Header -->
@@ -71,7 +70,11 @@
             <!-- Brand Mark & Identity -->
             <a href="#hero" class="brand-logo" aria-label="Shajjad Khan Homepage">
                 <div class="logo-mark">
-                    <img src="{{ url_for('static', filename='images/shajjad-logo-dark.png') }}" alt="" class="brand-logo-img">
+                    <picture class="brand-logo-picture">
+                        <source type="image/avif" srcset="{{ url_for('static', filename='images/shajjad-logo-dark-68.avif') }}">
+                        <source type="image/webp" srcset="{{ url_for('static', filename='images/shajjad-logo-dark-68.webp') }}">
+                        <img src="{{ url_for('static', filename='images/shajjad-logo-dark-68.png') }}" alt="" class="brand-logo-img" width="34" height="22" decoding="async">
+                    </picture>
                 </div>
                 <div class="logo-meta">
                     <span class="logo-name">Shajjad Khan</span>
@@ -100,16 +103,16 @@
                     <div class="mobile-drawer-divider"></div>
                     <a href="{{ tools_url }}" target="_blank" rel="noopener" class="btn-mobile-tools">
                         <div class="mobile-tools-icon">
-                            <i class="bi bi-grid-3x3-gap-fill"></i>
+                            <svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-grid-3x3-gap-fill"></use></svg>
                         </div>
                         <div class="mobile-tools-text">
                             <span class="mobile-tools-title">FastTrack Tools Suite</span>
                             <span class="mobile-tools-sub">50+ Free Developer &amp; PDF Utilities ↗</span>
                         </div>
-                        <i class="bi bi-arrow-up-right mobile-tools-arrow"></i>
+                        <svg class="bi-icon mobile-tools-arrow" aria-hidden="true" focusable="false"><use href="#bi-arrow-up-right"></use></svg>
                     </a>
                     <a href="#contact" class="btn-mobile-contact">
-                        <i class="bi bi-chat-dots-fill"></i>
+                        <svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-chat-dots-fill"></use></svg>
                         <span>Start Advisory Inquiry</span>
                     </a>
                 </div>
@@ -118,13 +121,13 @@
             <!-- Right Executive Actions -->
             <div class="nav-actions">
                 <a href="{{ tools_url }}" target="_blank" rel="noopener" class="nav-tools-pill desktop-nav-item" title="Open 50+ FastTrack Tools (Separate Utilities Platform)">
-                    <i class="bi bi-grid-3x3-gap-fill tools-pill-icon"></i>
+                    <svg class="bi-icon tools-pill-icon" aria-hidden="true" focusable="false"><use href="#bi-grid-3x3-gap-fill"></use></svg>
                     <span class="tools-pill-label">50+ Tools</span>
-                    <i class="bi bi-arrow-up-right tools-pill-arrow"></i>
+                    <svg class="bi-icon tools-pill-arrow" aria-hidden="true" focusable="false"><use href="#bi-arrow-up-right"></use></svg>
                 </a>
                 <a href="#contact" class="nav-cta-btn desktop-nav-item">
                     <span>Let's Talk</span>
-                    <i class="bi bi-arrow-right"></i>
+                    <svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-arrow-right"></use></svg>
                 </a>
                 <button type="button" class="mobile-menu-btn" id="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-controls="nav-links" aria-expanded="false">
                     <span class="bar bar-top"></span>
@@ -160,11 +163,11 @@
 
                 <div class="hero-cta-group">
                     <a href="#flagship" class="btn btn-emerald-lg">
-                        <i class="bi bi-rocket-takeoff-fill"></i>
+                        <svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-rocket-takeoff-fill"></use></svg>
                         <span>Explore TawreedFlow Case Study</span>
                     </a>
                     <a href="#contact" class="btn btn-outline-lg">
-                        <i class="bi bi-chat-dots-fill"></i>
+                        <svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-chat-dots-fill"></use></svg>
                         <span>Let's Talk</span>
                     </a>
                 </div>
@@ -198,7 +201,7 @@
         <!-- Featured Flagship Section: TawreedFlow -->
         <section class="section flagship-section" id="flagship">
             <div class="container">
-                <div class="section-badge text-emerald"><i class="bi bi-award-fill"></i> FEATURED FLAGSHIP PRODUCT</div>
+                <div class="section-badge text-emerald"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-award-fill"></use></svg> FEATURED FLAGSHIP PRODUCT</div>
                 <h2 class="section-title">TawreedFlow <span class="arabic-sub">توريد</span></h2>
                 <p class="section-subtitle">
                     The modern multi-tenant procurement and supply chain SaaS purpose-built for luxury hotels and enterprise hospitality across the GCC (Saudi Arabia, UAE, Qatar).
@@ -207,7 +210,11 @@
                 <div class="flagship-card">
                     <div class="flagship-header">
                         <div class="flagship-brand">
-                            <img src="{{ url_for('static', filename='images/tawreedflow-logo.png') }}" alt="TawreedFlow Logo" class="flagship-logo-img">
+                            <picture class="flagship-logo-picture">
+                                <source type="image/avif" srcset="{{ url_for('static', filename='images/tawreedflow-logo-120.avif') }}">
+                                <source type="image/webp" srcset="{{ url_for('static', filename='images/tawreedflow-logo-120.webp') }}">
+                                <img src="{{ url_for('static', filename='images/tawreedflow-logo-120.png') }}" alt="TawreedFlow Logo" class="flagship-logo-img" width="60" height="60" loading="lazy" decoding="async">
+                            </picture>
                             <div>
                                 <h3 class="flagship-heading">TawreedFlow Enterprise</h3>
                                 <div class="flagship-tags">
@@ -220,7 +227,7 @@
                         <div class="flagship-actions">
                             <a href="https://tawreedflow.com" target="_blank" rel="noopener" class="btn btn-emerald-sm">
                                 <span>Visit tawreedflow.com</span>
-                                <i class="bi bi-box-arrow-up-right"></i>
+                                <svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-box-arrow-up-right"></use></svg>
                             </a>
                         </div>
                     </div>
@@ -228,7 +235,7 @@
                     <div class="flagship-grid">
                         <div class="flagship-column">
                             <div class="feature-block">
-                                <div class="feature-icon bg-emerald-light"><i class="bi bi-exclamation-triangle-fill text-emerald"></i></div>
+                                <div class="feature-icon bg-emerald-light"><svg class="bi-icon text-emerald" aria-hidden="true" focusable="false"><use href="#bi-exclamation-triangle-fill"></use></svg></div>
                                 <div>
                                     <h4>The Industry Challenge</h4>
                                     <p>
@@ -238,7 +245,7 @@
                             </div>
 
                             <div class="feature-block">
-                                <div class="feature-icon bg-emerald-light"><i class="bi bi-cpu-fill text-emerald"></i></div>
+                                <div class="feature-icon bg-emerald-light"><svg class="bi-icon text-emerald" aria-hidden="true" focusable="false"><use href="#bi-cpu-fill"></use></svg></div>
                                 <div>
                                     <h4>The Architectural Solution</h4>
                                     <p>
@@ -248,7 +255,7 @@
                             </div>
 
                             <div class="feature-block">
-                                <div class="feature-icon bg-emerald-light"><i class="bi bi-diagram-3-fill text-emerald"></i></div>
+                                <div class="feature-icon bg-emerald-light"><svg class="bi-icon text-emerald" aria-hidden="true" focusable="false"><use href="#bi-diagram-3-fill"></use></svg></div>
                                 <div>
                                     <h4>Enterprise Role-Based Access</h4>
                                     <p>
@@ -273,7 +280,7 @@
                         <div class="flagship-column">
                             <div class="spec-panel">
                                 <div class="spec-panel-header">
-                                    <span class="spec-title"><i class="bi bi-terminal-fill text-emerald"></i> Engineering & Tech Stack</span>
+                                    <span class="spec-title"><svg class="bi-icon text-emerald" aria-hidden="true" focusable="false"><use href="#bi-terminal-fill"></use></svg> Engineering & Tech Stack</span>
                                     <span class="badge-status-live">Live</span>
                                 </div>
                                 
@@ -305,7 +312,7 @@
                                 </div>
 
                                 <div class="quote-box">
-                                    <i class="bi bi-quote quote-icon text-emerald"></i>
+                                    <svg class="bi-icon quote-icon text-emerald" aria-hidden="true" focusable="false"><use href="#bi-quote"></use></svg>
                                     <p class="quote-text">
                                         "Designed, directed, tested, and shipped end-to-end by founder Shajjad Khan — from workflow discovery to production rollout across GCC hotels."
                                     </p>
@@ -320,7 +327,7 @@
         <!-- Projects Portfolio Section -->
         <section class="section projects-section" id="projects">
             <div class="container">
-                <div class="section-badge text-cyan"><i class="bi bi-layers-fill"></i> ENGINEERING SHOWCASE</div>
+                <div class="section-badge text-cyan"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-layers-fill"></use></svg> ENGINEERING SHOWCASE</div>
                 <h2 class="section-title">Selected Systems &amp; Platforms</h2>
                 <p class="section-subtitle">
                     A collection of production platforms, practical tools, and workflow systems built from real operational pain points.
@@ -330,7 +337,7 @@
                     <!-- Project 1: BlockTree Matrix -->
                     <div class="project-card">
                         <div class="project-header">
-                            <div class="project-badge bg-cyan-subtle text-cyan"><i class="bi bi-diagram-3-fill"></i> SPATIAL GRAPH</div>
+                            <div class="project-badge bg-cyan-subtle text-cyan"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-diagram-3-fill"></use></svg> SPATIAL GRAPH</div>
                             <span class="project-year">2026</span>
                         </div>
                         <h3 class="project-title">BlockTree Editorial Matrix</h3>
@@ -354,7 +361,7 @@
                     <!-- Project 2: FastTrack Tools Platform -->
                     <div class="project-card">
                         <div class="project-header">
-                            <div class="project-badge bg-cyan-subtle text-cyan"><i class="bi bi-tools"></i> UTILITY ECOSYSTEM</div>
+                            <div class="project-badge bg-cyan-subtle text-cyan"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-tools"></use></svg> UTILITY ECOSYSTEM</div>
                             <span class="project-year">v2.0 Active</span>
                         </div>
                         <h3 class="project-title">FastTrack Tools Suite (50+ Utilities)</h3>
@@ -378,7 +385,7 @@
                         </div>
                         <div style="margin-top: 18px;">
                             <a href="{{ tools_url }}" class="btn btn-cyan-block">
-                                <i class="bi bi-tools"></i>
+                                <svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-tools"></use></svg>
                                 <span>Launch FastTrack Tools Suite (50 Utilities) →</span>
                             </a>
                         </div>
@@ -387,7 +394,7 @@
                     <!-- Project 3: ISP Telecom & Radius Billing Engine -->
                     <div class="project-card">
                         <div class="project-header">
-                            <div class="project-badge bg-gold-subtle text-gold"><i class="bi bi-hdd-network-fill"></i> TELECOM / NETWORKING</div>
+                            <div class="project-badge bg-gold-subtle text-gold"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-hdd-network-fill"></use></svg> TELECOM / NETWORKING</div>
                             <span class="project-year">Production</span>
                         </div>
                         <h3 class="project-title">ISP Telecom Billing &amp; MikroTik Automation</h3>
@@ -411,7 +418,7 @@
                     <!-- Project 4: GenieACS / CWMP TR-069 Fleet Management -->
                     <div class="project-card">
                         <div class="project-header">
-                            <div class="project-badge bg-emerald-subtle text-emerald"><i class="bi bi-router-fill"></i> IOT &amp; HARDWARE</div>
+                            <div class="project-badge bg-emerald-subtle text-emerald"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-router-fill"></use></svg> IOT &amp; HARDWARE</div>
                             <span class="project-year">Production</span>
                         </div>
                         <h3 class="project-title">GenieACS TR-069 Fleet Management</h3>
@@ -435,7 +442,7 @@
                     <!-- Project 5: Enterprise HR & Payroll SaaS -->
                     <div class="project-card">
                         <div class="project-header">
-                            <div class="project-badge bg-cyan-subtle text-cyan"><i class="bi bi-people-fill"></i> OPERATIONS SAAS</div>
+                            <div class="project-badge bg-cyan-subtle text-cyan"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-people-fill"></use></svg> OPERATIONS SAAS</div>
                             <span class="project-year">Production</span>
                         </div>
                         <h3 class="project-title">Enterprise HR &amp; Automated Payroll System</h3>
@@ -465,7 +472,7 @@
                 <div class="about-card">
                     <div class="about-grid">
                         <div class="about-text-column">
-                            <div class="section-badge text-gold"><i class="bi bi-person-badge-fill"></i> PHILOSOPHY & BACKGROUND</div>
+                            <div class="section-badge text-gold"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-person-badge-fill"></use></svg> PHILOSOPHY & BACKGROUND</div>
                             <h2 class="section-title">How I Build: Product Judgment, AI Leverage, Production Discipline</h2>
                             <p class="about-lead">
                                 I start with the operational problem, design the workflow with the people who will use it, and stay accountable through rollout. AI accelerates the implementation; architecture, product decisions, and production testing remain hands-on. Nothing ships until it works in the real world.
@@ -505,7 +512,7 @@
                                 </div>
                                 <h3 class="profile-name">Shajjad Khan</h3>
                                 <p class="profile-role">Founder &amp; Systems Architect</p>
-                                <p class="profile-loc"><i class="bi bi-geo-alt-fill text-emerald"></i> GCC &amp; Global</p>
+                                <p class="profile-loc"><svg class="bi-icon text-emerald" aria-hidden="true" focusable="false"><use href="#bi-geo-alt-fill"></use></svg> GCC &amp; Global</p>
 
                                 <div class="profile-bio-box">
                                     <p>
@@ -514,9 +521,9 @@
                                 </div>
 
                                 <div class="profile-links">
-                                    <a href="https://tawreedflow.com" target="_blank" rel="noopener" class="profile-btn"><i class="bi bi-globe"></i> TawreedFlow</a>
-                                    <a href="{{ tools_url }}" target="_blank" rel="noopener" class="profile-btn"><i class="bi bi-grid-3x3-gap-fill"></i> 50+ Tools</a>
-                                    <a href="#contact" class="profile-btn"><i class="bi bi-envelope-fill"></i> Contact</a>
+                                    <a href="https://tawreedflow.com" target="_blank" rel="noopener" class="profile-btn"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-globe"></use></svg> TawreedFlow</a>
+                                    <a href="{{ tools_url }}" target="_blank" rel="noopener" class="profile-btn"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-grid-3x3-gap-fill"></use></svg> 50+ Tools</a>
+                                    <a href="#contact" class="profile-btn"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-envelope-fill"></use></svg> Contact</a>
                                 </div>
                             </div>
                         </div>
@@ -528,7 +535,7 @@
         <!-- Technical Competencies & Skills Section -->
         <section class="section stack-section" id="stack">
             <div class="container">
-                <div class="section-badge text-emerald"><i class="bi bi-tools"></i> TECHNICAL ARSENAL</div>
+                <div class="section-badge text-emerald"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-tools"></use></svg> TECHNICAL ARSENAL</div>
                 <h2 class="section-title">Core Competencies &amp; Technologies</h2>
                 <p class="section-subtitle">
                     The tools, platforms, and workflows I use to turn ideas into working production systems.
@@ -537,57 +544,57 @@
                 <div class="stack-grid">
                     <div class="stack-category-card">
                         <div class="category-header">
-                            <i class="bi bi-code-slash text-emerald fs-4"></i>
+                            <svg class="bi-icon text-emerald fs-4" aria-hidden="true" focusable="false"><use href="#bi-code-slash"></use></svg>
                             <h3>Backend &amp; Languages</h3>
                         </div>
                         <ul class="skills-list">
-                            <li><i class="bi bi-check-circle-fill text-emerald"></i> <strong>Python</strong> (Django 6, Flask, FastAPI)</li>
-                            <li><i class="bi bi-check-circle-fill text-emerald"></i> <strong>JavaScript / TypeScript</strong> (Node.js, ES6+)</li>
-                            <li><i class="bi bi-check-circle-fill text-emerald"></i> <strong>SQL</strong> (PostgreSQL, MySQL, SQLite WAL)</li>
-                            <li><i class="bi bi-check-circle-fill text-emerald"></i> <strong>PHP</strong> &amp; Bash/Shell Scripting</li>
-                            <li><i class="bi bi-check-circle-fill text-emerald"></i> <strong>REST APIs &amp; WebSockets</strong></li>
+                            <li><svg class="bi-icon text-emerald" aria-hidden="true" focusable="false"><use href="#bi-check-circle-fill"></use></svg> <strong>Python</strong> (Django 6, Flask, FastAPI)</li>
+                            <li><svg class="bi-icon text-emerald" aria-hidden="true" focusable="false"><use href="#bi-check-circle-fill"></use></svg> <strong>JavaScript / TypeScript</strong> (Node.js, ES6+)</li>
+                            <li><svg class="bi-icon text-emerald" aria-hidden="true" focusable="false"><use href="#bi-check-circle-fill"></use></svg> <strong>SQL</strong> (PostgreSQL, MySQL, SQLite WAL)</li>
+                            <li><svg class="bi-icon text-emerald" aria-hidden="true" focusable="false"><use href="#bi-check-circle-fill"></use></svg> <strong>PHP</strong> &amp; Bash/Shell Scripting</li>
+                            <li><svg class="bi-icon text-emerald" aria-hidden="true" focusable="false"><use href="#bi-check-circle-fill"></use></svg> <strong>REST APIs &amp; WebSockets</strong></li>
                         </ul>
                     </div>
 
                     <div class="stack-category-card">
                         <div class="category-header">
-                            <i class="bi bi-server text-cyan fs-4"></i>
+                            <svg class="bi-icon text-cyan fs-4" aria-hidden="true" focusable="false"><use href="#bi-server"></use></svg>
                             <h3>Infrastructure &amp; DevOps</h3>
                         </div>
                         <ul class="skills-list">
-                            <li><i class="bi bi-check-circle-fill text-cyan"></i> <strong>Linux System Administration</strong> (Debian/Ubuntu)</li>
-                            <li><i class="bi bi-check-circle-fill text-cyan"></i> <strong>Nginx Reverse Proxy &amp; SSL</strong></li>
-                            <li><i class="bi bi-check-circle-fill text-cyan"></i> <strong>Systemd Services &amp; Process Management</strong></li>
-                            <li><i class="bi bi-check-circle-fill text-cyan"></i> <strong>Celery &amp; Redis</strong> Background Workers</li>
-                            <li><i class="bi bi-check-circle-fill text-cyan"></i> <strong>Docker &amp; Git CI/CD</strong> Workflows</li>
+                            <li><svg class="bi-icon text-cyan" aria-hidden="true" focusable="false"><use href="#bi-check-circle-fill"></use></svg> <strong>Linux System Administration</strong> (Debian/Ubuntu)</li>
+                            <li><svg class="bi-icon text-cyan" aria-hidden="true" focusable="false"><use href="#bi-check-circle-fill"></use></svg> <strong>Nginx Reverse Proxy &amp; SSL</strong></li>
+                            <li><svg class="bi-icon text-cyan" aria-hidden="true" focusable="false"><use href="#bi-check-circle-fill"></use></svg> <strong>Systemd Services &amp; Process Management</strong></li>
+                            <li><svg class="bi-icon text-cyan" aria-hidden="true" focusable="false"><use href="#bi-check-circle-fill"></use></svg> <strong>Celery &amp; Redis</strong> Background Workers</li>
+                            <li><svg class="bi-icon text-cyan" aria-hidden="true" focusable="false"><use href="#bi-check-circle-fill"></use></svg> <strong>Docker &amp; Git CI/CD</strong> Workflows</li>
                         </ul>
                     </div>
 
                     <div class="stack-category-card">
                         <div class="category-header">
-                            <i class="bi bi-hdd-network text-gold fs-4"></i>
+                            <svg class="bi-icon text-gold fs-4" aria-hidden="true" focusable="false"><use href="#bi-hdd-network"></use></svg>
                             <h3>Telecom &amp; Networking</h3>
                         </div>
                         <ul class="skills-list">
-                            <li><i class="bi bi-check-circle-fill text-gold"></i> <strong>MikroTik RouterOS API</strong> Automation</li>
-                            <li><i class="bi bi-check-circle-fill text-gold"></i> <strong>FreeRADIUS &amp; AAA</strong> Accounting</li>
-                            <li><i class="bi bi-check-circle-fill text-gold"></i> <strong>GenieACS CWMP (TR-069)</strong> Device Fleet</li>
-                            <li><i class="bi bi-check-circle-fill text-gold"></i> <strong>Tailscale Mesh</strong> &amp; WireGuard VPN</li>
-                            <li><i class="bi bi-check-circle-fill text-gold"></i> <strong>Bandwidth Shaper Queues &amp; Hotspots</strong></li>
+                            <li><svg class="bi-icon text-gold" aria-hidden="true" focusable="false"><use href="#bi-check-circle-fill"></use></svg> <strong>MikroTik RouterOS API</strong> Automation</li>
+                            <li><svg class="bi-icon text-gold" aria-hidden="true" focusable="false"><use href="#bi-check-circle-fill"></use></svg> <strong>FreeRADIUS &amp; AAA</strong> Accounting</li>
+                            <li><svg class="bi-icon text-gold" aria-hidden="true" focusable="false"><use href="#bi-check-circle-fill"></use></svg> <strong>GenieACS CWMP (TR-069)</strong> Device Fleet</li>
+                            <li><svg class="bi-icon text-gold" aria-hidden="true" focusable="false"><use href="#bi-check-circle-fill"></use></svg> <strong>Tailscale Mesh</strong> &amp; WireGuard VPN</li>
+                            <li><svg class="bi-icon text-gold" aria-hidden="true" focusable="false"><use href="#bi-check-circle-fill"></use></svg> <strong>Bandwidth Shaper Queues &amp; Hotspots</strong></li>
                         </ul>
                     </div>
 
                     <div class="stack-category-card">
                         <div class="category-header">
-                            <i class="bi bi-shield-check text-emerald fs-4"></i>
+                            <svg class="bi-icon text-emerald fs-4" aria-hidden="true" focusable="false"><use href="#bi-shield-check"></use></svg>
                             <h3>Security &amp; Architecture</h3>
                         </div>
                         <ul class="skills-list">
-                            <li><i class="bi bi-check-circle-fill text-emerald"></i> <strong>Pre-Driver Regex SQLi Shields</strong></li>
-                            <li><i class="bi bi-check-circle-fill text-emerald"></i> <strong>Timing Defense</strong> (PBKDF2 Dummy Equalizers)</li>
-                            <li><i class="bi bi-check-circle-fill text-emerald"></i> <strong>RFC 6238 TOTP 2FA</strong> Multi-Factor Auth</li>
-                            <li><i class="bi bi-check-circle-fill text-emerald"></i> <strong>Honeypot Bot Traps &amp; Rate Limiting</strong></li>
-                            <li><i class="bi bi-check-circle-fill text-emerald"></i> <strong>Multi-Tenant Schema &amp; Data Isolation</strong></li>
+                            <li><svg class="bi-icon text-emerald" aria-hidden="true" focusable="false"><use href="#bi-check-circle-fill"></use></svg> <strong>Pre-Driver Regex SQLi Shields</strong></li>
+                            <li><svg class="bi-icon text-emerald" aria-hidden="true" focusable="false"><use href="#bi-check-circle-fill"></use></svg> <strong>Timing Defense</strong> (PBKDF2 Dummy Equalizers)</li>
+                            <li><svg class="bi-icon text-emerald" aria-hidden="true" focusable="false"><use href="#bi-check-circle-fill"></use></svg> <strong>RFC 6238 TOTP 2FA</strong> Multi-Factor Auth</li>
+                            <li><svg class="bi-icon text-emerald" aria-hidden="true" focusable="false"><use href="#bi-check-circle-fill"></use></svg> <strong>Honeypot Bot Traps &amp; Rate Limiting</strong></li>
+                            <li><svg class="bi-icon text-emerald" aria-hidden="true" focusable="false"><use href="#bi-check-circle-fill"></use></svg> <strong>Multi-Tenant Schema &amp; Data Isolation</strong></li>
                         </ul>
                     </div>
                 </div>
@@ -600,7 +607,7 @@
                 <div class="contact-card">
                     <div class="contact-grid">
                         <div class="contact-info">
-                            <div class="section-badge text-emerald"><i class="bi bi-chat-dots-fill"></i> GET IN TOUCH</div>
+                            <div class="section-badge text-emerald"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-chat-dots-fill"></use></svg> GET IN TOUCH</div>
                             <h2 class="section-title">Let's Discuss Your Next High-Impact Initiative</h2>
                             <p class="contact-description">
                                 Whether you're looking to architect a scalable B2B SaaS platform, automate complex network operations, or evaluate strategic technical advisory, I'd welcome the conversation.
@@ -608,41 +615,41 @@
 
                             <div class="contact-methods">
                                 <div class="method-item">
-                                    <div class="method-icon"><i class="bi bi-envelope-check text-emerald"></i></div>
+                                    <div class="method-icon"><svg class="bi-icon text-emerald" aria-hidden="true" focusable="false"><use href="#bi-envelope-check"></use></svg></div>
                                     <div>
                                         <div class="method-label">Direct Email</div>
                                         <div class="method-value">
                                             <a href="mailto:shajjadkhan.me@hotmail.com" class="link-emerald">shajjadkhan.me@hotmail.com</a>
                                         </div>
                                         <div class="direct-email-btns">
-                                            <a href="mailto:shajjadkhan.me@hotmail.com" class="btn btn-emerald-xs"><i class="bi bi-envelope-fill"></i> Send Email</a>
-                                            <button type="button" class="btn btn-outline-xs" id="copy-email-btn" onclick="copyPortfolioEmail()"><i class="bi bi-clipboard"></i> Copy Email</button>
+                                            <a href="mailto:shajjadkhan.me@hotmail.com" class="btn btn-emerald-xs"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-envelope-fill"></use></svg> Send Email</a>
+                                            <button type="button" class="btn btn-outline-xs" id="copy-email-btn"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-clipboard"></use></svg> Copy Email</button>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="method-item">
-                                    <div class="method-icon"><i class="bi bi-geo-alt-fill text-gold"></i></div>
+                                    <div class="method-icon"><svg class="bi-icon text-gold" aria-hidden="true" focusable="false"><use href="#bi-geo-alt-fill"></use></svg></div>
                                     <div>
                                         <div class="method-label">Operating Base</div>
                                         <div class="method-value">Riyadh, Saudi Arabia &bull; Active</div>
                                     </div>
                                 </div>
                                 <div class="method-item">
-                                    <div class="method-icon"><i class="bi bi-globe2 text-cyan"></i></div>
+                                    <div class="method-icon"><svg class="bi-icon text-cyan" aria-hidden="true" focusable="false"><use href="#bi-globe2"></use></svg></div>
                                     <div>
                                         <div class="method-label">Personal Domain</div>
                                         <div class="method-value">www.shajjadkhan.com</div>
                                     </div>
                                 </div>
                                 <div class="method-item">
-                                    <div class="method-icon"><i class="bi bi-building text-gold"></i></div>
+                                    <div class="method-icon"><svg class="bi-icon text-gold" aria-hidden="true" focusable="false"><use href="#bi-building"></use></svg></div>
                                     <div>
                                         <div class="method-label">Enterprise Venture</div>
                                         <div class="method-value"><a href="https://tawreedflow.com" target="_blank" rel="noopener" class="link-gold">tawreedflow.com</a></div>
                                     </div>
                                 </div>
                                 <div class="method-item">
-                                    <div class="method-icon"><i class="bi bi-grid-3x3-gap-fill text-cyan"></i></div>
+                                    <div class="method-icon"><svg class="bi-icon text-cyan" aria-hidden="true" focusable="false"><use href="#bi-grid-3x3-gap-fill"></use></svg></div>
                                     <div>
                                         <div class="method-label">Developer Tools Suite</div>
                                         <div class="method-value"><a href="{{ tools_url }}" target="_blank" rel="noopener" class="link-cyan">50+ Serverless Utilities ↗</a></div>
@@ -652,27 +659,49 @@
                         </div>
 
                         <div class="contact-form-column">
-                            <form id="contact-form" class="cyber-form" onsubmit="return false;">
-                                <h3 class="form-heading"><i class="bi bi-envelope-paper-fill text-emerald"></i> Send Direct Inquiry</h3>
-                                
-                                <div id="form-alert" class="alert-box d-none"></div>
-
-                                <div class="form-row">
-                                    <div class="input-field">
-                                        <label for="contact-name">Your Name *</label>
-                                        <input type="text" id="contact-name" name="name" placeholder="e.g. Sultan Al-Otaibi" required maxlength="80">
-                                    </div>
-                                    <div class="input-field">
-                                        <label for="contact-email">Email Address *</label>
-                                        <input type="email" id="contact-email" name="email" placeholder="name@company.com" required maxlength="100">
+                            <form id="contact-form" class="cyber-form">
+                                <div id="form-success" class="form-success d-none" role="status" aria-live="polite" tabindex="-1">
+                                    <div class="form-success-icon"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-envelope-check"></use></svg></div>
+                                    <h4>Message received</h4>
+                                    <p>Thank you — I’ll reply within one business day. If you’d rather write directly, my inbox is open.</p>
+                                    <div class="form-success-actions">
+                                        <a href="mailto:shajjadkhan.me@hotmail.com?subject=Portfolio%20inquiry" class="btn btn-emerald-lg">Email directly</a>
+                                        <button type="button" id="form-reset-btn" class="btn btn-outline-lg">Send another message</button>
                                     </div>
                                 </div>
 
-                                <div class="form-row">
-                                    <div class="input-field">
-                                        <label for="contact-company">Organization / Company</label>
-                                        <input type="text" id="contact-company" name="company" placeholder="e.g. Hospitality Group, Tech Corp" maxlength="100">
+                                <div id="form-fields">
+                                    <h3 class="form-heading"><svg class="bi-icon text-emerald" aria-hidden="true" focusable="false"><use href="#bi-envelope-paper-fill"></use></svg> Send Direct Inquiry</h3>
+
+                                    <div id="form-alert" class="alert-box d-none"></div>
+
+                                    <div class="form-hp" aria-hidden="true">
+                                        <label for="contact-website">Website</label>
+                                        <input type="text" id="contact-website" name="website" tabindex="-1" autocomplete="off">
                                     </div>
+
+                                    <div class="form-row">
+                                        <div class="input-field">
+                                            <label for="contact-name">Your Name *</label>
+                                            <input type="text" id="contact-name" name="name" placeholder="e.g. Sultan Al-Otaibi" autocomplete="name" required maxlength="80">
+                                        </div>
+                                        <div class="input-field">
+                                            <label for="contact-email">Email Address *</label>
+                                            <input type="email" id="contact-email" name="email" placeholder="name@company.com" autocomplete="email" required maxlength="100">
+                                        </div>
+                                    </div>
+
+                                    <div class="form-row">
+                                        <div class="input-field">
+                                            <label for="contact-company">Organization / Company</label>
+                                            <input type="text" id="contact-company" name="company" placeholder="e.g. Hospitality Group, Tech Corp" autocomplete="organization" maxlength="100">
+                                        </div>
+                                        <div class="input-field">
+                                            <label for="contact-phone">Phone / WhatsApp (optional)</label>
+                                            <input type="tel" id="contact-phone" name="phone" placeholder="+966 5X XXX XXXX" autocomplete="tel" inputmode="tel" maxlength="40">
+                                        </div>
+                                    </div>
+
                                     <div class="input-field">
                                         <label for="contact-project-type">Subject / Project Scope</label>
                                         <select id="contact-project-type" name="project_type">
@@ -683,17 +712,19 @@
                                             <option value="General Collaboration">General Inquiries</option>
                                         </select>
                                     </div>
-                                </div>
 
-                                <div class="input-field">
-                                    <label for="contact-message">Message &amp; Project Overview *</label>
-                                    <textarea id="contact-message" name="message" rows="5" placeholder="Describe your operational bottleneck, timeline, or scope of inquiry..." required maxlength="3000"></textarea>
-                                </div>
+                                    <div class="input-field">
+                                        <label for="contact-message">Message &amp; Project Overview *</label>
+                                        <textarea id="contact-message" name="message" rows="5" placeholder="Describe your operational bottleneck, timeline, or scope of inquiry..." required maxlength="3000"></textarea>
+                                    </div>
 
-                                <button type="submit" id="contact-submit-btn" class="btn btn-emerald-block">
-                                    <i class="bi bi-send-fill"></i>
-                                    <span>Send Message</span>
-                                </button>
+                                    <button type="submit" id="contact-submit-btn" class="btn btn-emerald-block">
+                                        <svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-send-fill"></use></svg>
+                                        <span>Send Message</span>
+                                    </button>
+
+                                    <p class="form-privacy">Your details are used only to reply to this inquiry. No newsletters, no third-party sharing.</p>
+                                </div>
                             </form>
                         </div>
                     </div>
@@ -721,14 +752,14 @@
                     <span>Systems Operational &bull; All Services Normal</span>
                 </div>
                 <div class="footer-links">
-                    <a href="https://tawreedflow.com" target="_blank" rel="noopener"><i class="bi bi-shield-check"></i> TawreedFlow</a>
-                    <a href="{{ tools_url }}" target="_blank" rel="noopener"><i class="bi bi-grid-3x3-gap-fill"></i> FastTrack Tools</a>
-                    <a href="#hero"><i class="bi bi-arrow-up"></i> Top</a>
+                    <a href="https://tawreedflow.com" target="_blank" rel="noopener"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-shield-check"></use></svg> TawreedFlow</a>
+                    <a href="{{ tools_url }}" target="_blank" rel="noopener"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-grid-3x3-gap-fill"></use></svg> FastTrack Tools</a>
+                    <a href="#hero"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-arrow-up"></use></svg> Top</a>
                 </div>
             </div>
         </div>
     </footer>
 
-    <script src="{{ url_for('static', filename='js/main.js') }}?v=1.2"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}?v=1.3"></script>
 </body>
 </html>

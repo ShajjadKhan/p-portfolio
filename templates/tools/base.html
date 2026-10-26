@@ -39,10 +39,9 @@
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ adsense_pub_id|default('ca-pub-7534827047793212') }}"
             crossorigin="anonymous"></script>
 
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Self-hosted fonts: no third-party font requests. -->
+    <link rel="preload" href="{{ url_for('static', filename='fonts/plus-jakarta-sans-latin.woff2') }}" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/fonts.css') }}?v=1.0">
 
     <!-- Tools Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='tools/css/tools.css') }}?v=2.4">
@@ -79,7 +78,11 @@
         <div class="header-container">
             <div class="logo-group">
                 <a href="/tools" class="brand-logo">
-                    <img src="{{ url_for('static', filename='images/shajjad-logo-light.png') }}" alt="Shajjad Khan" class="tools-brand-logo-img">
+                    <picture>
+                        <source type="image/avif" srcset="{{ url_for('static', filename='images/shajjad-logo-dark-68.avif') }}">
+                        <source type="image/webp" srcset="{{ url_for('static', filename='images/shajjad-logo-dark-68.webp') }}">
+                        <img src="{{ url_for('static', filename='images/shajjad-logo-dark-68.png') }}" alt="Shajjad Khan" class="tools-brand-logo-img" width="34" height="17" decoding="async">
+                    </picture>
                     <span class="logo-text">Tools</span>
                 </a>
                 <span class="version-badge">50 Suite</span>
@@ -217,7 +220,11 @@
         <div class="footer-container">
             <div class="footer-col brand-col">
                 <div class="footer-logo">
-                    <img src="{{ url_for('static', filename='images/shajjad-logo-light.png') }}" alt="Shajjad Khan" class="tools-brand-logo-img">
+                    <picture>
+                        <source type="image/avif" srcset="{{ url_for('static', filename='images/shajjad-logo-dark-68.avif') }}">
+                        <source type="image/webp" srcset="{{ url_for('static', filename='images/shajjad-logo-dark-68.webp') }}">
+                        <img src="{{ url_for('static', filename='images/shajjad-logo-dark-68.png') }}" alt="Shajjad Khan" class="tools-brand-logo-img" width="34" height="17" loading="lazy" decoding="async">
+                    </picture>
                     <span class="logo-text">Tools</span>
                 </div>
                 <p class="footer-desc">
