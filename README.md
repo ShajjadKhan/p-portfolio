@@ -23,7 +23,7 @@ Professional portfolio of **Shajjad Khan** — Founder and Systems Architect. Sh
    - Stack: Python, PHP, MySQL, MikroTik API, FreeRADIUS, CWMP TR-069.
 
 4. **GenieACS / TR-069 Fleet Device Management**
-   - Carrier-grade auto-configuration server (ACS) managing zero-touch provisioning and live telemetry for thousands of subscriber CPE routers and GPON ONUs.
+   - Carrier-grade auto-configuration server (ACS) managing zero-touch provisioning and live monitoring for thousands of subscriber CPE routers and GPON ONUs.
    - Stack: GenieACS, Node.js, MongoDB, TR-069 CWMP, Debian Linux.
 
 5. **Enterprise HR & Automated Payroll SaaS**

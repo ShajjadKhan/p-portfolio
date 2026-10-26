@@ -22,7 +22,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=2.2">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=2.3">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/shajjad-favicon.png') }}">
 </head>
 <body>
@@ -237,7 +237,7 @@
                             <div class="spec-panel">
                                 <div class="spec-panel-header">
                                     <span class="spec-title"><i class="bi bi-terminal-fill text-emerald"></i> Engineering & Tech Stack</span>
-                                    <span class="badge-status-live">PROD ACTIVE</span>
+                                    <span class="badge-status-live">Live</span>
                                 </div>
                                 
                                 <div class="spec-list">
@@ -251,10 +251,10 @@
                                     </div>
                                     <div class="spec-item">
                                         <span class="spec-key">Asynchronous Workers</span>
-                                        <span class="spec-val">Celery Queues & Scheduled Dispatch Daemons</span>
+                                        <span class="spec-val">Celery Queues &amp; Scheduled Dispatch Workers</span>
                                     </div>
                                     <div class="spec-item">
-                                        <span class="spec-key">Real-time Telemetry</span>
+                                        <span class="spec-key">Real-time Monitoring</span>
                                         <span class="spec-val">VAPID WebPush Notifications + WhatsApp Cloud API</span>
                                     </div>
                                     <div class="spec-item">
@@ -326,7 +326,7 @@
                         </p>
                         <ul class="project-highlights">
                             <li>100% client-side privacy: Files never leave user RAM; zero third-party cloud storage exposure.</li>
-                            <li>Comprehensive catalog: DWG/CAD viewer, high-accuracy PDF editor & annotator, PDF merge/split, WebP/PNG conversions, QR generation, and XML sitemap telemetry.</li>
+                            <li>Comprehensive catalog: DWG/CAD viewer, high-accuracy PDF editor & annotator, PDF merge/split, WebP/PNG conversions, QR generation, and XML sitemap inspection.</li>
                             <li>Independent architecture: Hosted on dedicated service infrastructure with ad-monetized sustainability.</li>
                         </ul>
                         <div class="project-tech-stack">
@@ -379,11 +379,11 @@
                         </div>
                         <h3 class="project-title">GenieACS TR-069 Fleet Management</h3>
                         <p class="project-summary">
-                            Carrier-grade auto-configuration server (ACS) orchestrating remote provisioning, firmware upgrades, and real-time telemetry across thousands of subscriber CPE routers and GPON ONUs.
+                            Carrier-grade auto-configuration server (ACS) orchestrating remote provisioning, firmware upgrades, and real-time monitoring across thousands of subscriber CPE routers and GPON ONUs.
                         </p>
                         <ul class="project-highlights">
                             <li>Zero-touch provisioning profiles triggered upon customer fiber activation.</li>
-                            <li>Real-time Wi-Fi diagnostic telemetry, signal power analysis, and fault detection.</li>
+                            <li>Real-time Wi-Fi diagnostics, signal power analysis, and fault detection.</li>
                             <li>Automated mass firmware patch deployment with safety rollback thresholds.</li>
                         </ul>
                         <div class="project-tech-stack">
@@ -407,7 +407,7 @@
                         </p>
                         <ul class="project-highlights">
                             <li>Automated salary computation factoring overtime, deductions, and tax compliance.</li>
-                            <li>Biometric clock-in telemetry ingestion with shift scheduling algorithms.</li>
+                            <li>Biometric clock-in data ingestion with shift scheduling algorithms.</li>
                             <li>Role-based self-service employee portal and departmental audit logging.</li>
                         </ul>
                         <div class="project-tech-stack">
@@ -655,7 +655,7 @@
 
                                 <button type="submit" id="contact-submit-btn" class="btn btn-emerald-block">
                                     <i class="bi bi-send-fill"></i>
-                                    <span>Transmit Message</span>
+                                    <span>Send Message</span>
                                 </button>
                             </form>
                         </div>
@@ -692,6 +692,6 @@
         </div>
     </footer>
 
-    <script src="{{ url_for('static', filename='js/main.js') }}?v=1.1"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}?v=1.2"></script>
 </body>
 </html>

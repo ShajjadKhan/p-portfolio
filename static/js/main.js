@@ -7,23 +7,62 @@ document.addEventListener('DOMContentLoaded', () => {
     // 1. Mobile Navigation Drawer & Toggle
     const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
     const navLinks = document.getElementById('nav-links');
+    const mobileMenuQuery = window.matchMedia('(max-width: 860px)');
+    const backgroundForInert = document.querySelectorAll('main, footer, .brand-logo');
 
-    function closeMobileMenu() {
-        if (navLinks && mobileMenuToggle) {
-            navLinks.classList.remove('active');
-            mobileMenuToggle.classList.remove('open');
-            mobileMenuToggle.setAttribute('aria-expanded', 'false');
-            document.body.style.overflow = '';
+    function setBackgroundInert(isInert) {
+        backgroundForInert.forEach(el => {
+            if (isInert) {
+                el.setAttribute('inert', '');
+                el.setAttribute('aria-hidden', 'true');
+            } else {
+                el.removeAttribute('inert');
+                el.removeAttribute('aria-hidden');
+            }
+        });
+    }
+
+    function getDrawerFocusable() {
+        if (!navLinks) return [];
+        return Array.from(
+            navLinks.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')
+        ).filter(el => el.getClientRects().length > 0);
+    }
+
+    function openMobileMenu() {
+        if (!navLinks || !mobileMenuToggle) return;
+        navLinks.classList.add('active');
+        mobileMenuToggle.classList.add('open');
+        mobileMenuToggle.setAttribute('aria-expanded', 'true');
+        document.body.style.overflow = 'hidden';
+        setBackgroundInert(true);
+        const focusable = getDrawerFocusable();
+        if (focusable.length) {
+            focusable[0].focus();
+        }
+    }
+
+    function closeMobileMenu({ restoreFocus = true } = {}) {
+        if (!navLinks || !mobileMenuToggle) return;
+        const wasOpen = navLinks.classList.contains('active');
+        navLinks.classList.remove('active');
+        mobileMenuToggle.classList.remove('open');
+        mobileMenuToggle.setAttribute('aria-expanded', 'false');
+        document.body.style.overflow = '';
+        setBackgroundInert(false);
+        if (wasOpen && restoreFocus) {
+            mobileMenuToggle.focus();
         }
     }
 
     if (mobileMenuToggle && navLinks) {
         mobileMenuToggle.addEventListener('click', (e) => {
             e.stopPropagation();
-            const isOpen = navLinks.classList.toggle('active');
-            mobileMenuToggle.classList.toggle('open', isOpen);
-            mobileMenuToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-            document.body.style.overflow = isOpen ? 'hidden' : '';
+            if (navLinks.classList.contains('active')) {
+                closeMobileMenu();
+            } else {
+                openMobileMenu();
+            }
         });
 
         // Close mobile menu when a nav link or drawer button is clicked
@@ -33,10 +72,36 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        // Close on escape key
+        // Keep keyboard focus inside the open drawer and close on Escape
         document.addEventListener('keydown', (e) => {
+            if (!navLinks.classList.contains('active')) return;
+
             if (e.key === 'Escape') {
+                e.preventDefault();
                 closeMobileMenu();
+                return;
+            }
+
+            if (e.key !== 'Tab') return;
+
+            const focusable = getDrawerFocusable();
+            if (!focusable.length) return;
+
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+
+            if (!navLinks.contains(document.activeElement)) {
+                e.preventDefault();
+                first.focus();
+                return;
+            }
+
+            if (e.shiftKey && document.activeElement === first) {
+                e.preventDefault();
+                last.focus();
+            } else if (!e.shiftKey && document.activeElement === last) {
+                e.preventDefault();
+                first.focus();
             }
         });
 
@@ -44,6 +109,13 @@ document.addEventListener('DOMContentLoaded', () => {
         document.addEventListener('click', (e) => {
             if (navLinks.classList.contains('active') && !navLinks.contains(e.target) && !mobileMenuToggle.contains(e.target)) {
                 closeMobileMenu();
+            }
+        });
+
+        // Reset the drawer if the viewport grows past the mobile breakpoint
+        mobileMenuQuery.addEventListener('change', (e) => {
+            if (!e.matches) {
+                closeMobileMenu({ restoreFocus: false });
             }
         });
     }
@@ -112,7 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Set loading state
             submitBtn.disabled = true;
             const originalBtnHtml = submitBtn.innerHTML;
-            submitBtn.innerHTML = '<i class="bi bi-arrow-repeat spin"></i> <span>Transmitting Message...</span>';
+            submitBtn.innerHTML = '<i class="bi bi-arrow-repeat spin"></i> <span>Sending Message...</span>';
 
             try {
                 const response = await fetch('/api/contact', {
@@ -132,13 +204,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 const result = await response.json();
 
                 if (response.ok && result.status === 'success') {
-                    showAlert(result.message || 'Inquiry transmitted successfully!', 'success');
+                    showAlert(result.message || 'Inquiry sent successfully!', 'success');
                     contactForm.reset();
                 } else {
-                    showAlert(result.message || 'Error transmitting inquiry. Please try again.', 'error');
+                    showAlert(result.message || 'Error sending inquiry. Please try again.', 'error');
                 }
             } catch (err) {
-                showAlert('Network error communicating with portfolio daemon. Please try again later or email directly.', 'error');
+                showAlert('Network error. Please try again, or email directly.', 'error');
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalBtnHtml;
@@ -187,7 +259,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const specDetailBox = document.getElementById('spec-detail-box');
     const specsData = {
         overview: "Centralizes purchase requisitions, multi-tier approval matrices (Chef → Purchasing → GM/Finance), and automated vendor dispatching to streamline hotel engineering and operational procurement across the Gulf region.",
-        architecture: "Engineered on Python / Django 6.0 with strict multi-tenant schemas, Redis caching, Celery async dispatch daemons, and MariaDB/PostgreSQL transaction isolation.",
+        architecture: "Engineered on Python / Django 6.0 with strict multi-tenant schemas, Redis caching, Celery async dispatch workers, and MariaDB/PostgreSQL transaction isolation.",
         impact: "Eliminating multi-day requisition delays and procurement leakage across GCC luxury hotels, automating delivery reconciliation and invoice audit trails."
     };
 

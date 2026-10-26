@@ -89,7 +89,7 @@ def ads_txt():
 
 @app.route('/health')
 def health():
-    """Health check endpoint for telemetry and reverse proxies."""
+    """Health check endpoint for monitoring and reverse proxies."""
     return jsonify({
         "status": "healthy",
         "domain": "www.shajjadkhan.com",
@@ -176,6 +176,6 @@ def sitemap():
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 9191))
-    print(f"🚀 Shajjad Khan Portfolio & Tools daemon starting on 0.0.0.0:{port}")
+    print(f"🚀 Shajjad Khan Portfolio & Tools server starting on 0.0.0.0:{port}")
     app.run(host='0.0.0.0', port=port, debug=False)
 
