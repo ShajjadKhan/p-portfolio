@@ -33,7 +33,7 @@
     <link rel="preload" href="{{ url_for('static', filename='fonts/space-grotesk-latin.woff2') }}" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/fonts.css') }}?v=1.0">
     
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=2.4">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=2.5">
     <meta name="theme-color" content="#050811">
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32.png') }}">
@@ -170,6 +170,28 @@
                         <svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-chat-dots-fill"></use></svg>
                         <span>Let's Talk</span>
                     </a>
+                </div>
+
+                <div class="hero-product-visual">
+                    <div class="hero-product-frame">
+                        <picture>
+                            <source type="image/avif"
+                                    srcset="{{ url_for('static', filename='images/tawreedflow-dashboard-head-900.avif') }} 900w, {{ url_for('static', filename='images/tawreedflow-dashboard-head-1400.avif') }} 1400w, {{ url_for('static', filename='images/tawreedflow-dashboard-head-1850.avif') }} 1850w"
+                                    sizes="(max-width: 768px) calc(100vw - 32px), (max-width: 1200px) 90vw, 980px">
+                            <source type="image/webp"
+                                    srcset="{{ url_for('static', filename='images/tawreedflow-dashboard-head-900.webp') }} 900w, {{ url_for('static', filename='images/tawreedflow-dashboard-head-1400.webp') }} 1400w, {{ url_for('static', filename='images/tawreedflow-dashboard-head-1850.webp') }} 1850w"
+                                    sizes="(max-width: 768px) calc(100vw - 32px), (max-width: 1200px) 90vw, 980px">
+                            <img src="{{ url_for('static', filename='images/tawreedflow-dashboard-head-1850.png') }}"
+                                 srcset="{{ url_for('static', filename='images/tawreedflow-dashboard-head-900.png') }} 900w, {{ url_for('static', filename='images/tawreedflow-dashboard-head-1850.png') }} 1850w"
+                                 sizes="(max-width: 768px) calc(100vw - 32px), (max-width: 1200px) 90vw, 980px"
+                                 alt="TawreedFlow Department Head dashboard showing multi-property requisition metrics and team management actions."
+                                 width="1850" height="945" loading="eager" decoding="async">
+                        </picture>
+                    </div>
+                    <div class="hero-product-caption">
+                        <span class="hero-product-live"><span class="pulse-beacon" aria-hidden="true"></span> Live product</span>
+                        <span>TawreedFlow Department Head dashboard &middot; multi-property view</span>
+                    </div>
                 </div>
 
                 <!-- Live Metrics Strip -->
