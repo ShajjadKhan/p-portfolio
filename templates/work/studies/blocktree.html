@@ -1,0 +1,29 @@
+<h2>1. Executive Summary &amp; Spatial Concept</h2>
+<p>
+    Traditional digital newsletters and publication platforms restrict thought to linear, chronological feeds. <strong>BlockTree</strong> was architected as an infinite 2D spatial discourse hypergraph where editorial content branches dynamically across coordinates, allowing readers to explore complex topics non-linearly.
+</p>
+
+<h2>2. 2D Radial Collision Physics &amp; Smooth Navigation</h2>
+<p>
+    Displaying hundreds of interconnected editorial nodes on a single canvas requires robust physics simulation to prevent textual visual overlap:
+</p>
+<ul>
+    <li><strong>Virtual Joystick Physics:</strong> Implemented 360° fluid canvas panning and pinch-to-zoom using responsive touch events, hardware-accelerated CSS transforms, and custom panzoom physics algorithms.</li>
+    <li><strong>Radial Dynamic Collision Loop:</strong> Sibling nodes compute bounding radii in real-time. When a child branch expands, neighboring subtrees gently repel along angular vectors in under 15ms per frame.</li>
+    <li><strong>Coordinate Anchoring:</strong> Node positions persist in SQLite using normalized spatial vectors, ensuring reproducible visual layout across client viewports of differing DPI.</li>
+</ul>
+
+<h2>3. Word-Grade Typography Studio</h2>
+<p>
+    Authors write directly on the matrix using a custom browser typography engine:
+</p>
+<ul>
+    <li><strong>Dual-Pane Synchronized Preview:</strong> Markdown editing pane with instant sub-pixel canvas rendering.</li>
+    <li><strong>Structured Node Schema:</strong> Each publication block supports verified authorship cryptographic signatures, categorized tags, and parent-child branching links.</li>
+    <li><strong>Content Moderation &amp; 2FA:</strong> Multi-tier security featuring RFC 6238 TOTP two-factor authentication, PBKDF2 dummy hashing to prevent timing attacks, and pre-driver SQL injection sanitization.</li>
+</ul>
+
+<h2>4. Production Architecture</h2>
+<p>
+    Powered by a lightweight Python/Flask backend and SQLite in WAL (Write-Ahead Logging) mode, BlockTree achieves microsecond read latencies without the operational overhead of heavy distributed graph databases.
+</p>

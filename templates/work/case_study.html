@@ -1,0 +1,103 @@
+{% extends 'work/base.html' %}
+
+{% block title %}{{ cs.title }} — Shajjad Khan{% endblock %}
+{% block meta_desc %}{{ cs.tagline }}{% endblock %}
+{% block canonical %}https://www.shajjadkhan.com/work/{{ cs.slug }}{% endblock %}
+
+{% block schema %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": {{ cs.title|tojson }},
+  "description": {{ cs.tagline|tojson }},
+  "url": "https://www.shajjadkhan.com/work/{{ cs.slug }}",
+  "author": {
+    "@type": "Person",
+    "name": "Shajjad Khan",
+    "url": "https://www.shajjadkhan.com/"
+  },
+  "publisher": {
+    "@type": "Person",
+    "name": "Shajjad Khan"
+  },
+  "datePublished": "2026-01-01",
+  "inLanguage": "en"
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<article class="container">
+    <div class="work-header">
+        <div class="work-breadcrumb">
+            <a href="/">Home</a>
+            <span class="work-breadcrumb-sep">/</span>
+            <a href="/work">Case Studies</a>
+            <span class="work-breadcrumb-sep">/</span>
+            <span>{{ cs.short_title }}</span>
+        </div>
+        <h1 class="work-title">{{ cs.title }}</h1>
+        <p class="work-tagline">{{ cs.tagline }}</p>
+
+        <div class="work-meta-strip">
+            <div class="work-meta-item">
+                <span class="work-meta-label">Domain:</span>
+                <span class="work-meta-val">{{ cs.category }}</span>
+            </div>
+            <div class="work-meta-item">
+                <span class="work-meta-label">Status:</span>
+                <span class="work-meta-val">{{ cs.status }}</span>
+            </div>
+            <div class="work-meta-item">
+                <span class="work-meta-label">Role:</span>
+                <span class="work-meta-val">{{ cs.role }}</span>
+            </div>
+            <div class="work-meta-item">
+                <span class="work-meta-label">Target:</span>
+                <span class="work-meta-val">{{ cs.client_profile }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Metrics Strip -->
+    <div class="work-metrics-grid">
+        {% for m in cs.metrics %}
+        <div class="work-metric-card">
+            <div class="work-metric-val">{{ m.val }}</div>
+            <div class="work-metric-label">{{ m.label }}</div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Tech Stack Strip -->
+    <div style="margin: 20px 0 36px 0;">
+        <span style="font-size: 0.8rem; font-family: var(--font-mono, monospace); text-transform: uppercase; color: var(--text-dim, #7a8aa0); letter-spacing: 0.05em; margin-right: 12px;">Architecture Stack:</span>
+        <div class="work-tech-strip" style="display: inline-flex; margin: 0; vertical-align: middle;">
+            {% for tech in cs.tech_stack %}
+            <span class="work-tech-pill">{{ tech }}</span>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Narrative & Architecture Body -->
+    <div class="work-body">
+        {% include 'work/studies/' ~ cs.slug ~ '.html' %}
+    </div>
+
+    <!-- Next Steps / Advisory CTA -->
+    <div class="work-cta-box" style="margin-top: 60px;">
+        <h3>Explore Systems Architecture Collaboration</h3>
+        <p>Whether you need to scale multi-tenant operations, automate carrier networking, or replace manual business processes with production-grade SaaS, let's talk.</p>
+        <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
+            <a href="/#contact" class="btn btn-emerald-sm">
+                <span>Start an Advisory Inquiry</span>
+                <svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-arrow-right"></use></svg>
+            </a>
+            <a href="/work" class="btn" style="background: rgba(255,255,255,0.06); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.12);">
+                <span>← View All Case Studies</span>
+            </a>
+        </div>
+    </div>
+</article>
+{% endblock %}

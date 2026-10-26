@@ -1,0 +1,19 @@
+<h2>1. Executive Summary &amp; Network Environment</h2>
+<p>
+    Regional Internet Service Providers (ISPs) manage thousands of subscriber PPPoE and Hotspot connections across distributed MikroTik RouterOS edge routers. Manual bandwidth throttling, delayed invoice follow-ups, and manual disconnects cause substantial revenue leakage and high operational support overhead.
+</p>
+
+<h2>2. Real-Time MikroTik RouterOS API Engine</h2>
+<p>
+    Developed an automated infrastructure management service that interfaces directly with RouterOS API sockets over secure channels:
+</p>
+<ul>
+    <li><strong>Dynamic Simple Queue Shaping:</strong> Subscribers automatically receive tier-adjusted CIR/MIR rate limits based on active subscription packages.</li>
+    <li><strong>Automated Cut-Off &amp; Hotspot Captive Redirects:</strong> When an account becomes past due, the system gracefully disconnects the PPPoE active session and reroutes HTTP traffic to an internal captive portal displaying invoice payment options.</li>
+    <li><strong>Zero-Loss RADIUS Accounting:</strong> FreeRADIUS synchronization ensuring uninterrupted session accounting, multi-NAS roaming, and fraud prevention.</li>
+</ul>
+
+<h2>3. Automated Multi-Channel Notifications</h2>
+<p>
+    Integrated direct WhatsApp API and SMS webhooks that deliver automated billing alerts, invoice PDF downloads, and expiration reminders directly to subscriber handsets 3 days before cutoff, reducing overdue bill attrition by over 40%.
+</p>

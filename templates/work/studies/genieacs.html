@@ -1,0 +1,19 @@
+<h2>1. Executive Summary &amp; CPE Fleet Scale</h2>
+<p>
+    Managing thousands of distributed Customer Premises Equipment (CPE) routers, optical GPON ONUs, and wireless access points across hotel properties and subscriber sites requires carrier-grade zero-touch automation. Physical technician visits for simple configuration adjustments or firmware updates are cost-prohibitive.
+</p>
+
+<h2>2. CWMP TR-069 Protocol Orchestration</h2>
+<p>
+    Built and deployed a resilient Auto-Configuration Server (ACS) platform utilizing the Broadband Forum TR-069 (CWMP) protocol:
+</p>
+<ul>
+    <li><strong>Zero-Touch Provisioning (ZTP):</strong> When an unconfigured router powers on and contacts the ACS, the device serial and vendor OUI match preset rules to automatically push WAN VLAN tags, PPPoE credentials, Wi-Fi SSIDs, and firewall rules in seconds.</li>
+    <li><strong>Live Telemetry &amp; Optical Diagnostics:</strong> Real-time querying of GPON RX/TX optical power levels, device uptime, memory utilization, and Wi-Fi interference metrics to detect fiber degradation before client outages occur.</li>
+    <li><strong>Staged Firmware Deployment:</strong> Automated batch firmware upgrades rolled out in scheduled maintenance windows with automated fallback if reboot health checks fail.</li>
+</ul>
+
+<h2>3. Production Infrastructure &amp; High Availability</h2>
+<p>
+    Implemented on Debian Linux with Node.js microservices and MongoDB storage, reverse-proxied through Nginx with SSL client certificate authentication, effortlessly servicing continuous CWMP periodic inform packets.
+</p>

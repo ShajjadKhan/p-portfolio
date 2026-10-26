@@ -1,0 +1,111 @@
+<h2>1. Executive Summary &amp; Operational Context</h2>
+<p>
+    In luxury hospitality operations across the Gulf Cooperation Council (Saudi Arabia, UAE, Qatar), hotel properties procure millions of SAR/AED each month across fresh food &amp; beverage, engineering spares, housekeeping consumables, and capital operational equipment.
+</p>
+<p>
+    Historically, department heads (such as Executive Chefs and Chief Engineers) submitted ad-hoc purchase requests through WhatsApp messages, informal emails, or local paper slips. Purchasing departments collected quotes manually, forwarded photos of supplier invoices over chat, and struggled to track delivery fulfillment. This fragmented approach created severe operational friction:
+</p>
+<ul>
+    <li><strong>Zero Audit Trail:</strong> Spend approvals were scattered across mobile chat threads, rendering historical price auditing and compliance reporting nearly impossible.</li>
+    <li><strong>Rogue &amp; Off-Contract Purchasing:</strong> No automated enforcement of approved supplier lists, minimum quote thresholds, or budgeted spend limits.</li>
+    <li><strong>Taxonomy Decay:</strong> Unstandardized free-text items ("A4 Paper", "Copy Paper", "Xerox 80g") prevented group-level spend aggregation and volume bargaining.</li>
+    <li><strong>Receiving Discrepancies:</strong> Delivery notes were signed at the loading dock without immediate digital matching against the approved purchase order.</li>
+</ul>
+
+<div class="work-callout">
+    <p>
+        <strong>The Mission:</strong> Engineer a modern, resilient multi-tenant SaaS platform purpose-built for GCC hotel operations that digitizes the entire requisition-to-payment lifecycle, enforces multi-tier hierarchy approvals, and integrates seamlessly with regional communication workflows (WhatsApp Cloud API) and tax compliance standards (ZATCA Phase 2).
+    </p>
+</div>
+
+<h2>2. Live Product Dashboard &amp; Multi-Property Architecture</h2>
+<p>
+    TawreedFlow provides specialized, role-scoped dashboards tailored to each stakeholder in the hospitality chain. Below is the live <strong>Department Head Multi-Property Overview</strong>, illustrating real-time tracking of pending approvals, active deliveries, and completed orders across properties:
+</p>
+
+<figure class="work-figure">
+    <picture>
+        <source type="image/avif" srcset="{{ url_for('static', filename='images/tawreedflow-dashboard-head-1850.avif') }} 1850w, {{ url_for('static', filename='images/tawreedflow-dashboard-head-1400.avif') }} 1400w, {{ url_for('static', filename='images/tawreedflow-dashboard-head-900.avif') }} 900w" sizes="(max-width: 900px) 100vw, 860px">
+        <source type="image/webp" srcset="{{ url_for('static', filename='images/tawreedflow-dashboard-head-1850.webp') }} 1850w, {{ url_for('static', filename='images/tawreedflow-dashboard-head-1400.webp') }} 1400w, {{ url_for('static', filename='images/tawreedflow-dashboard-head-900.webp') }} 900w" sizes="(max-width: 900px) 100vw, 860px">
+        <img src="{{ url_for('static', filename='images/tawreedflow-dashboard-head-1850.png') }}" alt="TawreedFlow Department Head Live Multi-Property Dashboard" width="1850" height="945" loading="lazy" decoding="async">
+    </picture>
+    <figcaption class="work-figure-caption">
+        <svg class="bi-icon text-emerald" aria-hidden="true" focusable="false"><use href="#bi-shield-check"></use></svg>
+        <span>Production View · TawreedFlow Department Head dashboard managing multi-property operational procurement workflows.</span>
+    </figcaption>
+</figure>
+
+<h2>3. End-to-End Procurement Lifecycle</h2>
+<p>
+    TawreedFlow replaces ad-hoc communications with an immutable, event-driven state machine:
+</p>
+
+<table class="work-spec-table">
+    <thead>
+        <tr>
+            <th>Lifecycle Stage</th>
+            <th>Primary Actor</th>
+            <th>System Automation &amp; Verification</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>1. Requisition Draft</strong></td>
+            <td>Department Staff / Chef</td>
+            <td>Standardized item master lookup, required unit specifications, budget limit alerts.</td>
+        </tr>
+        <tr>
+            <td><strong>2. Multi-Tier Approval</strong></td>
+            <td>Dept Head / GM / Finance</td>
+            <td>Threshold-based routing. Automated WhatsApp / WebPush instant review links with PIN verification.</td>
+        </tr>
+        <tr>
+            <td><strong>3. Automated RFQ</strong></td>
+            <td>Purchasing Coordinator</td>
+            <td>One-click dispatch of structured Request For Quotations to approved regional vendors.</td>
+        </tr>
+        <tr>
+            <td><strong>4. Quote Comparison</strong></td>
+            <td>Purchasing Director</td>
+            <td>Side-by-side bid matrix with automated unit-price normalization and substitute item flags.</td>
+        </tr>
+        <tr>
+            <td><strong>5. PO Issuance</strong></td>
+            <td>Procurement Officer</td>
+            <td>Digitally signed PDF PO generation; instant dispatch via WhatsApp Cloud API &amp; supplier portal.</td>
+        </tr>
+        <tr>
+            <td><strong>6. 3-Way Match Receiving</strong></td>
+            <td>Loading Dock / Receiver</td>
+            <td>Barcode/PIN delivery verification; partial delivery logging; automated AP invoice reconciliation.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>4. Technical Deep Dive: Multi-Tenancy &amp; Security Isolation</h2>
+<p>
+    Hospitality groups require strict isolation between distinct properties while granting corporate executives consolidated visibility:
+</p>
+<ul>
+    <li><strong>Hierarchical Tenant Scoping:</strong> Every query in the Django ORM is constrained by custom ModelManagers filtering on <code>property_id</code> and <code>organization_id</code>. Corporate executives switch property contexts without cross-tenant session bleeding.</li>
+    <li><strong>Role-Based Access Control (RBAC):</strong> Granular permissions separating requisition creation, financial approval, supplier dispatch, and physical dock delivery acceptance.</li>
+    <li><strong>Asynchronous Task Pipeline:</strong> High-throughput Celery workers managed via Redis handle external WhatsApp Webhooks, PDF document rendering, and email dispatch without blocking web request worker threads.</li>
+    <li><strong>Audit Logging:</strong> Every approval, price override, and receiving receipt is appended to an append-only audit trail with IP address, timestamp, and user identifier.</li>
+</ul>
+
+<div class="work-callout work-callout-cyan">
+    <p>
+        <strong>ZATCA Phase 2 E-Invoicing Alignment:</strong> Structured line-item taxes, UUID invoice chaining, and cryptographic QR verification embedded directly into the receiving and purchase order schemas to ensure turnkey compliance with Saudi tax authority regulations.
+    </p>
+</div>
+
+<h2>5. Measured Operational Results</h2>
+<p>
+    Deployed in live GCC hotel operations, TawreedFlow demonstrated immediate operational improvements:
+</p>
+<ul>
+    <li><strong>100% Elimination of Lost Requisitions:</strong> Zero purchasing requests lost in informal chat channels.</li>
+    <li><strong>65% Reduction in Approval Latency:</strong> Multi-tier mobile approvals completed in minutes instead of 2–3 business days.</li>
+    <li><strong>234 Verified Delivered Orders:</strong> Fully audited receipts with digital signatures and delivery photographic evidence.</li>
+    <li><strong>Single Source of Spend Truth:</strong> Consolidated reporting enabling management to negotiate bulk volume discounts across group properties.</li>
+</ul>
