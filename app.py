@@ -9,14 +9,19 @@ import os
 import sys
 import sqlite3
 import datetime
+import json
 import re
+from xml.sax.saxutils import escape
 from flask import Flask, render_template, request, jsonify, redirect, Response
 
 from tools_blueprint import tools_bp
+from tools_catalog import TOOLS
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, 'contacts.db')
+SITE_URL = 'https://www.shajjadkhan.com'
+SITEMAP_LASTMOD = os.environ.get('SITEMAP_LASTMOD', '2026-10-26')
 
 app = Flask(
     __name__,
@@ -152,27 +157,80 @@ def robots():
     return (
         "User-agent: *\n"
         "Allow: /\n"
-        "Sitemap: https://www.shajjadkhan.com/sitemap.xml\n"
+        f"Sitemap: {SITE_URL}/sitemap.xml\n"
     ), 200, {'Content-Type': 'text/plain'}
+
+@app.route('/manifest.webmanifest')
+def manifest():
+    """Web app manifest for installable browser and mobile shortcuts."""
+    data = {
+        "name": "Shajjad Khan — Founder & Systems Architect",
+        "short_name": "Shajjad Khan",
+        "description": "Portfolio of Shajjad Khan, founder and systems architect behind TawreedFlow, plus 50+ private in-browser tools.",
+        "id": "/",
+        "start_url": "/",
+        "scope": "/",
+        "display": "standalone",
+        "background_color": "#050811",
+        "theme_color": "#050811",
+        "lang": "en",
+        "dir": "ltr",
+        "categories": ["business", "productivity"],
+        "icons": [
+            {
+                "src": "/static/images/icon-192.png",
+                "sizes": "192x192",
+                "type": "image/png",
+                "purpose": "any"
+            },
+            {
+                "src": "/static/images/icon-512.png",
+                "sizes": "512x512",
+                "type": "image/png",
+                "purpose": "any"
+            }
+        ]
+    }
+    return Response(json.dumps(data), mimetype='application/manifest+json')
 
 @app.route('/sitemap.xml')
 def sitemap():
-    xml = f"""<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>https://www.shajjadkhan.com/</loc>
-    <lastmod>{datetime.date.today().isoformat()}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
-  </url>
-  <url>
-    <loc>https://www.shajjadkhan.com/tools</loc>
-    <lastmod>{datetime.date.today().isoformat()}</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
-  </url>
-</urlset>"""
-    return xml, 200, {'Content-Type': 'application/xml'}
+    """Sitemap covering the homepage, tools catalog, and every live tool page."""
+    entries = []
+
+    def add(loc, changefreq, priority):
+        entries.append(
+            f"  <url>\n"
+            f"    <loc>{escape(loc)}</loc>\n"
+            f"    <lastmod>{SITEMAP_LASTMOD}</lastmod>\n"
+            f"    <changefreq>{changefreq}</changefreq>\n"
+            f"    <priority>{priority}</priority>\n"
+            f"  </url>"
+        )
+
+    add(f"{SITE_URL}/", "weekly", "1.0")
+    add(f"{SITE_URL}/tools", "daily", "0.9")
+
+    # Case study, about, and writing pages are homepage sections today.
+    # Add their dedicated URLs here when P3-1/P3-2 ship.
+    seen = set()
+    for tool in TOOLS:
+        slug = tool.get('slug')
+        if not slug or slug in seen:
+            continue
+        seen.add(slug)
+        add(f"{SITE_URL}/tools/{slug}", "monthly", "0.7")
+
+    add(f"{SITE_URL}/tools/privacy", "yearly", "0.3")
+    add(f"{SITE_URL}/tools/terms", "yearly", "0.3")
+
+    xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        + "\n".join(entries)
+        + "\n</urlset>"
+    )
+    return Response(xml, mimetype='application/xml')
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 9191))

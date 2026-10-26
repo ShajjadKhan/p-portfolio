@@ -7,6 +7,33 @@
     <meta name="description" content="{% block meta_desc %}Fast, private, client-side engineering, image, PDF, and business utilities. 100% private in-browser execution with zero lag.{% endblock %}">
     <meta name="google-adsense-account" content="ca-pub-7534827047793212">
     <link rel="canonical" href="https://www.shajjadkhan.com/tools{% block canonical %}{% endblock %}">
+    <meta name="theme-color" content="#050811">
+
+    <!-- Open Graph / Social Media -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Shajjad Khan Tools">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:url" content="https://www.shajjadkhan.com{{ request.path }}">
+    <meta property="og:title" content="{{ self.title()|trim }}">
+    <meta property="og:description" content="{% block social_desc %}{{ self.meta_desc()|trim }}{% endblock %}">
+    <meta property="og:image" content="https://www.shajjadkhan.com/static/images/og-tools.png">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="FastTrack Tools — 50+ private in-browser utilities by Shajjad Khan">
+
+    <!-- Twitter / X -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ self.title()|trim }}">
+    <meta name="twitter:description" content="{{ self.social_desc()|trim }}">
+    <meta name="twitter:image" content="https://www.shajjadkhan.com/static/images/og-tools.png">
+    <meta name="twitter:image:alt" content="FastTrack Tools — 50+ private in-browser utilities by Shajjad Khan">
+
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='images/apple-touch-icon.png') }}">
+    <link rel="manifest" href="/manifest.webmanifest">
+    {% include 'partials/site-schema.html' %}
 
     <!-- Google AdSense Auto-Ads Script -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ adsense_pub_id|default('ca-pub-7534827047793212') }}"
