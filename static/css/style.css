@@ -2467,3 +2467,478 @@ body {
         animation: none !important;
     }
 }
+
+/* ==========================================================================
+   P1-5: ENGAGEMENT MODELS, TRUST & SECURITY, ENTERPRISE FAQ, LEAD MAGNET
+   ========================================================================== */
+
+/* Availability Strip */
+.availability-strip {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(16, 185, 129, 0.08);
+    border: 1px solid rgba(16, 185, 129, 0.28);
+    border-radius: 9999px;
+    padding: 7px 18px;
+    font-size: 0.88rem;
+    color: #cbd5e1;
+    margin-bottom: 2.25rem;
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.12);
+}
+
+.availability-strip strong {
+    color: #fff;
+}
+
+/* Engagement Cards Grid */
+.engagement-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+}
+
+.engagement-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-glass);
+    border-radius: 12px;
+    padding: 2rem 1.75rem;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.engagement-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(16, 185, 129, 0.35);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+}
+
+.engagement-card-featured {
+    border-color: rgba(16, 185, 129, 0.45);
+    background: linear-gradient(180deg, rgba(16, 185, 129, 0.06) 0%, rgba(14, 22, 40, 0.95) 100%);
+    box-shadow: 0 0 35px rgba(16, 185, 129, 0.08);
+}
+
+.engagement-pill {
+    display: inline-block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--emerald);
+    background: var(--emerald-subtle);
+    padding: 4px 10px;
+    border-radius: 9999px;
+    margin-bottom: 1.15rem;
+    align-self: flex-start;
+}
+
+.engagement-pill-cyan {
+    color: var(--cyan);
+    background: var(--cyan-subtle);
+}
+
+.engagement-pill-gold {
+    color: var(--gold);
+    background: rgba(245, 158, 11, 0.12);
+}
+
+.engagement-title {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.5rem;
+}
+
+.engagement-summary {
+    font-size: 0.9rem;
+    line-height: 1.55;
+    color: var(--text-dim);
+    margin-bottom: 1.25rem;
+}
+
+.engagement-cadence {
+    display: flex;
+    gap: 8px;
+    font-size: 0.82rem;
+    padding: 6px 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 6px;
+    margin-bottom: 1.25rem;
+}
+
+.cadence-label {
+    color: var(--text-dim);
+}
+
+.cadence-val {
+    color: #e2e8f0;
+    font-weight: 600;
+}
+
+.engagement-features {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1.5rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    font-size: 0.88rem;
+    color: #cbd5e1;
+}
+
+.engagement-features li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    line-height: 1.45;
+}
+
+.engagement-features .bi-icon {
+    flex-shrink: 0;
+    width: 15px;
+    height: 15px;
+    margin-top: 3px;
+}
+
+.engagement-fit {
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    padding-top: 1rem;
+    margin-top: auto;
+    margin-bottom: 1.35rem;
+    line-height: 1.5;
+}
+
+.engagement-fit strong {
+    color: #e2e8f0;
+}
+
+.btn-cyan-block {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 11px 18px;
+    background: rgba(0, 243, 255, 0.12);
+    border: 1px solid rgba(0, 243, 255, 0.4);
+    border-radius: 8px;
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.92rem;
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+}
+
+.btn-cyan-block:hover {
+    background: rgba(0, 243, 255, 0.22);
+    border-color: var(--cyan);
+    transform: translateY(-1px);
+    color: #fff;
+}
+
+.btn-outline-block {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 11px 18px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    color: #cbd5e1;
+    font-weight: 600;
+    font-size: 0.92rem;
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.btn-outline-block:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: #fff;
+}
+
+/* Trust & Security Card */
+.trust-security-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-glass);
+    border-radius: 12px;
+    padding: 2.25rem 2rem;
+    margin-top: 2rem;
+}
+
+.trust-header {
+    text-align: center;
+    max-width: 680px;
+    margin: 0 auto 2rem auto;
+}
+
+.trust-header h3 {
+    font-size: 1.4rem;
+    color: #fff;
+    margin: 0.5rem 0;
+}
+
+.trust-subtitle {
+    font-size: 0.92rem;
+    color: var(--text-dim);
+    line-height: 1.5;
+    margin: 0;
+}
+
+.trust-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+}
+
+.trust-item {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    padding: 1rem 1.15rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+}
+
+.trust-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.trust-icon .bi-icon {
+    width: 20px;
+    height: 20px;
+}
+
+.trust-content h4 {
+    font-size: 1rem;
+    color: #fff;
+    margin: 0 0 0.35rem 0;
+}
+
+.trust-content p {
+    font-size: 0.86rem;
+    color: var(--text-dim);
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* Enterprise FAQ Accordion */
+.faq-accordion {
+    max-width: 860px;
+    margin: 0 auto 2.5rem auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.faq-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border-glass);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.faq-item[open] {
+    border-color: rgba(16, 185, 129, 0.35);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+.faq-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+    gap: 1rem;
+}
+
+.faq-summary::-webkit-details-marker {
+    display: none;
+}
+
+.faq-question {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #f1f5f9;
+}
+
+.faq-icon-wrap {
+    flex-shrink: 0;
+    color: var(--text-dim);
+}
+
+.faq-chevron {
+    width: 16px;
+    height: 16px;
+    transition: transform 0.25s ease;
+}
+
+.faq-item[open] .faq-chevron {
+    transform: rotate(180deg);
+    color: var(--emerald);
+}
+
+.faq-answer {
+    padding: 0 1.5rem 1.25rem 1.5rem;
+    font-size: 0.92rem;
+    line-height: 1.65;
+    color: #cbd5e1;
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+    padding-top: 1rem;
+}
+
+.faq-answer p {
+    margin: 0;
+}
+
+.faq-answer strong {
+    color: #fff;
+}
+
+/* Lead Magnet Card */
+.lead-magnet-card {
+    max-width: 860px;
+    margin: 0 auto;
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(14, 22, 40, 0.95) 100%);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    border-radius: 12px;
+    padding: 1.75rem 2rem;
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-start;
+}
+
+.lead-magnet-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    background: rgba(245, 158, 11, 0.15);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.lead-magnet-icon .bi-icon {
+    width: 24px;
+    height: 24px;
+}
+
+.lead-magnet-content h4 {
+    font-size: 1.15rem;
+    color: #fff;
+    margin: 0 0 0.5rem 0;
+}
+
+.lead-magnet-content p {
+    font-size: 0.9rem;
+    color: #cbd5e1;
+    line-height: 1.55;
+    margin: 0 0 1.15rem 0;
+}
+
+.lead-magnet-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+/* Booking Option Card */
+.booking-option-card {
+    background: rgba(16, 185, 129, 0.06);
+    border: 1px solid rgba(16, 185, 129, 0.22);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+
+.booking-text strong {
+    display: block;
+    font-size: 0.92rem;
+    color: #fff;
+    margin-bottom: 3px;
+}
+
+.booking-text p {
+    margin: 0;
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    line-height: 1.4;
+}
+
+.btn-booking {
+    white-space: nowrap;
+    flex-shrink: 0;
+    font-size: 0.82rem;
+    padding: 8px 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-color: rgba(16, 185, 129, 0.35);
+    color: #fff;
+}
+
+.btn-booking:hover {
+    border-color: var(--emerald);
+    background: rgba(16, 185, 129, 0.15);
+    color: #fff;
+}
+
+/* Responsive adjustments for Engagement, FAQ & Trust */
+@media (max-width: 960px) {
+    .engagement-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .trust-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .lead-magnet-card {
+        flex-direction: column;
+        padding: 1.35rem 1.25rem;
+    }
+
+    .booking-option-card {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: left;
+    }
+
+    .btn-booking {
+        text-align: center;
+        justify-content: center;
+    }
+
+    .availability-strip {
+        font-size: 0.8rem;
+        padding: 6px 14px;
+        line-height: 1.4;
+    }
+}

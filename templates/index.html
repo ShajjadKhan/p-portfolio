@@ -34,7 +34,7 @@
     <link rel="preload" href="{{ url_for('static', filename='fonts/space-grotesk-latin.woff2') }}" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/fonts.css') }}?v=1.0">
     
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=2.5">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=2.6">
     <meta name="theme-color" content="#050811">
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32.png') }}">
@@ -57,6 +57,62 @@
         { "@type": "Country", "name": "Kuwait" },
         { "@type": "Country", "name": "Bahrain" },
         { "@type": "Country", "name": "Oman" }
+      ]
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Do you execute mutual NDAs before reviewing proprietary operational workflows?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, absolutely. Prior to reviewing internal procurement flows, supplier pricing, or existing architecture, we execute a standard bilateral Non-Disclosure Agreement. Your operational trade secrets, vendor matrices, and strategic data remain strictly confidential."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can our applications and databases remain hosted strictly within Saudi Arabia?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. All platforms are engineered for sovereign deployment on certified regional infrastructure (such as local Saudi cloud providers in Riyadh/Jeddah or client on-premise Debian/Ubuntu Linux servers) in full compliance with SDAIA's Personal Data Protection Law (PDPL) and CST data localization mandates."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Who owns the intellectual property and source code upon completion?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "You own 100% of the custom application source code, schemas, and intellectual property upon final delivery and settlement. There are no recurring proprietary software licensing fees from me, no vendor lock-in, and full technical handover documentation is included."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can custom builds integrate with existing ERPs, Oracle Opera, or ZATCA?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. We engineer compliant ZATCA Phase 2 cryptographic e-invoicing pipelines (generating signed UBL 2.1 XML and Phase 2 clearance webhooks), alongside REST, GraphQL, or database sync pipelines for systems like SAP, Oracle Opera, or custom legacy software."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What working hours do you keep, and how do we communicate during a build?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "I operate on Arabia Standard Time (AST / UTC+3), based in Riyadh. For active engagements, communication is conducted via dedicated Slack or Microsoft Teams channels with daily asynchronous updates, weekly milestone demos, and direct WhatsApp escalation for urgent operational alerts."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What support is provided after the system goes live in production?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Every turnkey delivery includes a complimentary 30-day production warranty covering bug fixes, minor parameter adjustments, and operational stabilization. Beyond the warranty, ongoing coverage is available via a fractional advisory retainer or an SLA-backed maintenance agreement."
+          }
+        }
       ]
     }
     </script>
@@ -638,6 +694,261 @@
             </div>
         </section>
 
+        <!-- Engagement Models Section -->
+        <section class="section engagement-section" id="engagement">
+            <div class="container">
+                <div class="section-badge text-gold"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-briefcase-fill"></use></svg> ENGAGEMENT MODELS</div>
+                <h2 class="section-title">Ways We Can Work Together</h2>
+                <p class="section-subtitle">
+                    Clear, transparent engagement models designed for operations leaders, hospitality executives, and technical founders.
+                </p>
+
+                <div class="availability-strip">
+                    <span class="status-pulse-dot"></span>
+                    <span><strong>Current Availability:</strong> Accepting select enterprise builds &amp; advisory engagements for Q4 2026 / Q1 2027 &bull; Direct founder access</span>
+                </div>
+
+                <div class="engagement-grid">
+                    <!-- Model 1: Turnkey Platform Delivery (Flagship) -->
+                    <div class="engagement-card engagement-card-featured">
+                        <div class="engagement-pill">MOST REQUESTED &bull; FULL LIFECYCLE</div>
+                        <div class="engagement-header">
+                            <h3 class="engagement-title">Turnkey Platform Build</h3>
+                            <p class="engagement-summary">
+                                Full-lifecycle engineering from initial workflow discovery to production deployment across your properties or client base.
+                            </p>
+                        </div>
+                        <div class="engagement-cadence">
+                            <span class="cadence-label">Cadence:</span>
+                            <span class="cadence-val">Milestone-Based Fixed Delivery</span>
+                        </div>
+                        <ul class="engagement-features">
+                            <li><svg class="bi-icon text-emerald" aria-hidden="true" focusable="false"><use href="#bi-check-circle-fill"></use></svg> Operational workflow mapping &amp; database schema design</li>
+                            <li><svg class="bi-icon text-emerald" aria-hidden="true" focusable="false"><use href="#bi-check-circle-fill"></use></svg> Multi-tier approval hierarchies &amp; state machines</li>
+                            <li><svg class="bi-icon text-emerald" aria-hidden="true" focusable="false"><use href="#bi-check-circle-fill"></use></svg> ZATCA Phase 2 / WhatsApp Cloud API integrations</li>
+                            <li><svg class="bi-icon text-emerald" aria-hidden="true" focusable="false"><use href="#bi-check-circle-fill"></use></svg> Sovereign deployment on GCC Linux cloud or on-premise</li>
+                            <li><svg class="bi-icon text-emerald" aria-hidden="true" focusable="false"><use href="#bi-check-circle-fill"></use></svg> 30-day post-launch warranty &amp; operational training</li>
+                        </ul>
+                        <div class="engagement-fit">
+                            <strong>Best for:</strong> Operations leaders replacing fragmented Excel/WhatsApp with an audited enterprise product.
+                        </div>
+                        <a href="#contact" class="btn btn-emerald-block engagement-cta" data-project-type="Turnkey Platform Build">
+                            <span>Start Platform Discussion &rarr;</span>
+                        </a>
+                    </div>
+
+                    <!-- Model 2: Architecture & Discovery Sprint -->
+                    <div class="engagement-card">
+                        <div class="engagement-pill engagement-pill-cyan">2–3 WEEK SPRINT</div>
+                        <div class="engagement-header">
+                            <h3 class="engagement-title">Architecture &amp; Discovery Sprint</h3>
+                            <p class="engagement-summary">
+                                High-intensity diagnostic sprint to audit existing bottlenecks, unblock technical debt, or map complex procurement logic.
+                            </p>
+                        </div>
+                        <div class="engagement-cadence">
+                            <span class="cadence-label">Cadence:</span>
+                            <span class="cadence-val">Fixed-Scope 2–3 Week Sprint</span>
+                        </div>
+                        <ul class="engagement-features">
+                            <li><svg class="bi-icon text-cyan" aria-hidden="true" focusable="false"><use href="#bi-check-circle-fill"></use></svg> Deep audit of database queries, concurrency &amp; bottlenecks</li>
+                            <li><svg class="bi-icon text-cyan" aria-hidden="true" focusable="false"><use href="#bi-check-circle-fill"></use></svg> ZATCA Phase 2 &amp; PDPL data residency readiness review</li>
+                            <li><svg class="bi-icon text-cyan" aria-hidden="true" focusable="false"><use href="#bi-check-circle-fill"></use></svg> Complete architectural blueprint &amp; schema specification</li>
+                            <li><svg class="bi-icon text-cyan" aria-hidden="true" focusable="false"><use href="#bi-check-circle-fill"></use></svg> Build vs. buy evaluation &amp; milestone execution plan</li>
+                        </ul>
+                        <div class="engagement-fit">
+                            <strong>Best for:</strong> Teams facing performance plateaus, regulatory deadlines, or planning a major rewrite.
+                        </div>
+                        <a href="#contact" class="btn btn-cyan-block engagement-cta" data-project-type="Architecture & Discovery Sprint">
+                            <span>Book Architecture Sprint &rarr;</span>
+                        </a>
+                    </div>
+
+                    <!-- Model 3: Fractional Retainer -->
+                    <div class="engagement-card">
+                        <div class="engagement-pill engagement-pill-gold">MONTHLY ADVISORY</div>
+                        <div class="engagement-header">
+                            <h3 class="engagement-title">Fractional Systems Architect</h3>
+                            <p class="engagement-summary">
+                                Principal-level architectural governance, infrastructure hardening, and technical guidance on a dedicated monthly retainer.
+                            </p>
+                        </div>
+                        <div class="engagement-cadence">
+                            <span class="cadence-label">Cadence:</span>
+                            <span class="cadence-val">Dedicated Monthly Capacity</span>
+                        </div>
+                        <ul class="engagement-features">
+                            <li><svg class="bi-icon text-gold" aria-hidden="true" focusable="false"><use href="#bi-check-circle-fill"></use></svg> Direct Slack/Teams engineering advisory channel</li>
+                            <li><svg class="bi-icon text-gold" aria-hidden="true" focusable="false"><use href="#bi-check-circle-fill"></use></svg> Weekly architecture reviews, PR audits &amp; schema advice</li>
+                            <li><svg class="bi-icon text-gold" aria-hidden="true" focusable="false"><use href="#bi-check-circle-fill"></use></svg> Incident escalation, backup verification &amp; uptime defense</li>
+                            <li><svg class="bi-icon text-gold" aria-hidden="true" focusable="false"><use href="#bi-check-circle-fill"></use></svg> Technical vendor vetting &amp; senior engineering hiring review</li>
+                        </ul>
+                        <div class="engagement-fit">
+                            <strong>Best for:</strong> Growing companies seeking principal-level guidance without full-time executive payroll.
+                        </div>
+                        <a href="#contact" class="btn btn-outline-block engagement-cta" data-project-type="Fractional Systems Architect">
+                            <span>Inquire About Retainer &rarr;</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Trust & Security Pillars -->
+                <div class="trust-security-card">
+                    <div class="trust-header">
+                        <div class="section-badge text-emerald" style="margin-bottom: 0.5rem;"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-shield-lock-fill"></use></svg> ENTERPRISE GOVERNANCE</div>
+                        <h3>Engineered for GCC Operational &amp; Compliance Standards</h3>
+                        <p class="trust-subtitle">Every system is constructed under zero-trust principles to safeguard enterprise data assets and meet regional mandates.</p>
+                    </div>
+
+                    <div class="trust-grid">
+                        <div class="trust-item">
+                            <div class="trust-icon text-emerald"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-shield-check"></use></svg></div>
+                            <div class="trust-content">
+                                <h4>Strict RBAC &amp; Tenant Isolation</h4>
+                                <p>Role-based access hierarchies (Requester, Dept Head, Finance, GM) with row-level data segregation preventing cross-property leakage.</p>
+                            </div>
+                        </div>
+
+                        <div class="trust-item">
+                            <div class="trust-icon text-cyan"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-clock-history"></use></svg></div>
+                            <div class="trust-content">
+                                <h4>Cryptographic Audit Trails</h4>
+                                <p>Every PO generation, quote approval, and status change is immutably timestamped with user ID, IP address, and state history.</p>
+                            </div>
+                        </div>
+
+                        <div class="trust-item">
+                            <div class="trust-icon text-gold"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-server"></use></svg></div>
+                            <div class="trust-content">
+                                <h4>Saudi PDPL Sovereign Residency</h4>
+                                <p>Engineered for deployment within Kingdom cloud regions (Riyadh/Jeddah) or on-premise Linux clusters compliant with SDAIA and CST.</p>
+                            </div>
+                        </div>
+
+                        <div class="trust-item">
+                            <div class="trust-icon text-emerald"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-file-earmark-check"></use></svg></div>
+                            <div class="trust-content">
+                                <h4>ZATCA Phase 2 E-Invoicing</h4>
+                                <p>Compliant cryptographic UBL 2.1 XML generation, invoice hash chains, ECDSA signatures, and automated clearance webhooks.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Enterprise FAQ Section -->
+        <section class="section faq-section" id="faq">
+            <div class="container">
+                <div class="section-badge text-cyan"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-chat-left-text-fill"></use></svg> QUESTIONS &amp; GOVERNANCE</div>
+                <h2 class="section-title">Enterprise FAQ</h2>
+                <p class="section-subtitle">
+                    Direct answers regarding confidentiality, IP ownership, data residency, and collaboration workflows.
+                </p>
+
+                <div class="faq-accordion">
+                    <details class="faq-item" open>
+                        <summary class="faq-summary">
+                            <span class="faq-question">Do you execute mutual NDAs before reviewing proprietary workflows?</span>
+                            <span class="faq-icon-wrap"><svg class="bi-icon faq-chevron" aria-hidden="true" focusable="false"><use href="#bi-chevron-down"></use></svg></span>
+                        </summary>
+                        <div class="faq-answer">
+                            <p>
+                                <strong>Yes, absolutely.</strong> Prior to reviewing internal procurement flows, supplier pricing, or existing architecture, we execute a standard bilateral Non-Disclosure Agreement. Your operational trade secrets, vendor matrices, and strategic data remain strictly confidential.
+                            </p>
+                        </div>
+                    </details>
+
+                    <details class="faq-item">
+                        <summary class="faq-summary">
+                            <span class="faq-question">Can our applications and databases remain hosted strictly within Saudi Arabia?</span>
+                            <span class="faq-icon-wrap"><svg class="bi-icon faq-chevron" aria-hidden="true" focusable="false"><use href="#bi-chevron-down"></use></svg></span>
+                        </summary>
+                        <div class="faq-answer">
+                            <p>
+                                <strong>Yes.</strong> All platforms are engineered for sovereign deployment on certified regional infrastructure (such as local Saudi cloud providers in Riyadh/Jeddah or client on-premise Debian/Ubuntu Linux servers) in full compliance with SDAIA's Personal Data Protection Law (PDPL) and CST data localization mandates.
+                            </p>
+                        </div>
+                    </details>
+
+                    <details class="faq-item">
+                        <summary class="faq-summary">
+                            <span class="faq-question">Who owns the intellectual property and source code upon completion?</span>
+                            <span class="faq-icon-wrap"><svg class="bi-icon faq-chevron" aria-hidden="true" focusable="false"><use href="#bi-chevron-down"></use></svg></span>
+                        </summary>
+                        <div class="faq-answer">
+                            <p>
+                                <strong>You own 100% of the custom application source code, schemas, and intellectual property</strong> upon final delivery and settlement. There are no recurring proprietary software licensing fees from me, no vendor lock-in, and full technical handover documentation is included.
+                            </p>
+                        </div>
+                    </details>
+
+                    <details class="faq-item">
+                        <summary class="faq-summary">
+                            <span class="faq-question">Can custom builds integrate with existing ERPs, Oracle Opera, or ZATCA?</span>
+                            <span class="faq-icon-wrap"><svg class="bi-icon faq-chevron" aria-hidden="true" focusable="false"><use href="#bi-chevron-down"></use></svg></span>
+                        </summary>
+                        <div class="faq-answer">
+                            <p>
+                                <strong>Yes.</strong> We engineer compliant ZATCA Phase 2 cryptographic e-invoicing pipelines (generating signed UBL 2.1 XML and Phase 2 clearance webhooks), alongside REST, GraphQL, or database sync pipelines for systems like SAP, Oracle Opera, or custom legacy software.
+                            </p>
+                        </div>
+                    </details>
+
+                    <details class="faq-item">
+                        <summary class="faq-summary">
+                            <span class="faq-question">What working hours do you keep, and how do we communicate during a build?</span>
+                            <span class="faq-icon-wrap"><svg class="bi-icon faq-chevron" aria-hidden="true" focusable="false"><use href="#bi-chevron-down"></use></svg></span>
+                        </summary>
+                        <div class="faq-answer">
+                            <p>
+                                I operate on <strong>Arabia Standard Time (AST / UTC+3)</strong>, based in Riyadh. For active engagements, communication is conducted via dedicated Slack or Microsoft Teams channels with daily asynchronous updates, weekly milestone demos, and direct WhatsApp escalation for urgent operational alerts.
+                            </p>
+                        </div>
+                    </details>
+
+                    <details class="faq-item">
+                        <summary class="faq-summary">
+                            <span class="faq-question">What support is provided after the system goes live in production?</span>
+                            <span class="faq-icon-wrap"><svg class="bi-icon faq-chevron" aria-hidden="true" focusable="false"><use href="#bi-chevron-down"></use></svg></span>
+                        </summary>
+                        <div class="faq-answer">
+                            <p>
+                                Every turnkey delivery includes a complimentary <strong>30-day production warranty</strong> covering bug fixes, minor parameter adjustments, and operational stabilization. Beyond the warranty, ongoing coverage is available via a fractional advisory retainer or an SLA-backed maintenance agreement.
+                            </p>
+                        </div>
+                    </details>
+                </div>
+
+                <!-- Lead Magnet Callout Card -->
+                <div class="lead-magnet-card">
+                    <div class="lead-magnet-icon">
+                        <svg class="bi-icon text-gold" aria-hidden="true" focusable="false"><use href="#bi-file-earmark-check"></use></svg>
+                    </div>
+                    <div class="lead-magnet-content">
+                        <h4>GCC Hotel Procurement &amp; Operations Automation Blueprint</h4>
+                        <p>
+                            Evaluating software to streamline purchase orders, eliminate WhatsApp leakage, and prepare for ZATCA Phase 2 compliance? Explore our interactive tools and implementation case studies:
+                        </p>
+                        <div class="lead-magnet-actions">
+                            <a href="/calculator/hotel-procurement-roi" class="btn btn-gold-sm">
+                                <svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-sliders"></use></svg>
+                                <span>Hotel Savings Calculator</span>
+                            </a>
+                            <a href="/compare/tawreedflow-vs-whatsapp-excel" class="btn btn-outline-sm">
+                                <svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-diagram-3-fill"></use></svg>
+                                <span>TawreedFlow vs. WhatsApp Matrix</span>
+                            </a>
+                            <a href="/work/tawreedflow" class="btn btn-outline-sm">
+                                <svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-layers-fill"></use></svg>
+                                <span>Read TawreedFlow Case Study &rarr;</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- Interactive Contact Section -->
         <section class="section contact-section" id="contact">
             <div class="container">
@@ -647,20 +958,50 @@
                             <div class="section-badge text-emerald"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-chat-dots-fill"></use></svg> GET IN TOUCH</div>
                             <h2 class="section-title">Let's Discuss Your Next High-Impact Initiative</h2>
                             <p class="contact-description">
-                                Whether you're looking to architect a scalable B2B SaaS platform, automate complex network operations, or evaluate strategic technical advisory, I'd welcome the conversation.
+                                Whether you're looking to architect a scalable B2B SaaS platform, automate complex operations, or evaluate strategic technical advisory, I'd welcome the conversation.
                             </p>
 
                             <div class="contact-methods">
                                 <div class="method-item">
                                     <div class="method-icon"><svg class="bi-icon text-emerald" aria-hidden="true" focusable="false"><use href="#bi-envelope-check"></use></svg></div>
                                     <div>
-                                        <div class="method-label">Direct Email</div>
+                                        <div class="method-label">Official Domain Email</div>
                                         <div class="method-value">
-                                            <a href="mailto:shajjadkhan.me@hotmail.com" class="link-emerald">shajjadkhan.me@hotmail.com</a>
+                                            <a href="mailto:hello@shajjadkhan.com" class="link-emerald">hello@shajjadkhan.com</a>
                                         </div>
                                         <div class="direct-email-btns">
-                                            <a href="mailto:shajjadkhan.me@hotmail.com" class="btn btn-emerald-xs"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-envelope-fill"></use></svg> Send Email</a>
+                                            <a href="mailto:hello@shajjadkhan.com" class="btn btn-emerald-xs"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-envelope-fill"></use></svg> Send Email</a>
                                             <button type="button" class="btn btn-outline-xs" id="copy-email-btn"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-clipboard"></use></svg> Copy Email</button>
+                                        </div>
+                                        <div class="method-sub" style="margin-top: 6px; font-size: 0.8rem; color: var(--text-dim);">
+                                            Direct inbox: <a href="mailto:shajjadkhan.me@hotmail.com" class="link-muted">shajjadkhan.me@hotmail.com</a>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="method-item">
+                                    <div class="method-icon"><svg class="bi-icon text-emerald" aria-hidden="true" focusable="false"><use href="#bi-whatsapp"></use></svg></div>
+                                    <div>
+                                        <div class="method-label">WhatsApp Click-to-Chat</div>
+                                        <div class="method-value">
+                                            <a href="https://wa.me/966500000000?text=Hi%20Shajjad%2C%20I%20would%20like%20to%20discuss%20a%20project" target="_blank" rel="noopener" class="link-emerald">Open WhatsApp Conversation ↗</a>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="method-item">
+                                    <div class="method-icon"><svg class="bi-icon text-cyan" aria-hidden="true" focusable="false"><use href="#bi-linkedin"></use></svg></div>
+                                    <div>
+                                        <div class="method-label">Executive Network</div>
+                                        <div class="method-value">
+                                            <a href="https://www.linkedin.com/in/shajjadkhan/" target="_blank" rel="noopener" class="link-cyan">linkedin.com/in/shajjadkhan ↗</a>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="method-item">
+                                    <div class="method-icon"><svg class="bi-icon text-gold" aria-hidden="true" focusable="false"><use href="#bi-github"></use></svg></div>
+                                    <div>
+                                        <div class="method-label">Source Repositories</div>
+                                        <div class="method-value">
+                                            <a href="https://github.com/ShajjadKhan" target="_blank" rel="noopener" class="link-gold">github.com/ShajjadKhan ↗</a>
                                         </div>
                                     </div>
                                 </div>
@@ -671,38 +1012,30 @@
                                         <div class="method-value">Riyadh, Saudi Arabia &bull; Active</div>
                                     </div>
                                 </div>
-                                <div class="method-item">
-                                    <div class="method-icon"><svg class="bi-icon text-cyan" aria-hidden="true" focusable="false"><use href="#bi-globe2"></use></svg></div>
-                                    <div>
-                                        <div class="method-label">Personal Domain</div>
-                                        <div class="method-value">www.shajjadkhan.com</div>
-                                    </div>
-                                </div>
-                                <div class="method-item">
-                                    <div class="method-icon"><svg class="bi-icon text-gold" aria-hidden="true" focusable="false"><use href="#bi-building"></use></svg></div>
-                                    <div>
-                                        <div class="method-label">Enterprise Venture</div>
-                                        <div class="method-value"><a href="https://tawreedflow.com" target="_blank" rel="noopener" class="link-gold">tawreedflow.com</a></div>
-                                    </div>
-                                </div>
-                                <div class="method-item">
-                                    <div class="method-icon"><svg class="bi-icon text-cyan" aria-hidden="true" focusable="false"><use href="#bi-grid-3x3-gap-fill"></use></svg></div>
-                                    <div>
-                                        <div class="method-label">Developer Tools Suite</div>
-                                        <div class="method-value"><a href="{{ tools_url }}" target="_blank" rel="noopener" class="link-cyan">50+ Serverless Utilities ↗</a></div>
-                                    </div>
-                                </div>
                             </div>
                         </div>
 
                         <div class="contact-form-column">
+                            <!-- Direct Calendar Booking Option Card -->
+                            <div class="booking-option-card">
+                                <div class="booking-text">
+                                    <strong>Prefer an immediate calendar discussion?</strong>
+                                    <p>Schedule a 20-minute introductory architecture call directly.</p>
+                                </div>
+                                <a href="https://cal.com/shajjadkhan" target="_blank" rel="noopener" class="btn btn-outline-sm btn-booking">
+                                    <svg class="bi-icon text-emerald" aria-hidden="true" focusable="false"><use href="#bi-calendar-event"></use></svg>
+                                    <span>Book 20-Min Call (Cal.com) ↗</span>
+                                </a>
+                            </div>
+
                             <form id="contact-form" class="cyber-form">
                                 <div id="form-success" class="form-success d-none" role="status" aria-live="polite" tabindex="-1">
                                     <div class="form-success-icon"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-envelope-check"></use></svg></div>
                                     <h4>Message received</h4>
-                                    <p>Thank you — I’ll reply within one business day. If you’d rather write directly, my inbox is open.</p>
+                                    <p>Thank you — I’ll reply within one business day. Need an immediate slot or direct discussion?</p>
                                     <div class="form-success-actions">
-                                        <a href="mailto:shajjadkhan.me@hotmail.com?subject=Portfolio%20inquiry" class="btn btn-emerald-lg">Email directly</a>
+                                        <a href="mailto:hello@shajjadkhan.com?subject=Portfolio%20inquiry" class="btn btn-emerald-lg">Email directly</a>
+                                        <a href="https://cal.com/shajjadkhan" target="_blank" rel="noopener" class="btn btn-outline-lg"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-calendar-event"></use></svg> Book Calendar Slot</a>
                                         <button type="button" id="form-reset-btn" class="btn btn-outline-lg">Send another message</button>
                                     </div>
                                 </div>
@@ -742,10 +1075,11 @@
                                     <div class="input-field">
                                         <label for="contact-project-type">Subject / Project Scope</label>
                                         <select id="contact-project-type" name="project_type">
+                                            <option value="Turnkey Platform Build">Turnkey Platform Build (B2B SaaS / ERP)</option>
+                                            <option value="Architecture & Discovery Sprint">Architecture &amp; Discovery Sprint (2–3 Weeks)</option>
+                                            <option value="Fractional Systems Architect">Fractional Systems Architect Retainer</option>
                                             <option value="TawreedFlow Inquiry">TawreedFlow SaaS Inquiry</option>
-                                            <option value="Enterprise SaaS Development">Enterprise SaaS Architecture</option>
-                                            <option value="Telecom & Network Automation">Telecom & Network Automation</option>
-                                            <option value="Technical Advisory / Fractional CTO">Technical Advisory / Consulting</option>
+                                            <option value="Telecom & Network Automation">Telecom &amp; Network Automation</option>
                                             <option value="General Collaboration">General Inquiries</option>
                                         </select>
                                     </div>
@@ -760,7 +1094,10 @@
                                         <span>Send Message</span>
                                     </button>
 
-                                    <p class="form-privacy">Your details are used only to reply to this inquiry. No newsletters, no third-party sharing.</p>
+                                    <p class="form-privacy">
+                                        <svg class="bi-icon text-emerald" style="width:13px;height:13px;vertical-align:-1px;" aria-hidden="true" focusable="false"><use href="#bi-shield-check"></use></svg>
+                                        Confidential &amp; PDPL compliant. Mutual NDA signed upon request. Zero third-party tracking or data sharing.
+                                    </p>
                                 </div>
                             </form>
                         </div>
@@ -784,21 +1121,23 @@
             </div>
 
             <div class="footer-right">
-                <div class="system-status-indicator">
+                <a href="/health" target="_blank" rel="noopener" class="system-status-indicator" title="View Real-Time System Health Endpoint">
                     <span class="status-dot"></span>
                     <span>Systems Operational &bull; All Services Normal</span>
-                </div>
+                </a>
                 <div class="footer-links">
                     <a href="/work"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-layers-fill"></use></svg> Case Studies</a>
                     <a href="https://tawreedflow.com" target="_blank" rel="noopener"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-shield-check"></use></svg> TawreedFlow</a>
                     <a href="{{ tools_url }}" target="_blank" rel="noopener"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-grid-3x3-gap-fill"></use></svg> FastTrack Tools</a>
                     <a href="/writing"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-pencil-square"></use></svg> Writing</a>
+                    <a href="https://github.com/ShajjadKhan" target="_blank" rel="noopener"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-github"></use></svg> GitHub</a>
+                    <a href="https://www.linkedin.com/in/shajjadkhan/" target="_blank" rel="noopener"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-linkedin"></use></svg> LinkedIn</a>
                     <a href="#hero"><svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-arrow-up"></use></svg> Top</a>
                 </div>
             </div>
         </div>
     </footer>
 
-    <script src="{{ url_for('static', filename='js/main.js') }}?v=1.3"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}?v=1.4"></script>
 </body>
 </html>
