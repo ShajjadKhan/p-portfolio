@@ -18,13 +18,13 @@ TOOLS = [
     {
         "id": "pdf-editor",
         "slug": "pdf-editor",
-        "title": "High-Accuracy PDF Editor & Signer",
+        "title": "High-Accuracy PDF Editor & Scanned Paper Suite",
         "category": "pdf",
-        "badge": "High Accuracy",
+        "badge": "Photoshop Mode",
         "icon": "✍️📄",
-        "short_desc": "Edit PDFs with coordinate accuracy: add text, whiteout/erase, draw signatures, highlight, insert images/stamps, and export vector PDFs.",
-        "detailed_desc": "Comprehensive in-browser precision PDF editor with lossless vector export. Add custom formatted text (Helvetica, Times, Courier), erase or redact existing content with whiteout boxes, draw freehand notes and multi-color translucent highlighters, insert signatures and images, draw shapes, and export crystal-clear PDFs with sub-pixel coordinate alignment and zero quality degradation.",
-        "keywords": ["pdf editor", "edit pdf", "pdf edit", "high accuracy pdf edit", "pdf signer", "pdf signature", "pdf whiteout", "pdf redact", "add text to pdf", "pdf annotations", "fill pdf", "pdf eraser"],
+        "short_desc": "Edit PDFs and change dates on scanned papers with Photoshop perfection: Clone Stamp, Paper Patch texture healing, Eyedropper ink match, optical scan blur & micro-tilt, plus Word mode and vector export.",
+        "detailed_desc": "Precision PDF editor with built-in Photoshop-grade scanned document tools. Erase and change dates on scanned paper seamlessly with Clone Stamp texture cloning, Paper Patch edge-feathered healing, background & ink color Eyedropper, optical scan softness blur, micro-tilt angle alignment (-5° to +5°), letter tracking, and paper grain synthesis. Also features Word-mode in-place vector text editing, signatures, and lossless high-DPI export.",
+        "keywords": ["pdf editor", "edit pdf", "change date on scanned paper", "scanned pdf editor", "clone stamp pdf", "pdf date changer", "pdf paper patch", "photoshop pdf edit", "high accuracy pdf edit", "pdf signer", "pdf signature", "pdf whiteout", "pdf eraser", "fill pdf"],
         "client_powered": True
     },
     {

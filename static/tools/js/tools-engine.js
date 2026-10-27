@@ -1389,10 +1389,10 @@ const ToolRenderers = {
             statusBox.textContent = 'Rendering PDF page previews...';
             try {
                 const arrayBuffer = await Utils.readFileAsArrayBuffer(file);
+                currentDoc = new Uint8Array(arrayBuffer.slice(0));
                 const pdfjs = window.pdfjsLib;
-                const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
+                const loadingTask = pdfjs.getDocument({ data: currentDoc.slice(0) });
                 const pdf = await loadingTask.promise;
-                currentDoc = arrayBuffer;
                 pagesData = [];
 
                 for (let i = 1; i <= pdf.numPages; i++) {
@@ -1499,7 +1499,7 @@ const ToolRenderers = {
             statusBox.textContent = 'Rebuilding PDF document...';
             try {
                 const { PDFDocument, degrees } = window.PDFLib;
-                const sourcePdf = await PDFDocument.load(currentDoc, { ignoreEncryption: true });
+                const sourcePdf = await PDFDocument.load(currentDoc.slice(0), { ignoreEncryption: true });
                 const newPdf = await PDFDocument.create();
 
                 for (const item of activePages) {
@@ -1552,9 +1552,10 @@ const ToolRenderers = {
         Utils.createDropzone(dz, 'application/pdf', false, async (files) => {
             if (!files.length) return;
             try {
-                pdfBytes = await Utils.readFileAsArrayBuffer(files[0]);
+                const rawBuf = await Utils.readFileAsArrayBuffer(files[0]);
+                pdfBytes = new Uint8Array(rawBuf.slice(0));
                 const { PDFDocument } = window.PDFLib;
-                const doc = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
+                const doc = await PDFDocument.load(pdfBytes.slice(0), { ignoreEncryption: true });
                 totalPages = doc.getPageCount();
                 pagesCountEl.textContent = `${totalPages} Pages`;
                 container.querySelector('#split-ranges').value = `1-${Math.min(totalPages, 3)}`;
@@ -1597,7 +1598,7 @@ const ToolRenderers = {
                 }
 
                 const { PDFDocument } = window.PDFLib;
-                const source = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
+                const source = await PDFDocument.load(pdfBytes.slice(0), { ignoreEncryption: true });
                 const target = await PDFDocument.create();
 
                 const copiedPages = await target.copyPages(source, Array.from(pagesToExtract));
@@ -1681,10 +1682,11 @@ const ToolRenderers = {
     },
 
     // =========================================================================
-    // High-Accuracy PDF Editor & Precision Signer (with Word-Style In-Place Text Editing)
+    // High-Accuracy PDF Editor & Photoshop Scanned Paper Suite
+    // (Photoshop Paper Patch, Clone Stamp, Eyedropper, Scan Softness, Micro-Tilt & Lossless/High-DPI Hybrid Export)
     // =========================================================================
     'pdf-editor': (container) => {
-        let currentPdfBuffer = null;
+        let currentPdfBytes = null;
         let pdfDoc = null;
         let originalFileName = 'document.pdf';
         let totalPages = 0;
@@ -1694,8 +1696,11 @@ const ToolRenderers = {
         let pageWidthPt = 595.28;
         let pageHeightPt = 841.89;
 
-        // Active tool: 'edit-text' is default Word-mode for editing existing text
-        let activeTool = 'edit-text'; // edit-text, select, text, whiteout, redact, draw, highlight, shape, signature, image, stamp
+        // Active tool
+        // Photoshop Scanned Tools: 'patch', 'clone-stamp', 'eyedropper', 'date-stamp'
+        // Core Tools: 'edit-text', 'select', 'text', 'whiteout', 'redact', 'draw', 'highlight', 'shape', 'signature', 'image', 'stamp'
+        let activeTool = 'edit-text';
+        let previousTool = 'select';
         let selectedId = null;
         let activeTextBlock = null;
         let shapeSubtype = 'rect'; // rect, circle, line, arrow
@@ -1703,12 +1708,44 @@ const ToolRenderers = {
         // Active tool styling properties
         const textProps = {
             fontFamily: 'Helvetica',
-            fontSize: 14,
-            color: '#000000',
+            fontSize: 13,
+            color: '#1f2429', // Natural scanned document dark ink
             bgColor: 'transparent',
             bold: false,
-            italic: false
+            italic: false,
+            blur: 0.6, // Optical scanner softness in px
+            rotation: 0.0, // Micro-tilt in degrees (-5° to +5°)
+            letterSpacing: 0.5, // Character tracking in px (-2 to 8)
+            blendMode: 'multiply', // 'multiply' realistic paper absorption or 'normal'
+            opacity: 0.96
         };
+
+        const patchProps = {
+            feather: 3, // Edge feathering in pt (0 to 10)
+            noise: 4,   // Subtle synthesized paper grain % (0 to 20)
+            opacity: 1.0
+        };
+
+        const cloneStampProps = {
+            brushSize: 18, // Brush diameter in pt (4 to 60)
+            feather: 50,   // Softness radial falloff % (0 to 100)
+            opacity: 1.0
+        };
+
+        let cloneSource = null; // { ptX, ptY }
+        let isSettingCloneSource = false;
+        let activeStrokeCloneStart = null;
+        let activeCloneStroke = null;
+
+        let eyedropperTarget = 'paper'; // 'paper' or 'ink'
+        let sampledPaperColor = '#f5f4ef'; // Sampled off-white / scanned paper tone
+        let sampledInkColor = '#1f2429';   // Sampled document ink tone
+
+        const dateProps = {
+            format: 'YYYY-MM-DD',
+            dateVal: new Date().toISOString().split('T')[0]
+        };
+
         const penProps = {
             color: '#000000',
             width: 2
@@ -1724,10 +1761,11 @@ const ToolRenderers = {
         };
 
         // Data Stores by Page Number
-        const pageTextBlocks = {};  // { [pageNum]: [ { id, str, origStr, ptX, ptY, ptW, ptH, fontSize, fontFamily, color, edited } ] }
-        const pageAnnotations = {}; // { [pageNum]: [ user-added items ] }
-        const pageDrawings = {};    // { [pageNum]: [ drawing strokes ] }
+        const pageTextBlocks = {};  // { [pageNum]: [ text blocks ] }
+        const pageAnnotations = {}; // { [pageNum]: [ user-added items: patch, text, whiteout, etc. ] }
+        const pageDrawings = {};    // { [pageNum]: [ drawing & clone-stamp strokes ] }
         const pageRotations = {};   // { [pageNum]: rotationDeg }
+        const pageIsScanned = {};   // { [pageNum]: boolean }
 
         // Undo & Redo History
         const undoStack = [];
@@ -1735,7 +1773,7 @@ const ToolRenderers = {
 
         // Interaction state
         let isInteracting = false;
-        let interactionMode = null; // 'drag', 'resize', 'create-box', 'draw'
+        let interactionMode = null; // 'drag', 'resize', 'create-box', 'create-patch', 'clone-stamp', 'draw'
         let resizeHandle = null;
         let startClientX = 0, startClientY = 0;
         let startPtX = 0, startPtY = 0, startPtW = 0, startPtH = 0;
@@ -1747,9 +1785,9 @@ const ToolRenderers = {
                 <!-- Dropzone State -->
                 <div id="pdf-ed-dropzone" class="pdf-ed-dropzone-box">
                     <div class="pdf-ed-dropzone-icon">✍️📄</div>
-                    <div class="pdf-ed-dropzone-title">High-Accuracy PDF Editor & Signer</div>
+                    <div class="pdf-ed-dropzone-title">High-Accuracy PDF Editor & Photoshop Scanned Paper Suite</div>
                     <div class="pdf-ed-dropzone-sub">
-                        Direct in-place text editing (Word Mode): click any existing date, number, or text in your PDF to edit directly with Backspace and keyboard, plus signatures, whiteout & annotations.
+                        Change dates and edit text on scanned documents with Photoshop perfection: Clone Stamp, Paper Patch texture healing, Eyedropper ink matching, optical scan blur & micro-tilt, plus Word Mode in-place vector editing.
                     </div>
                     <div class="pdf-ed-dropzone-actions">
                         <button type="button" class="btn-primary" id="pdf-ed-choose-btn">Choose PDF File</button>
@@ -1779,9 +1817,9 @@ const ToolRenderers = {
                         </div>
 
                         <div class="pdf-ed-zoom-group">
-                            <button type="button" class="pdf-ed-btn-mini" id="pdf-ed-zoom-out" title="Zoom Out">➖</button>
+                            <button type="button" class="pdf-ed-btn-mini" id="pdf-ed-zoom-out" title="Zoom Out (Down to 30%)">➖</button>
                             <span class="pdf-ed-zoom-val" id="pdf-ed-zoom-txt">100%</span>
-                            <button type="button" class="pdf-ed-btn-mini" id="pdf-ed-zoom-in" title="Zoom In">➕</button>
+                            <button type="button" class="pdf-ed-btn-mini" id="pdf-ed-zoom-in" title="Zoom In (Up to 400% for pixel micro-alignment)">➕</button>
                             <button type="button" class="pdf-ed-btn-mini" id="pdf-ed-zoom-fit" title="Fit Width">Fit Width</button>
                         </div>
 
@@ -1790,32 +1828,53 @@ const ToolRenderers = {
                             <button type="button" class="pdf-ed-btn-mini" id="pdf-ed-redo-btn" title="Redo (Ctrl+Y)">↪ Redo</button>
                             <button type="button" class="pdf-ed-btn-mini" id="pdf-ed-clear-btn" title="Clear Page Annotations">🗑️ Clear</button>
                             <button type="button" class="pdf-ed-btn-mini" id="pdf-ed-new-btn" title="Open Another PDF">📂 Open</button>
-                            <button type="button" class="pdf-ed-export-btn" id="pdf-ed-export-btn">
+                            <button type="button" class="pdf-ed-export-btn" id="pdf-ed-export-btn" title="Lossless Vector & High-DPI Scanned Paper Export">
                                 <span>💾</span>
-                                <span>Export Vector PDF</span>
+                                <span>Export Perfect PDF</span>
                             </button>
                         </div>
                     </div>
 
                     <!-- Tool Ribbon -->
                     <div class="pdf-ed-ribbon" id="pdf-ed-tools">
-                        <button type="button" class="pdf-ed-tool-btn active" data-tool="edit-text" title="Click directly on existing text/dates to edit with Backspace and typing like Word">
-                            <span>📝</span> Edit Text (Word Mode)
+                        <!-- Photoshop Scanned Document Suite -->
+                        <button type="button" class="pdf-ed-tool-btn tool-ps" data-tool="patch" title="Select clean paper nearby to patch over old date with feathered edge [J]">
+                            <span>🩹</span> Paper Patch
                         </button>
-                        <button type="button" class="pdf-ed-tool-btn" data-tool="select" title="Select, Move, and Resize Elements">
+                        <button type="button" class="pdf-ed-tool-btn tool-ps" data-tool="clone-stamp" title="Alt+Click clean paper to sample texture, then brush over old date [S]">
+                            <span>🖌️</span> Clone Stamp
+                        </button>
+                        <button type="button" class="pdf-ed-tool-btn tool-ps" data-tool="eyedropper" title="Sample exact paper color or text ink color [I]">
+                            <span>💉</span> Eyedropper
+                        </button>
+                        <button type="button" class="pdf-ed-tool-btn tool-ps" data-tool="date-stamp" title="Stamp new date with matching ink, font, tilt, tracking & scan softness">
+                            <span>📅</span> Date Tool
+                        </button>
+
+                        <div class="pdf-ed-tool-sep"></div>
+
+                        <!-- Core PDF Editing -->
+                        <button type="button" class="pdf-ed-tool-btn active" data-tool="edit-text" title="Click directly on existing text/dates to edit with Backspace and typing like Word">
+                            <span>📝</span> Word Mode
+                        </button>
+                        <button type="button" class="pdf-ed-tool-btn" data-tool="select" title="Select, Move, and Micro-Nudge Elements with Arrow Keys [V]">
                             <span>👆</span> Select / Move
                         </button>
+
                         <div class="pdf-ed-tool-sep"></div>
-                        <button type="button" class="pdf-ed-tool-btn" data-tool="text" title="Click anywhere to add new text">
+
+                        <button type="button" class="pdf-ed-tool-btn" data-tool="text" title="Click anywhere to add text with optical scan blur & micro-tilt">
                             <span>🔤</span> Add Text
                         </button>
-                        <button type="button" class="pdf-ed-tool-btn" data-tool="whiteout" title="Drag box over text to erase/whiteout">
-                            <span>⬜</span> Whiteout / Erase
+                        <button type="button" class="pdf-ed-tool-btn" data-tool="whiteout" title="Cover text with background color matching, feathering & noise">
+                            <span>⬜</span> Whiteout / Match
                         </button>
                         <button type="button" class="pdf-ed-tool-btn" data-tool="redact" title="Drag black box to redact confidential info">
                             <span>⬛</span> Redact
                         </button>
+
                         <div class="pdf-ed-tool-sep"></div>
+
                         <button type="button" class="pdf-ed-tool-btn" data-tool="draw" title="Freehand Pen Tool">
                             <span>✏️</span> Pen
                         </button>
@@ -1825,7 +1884,9 @@ const ToolRenderers = {
                         <button type="button" class="pdf-ed-tool-btn" data-tool="shape" title="Draw Rectangles, Circles, Lines, Arrows">
                             <span>🔲</span> Shapes
                         </button>
+
                         <div class="pdf-ed-tool-sep"></div>
+
                         <button type="button" class="pdf-ed-tool-btn" data-tool="signature" title="Insert Drawn or Typed Signature">
                             <span>✍️</span> Signature
                         </button>
@@ -1845,13 +1906,34 @@ const ToolRenderers = {
                     <div class="pdf-ed-main-layout">
                         <div class="pdf-ed-sidebar" id="pdf-ed-sidebar"></div>
                         <div class="pdf-ed-viewport" id="pdf-ed-viewport">
+                            <!-- Scanned Document Detected Smart Banner -->
+                            <div id="pdf-ed-scanned-banner" class="pdf-ed-scanned-banner" style="display: none;">
+                                <div class="pdf-ed-scanned-banner-text">
+                                    <span class="pdf-ed-scanned-pill">📸 SCANNED DOCUMENT</span>
+                                    <span>This page is an image scan. Use <b>Paper Patch [J]</b> or <b>Clone Stamp [S]</b> to erase the date, then use <b>Date Tool</b> with matching ink, optical scan blur & micro-tilt!</span>
+                                </div>
+                                <div class="pdf-ed-scanned-banner-actions">
+                                    <button type="button" class="pdf-ed-btn-mini" id="banner-btn-patch" style="background:rgba(0,229,153,0.18); border-color:var(--accent); color:var(--accent);">🩹 Paper Patch</button>
+                                    <button type="button" class="pdf-ed-btn-mini" id="banner-btn-date" style="background:rgba(0,194,255,0.18); border-color:var(--accent-blue); color:var(--accent-blue);">📅 Add Matched Date</button>
+                                    <button type="button" class="pdf-ed-btn-mini" id="banner-btn-dismiss" title="Dismiss">✕</button>
+                                </div>
+                            </div>
+
                             <div class="pdf-ed-stage-wrap" id="pdf-ed-stage-wrap">
                                 <div class="pdf-ed-stage" id="pdf-ed-stage">
                                     <canvas class="pdf-ed-base-canvas" id="pdf-ed-base-canvas"></canvas>
                                     <div class="pdf-ed-text-layer" id="pdf-ed-text-layer"></div>
                                     <canvas class="pdf-ed-draw-canvas" id="pdf-ed-draw-canvas"></canvas>
                                     <div class="pdf-ed-anno-layer" id="pdf-ed-anno-layer"></div>
+                                    <div class="pdf-ed-clone-reticle" id="pdf-ed-clone-reticle"></div>
                                 </div>
+                            </div>
+
+                            <!-- Eyedropper Magnifier Loupe -->
+                            <div class="pdf-ed-loupe" id="pdf-ed-loupe">
+                                <canvas class="pdf-ed-loupe-canvas" width="96" height="96"></canvas>
+                                <div class="pdf-ed-loupe-reticle"></div>
+                                <div class="pdf-ed-loupe-info">#000000</div>
                             </div>
                         </div>
                     </div>
@@ -1861,7 +1943,7 @@ const ToolRenderers = {
                         <div id="pdf-ed-hud-dims">Page: 595 x 842 pt (210.0 x 297.0 mm, A4)</div>
                         <div id="pdf-ed-hud-coords">Cursor: X: 0.0 pt, Y: 0.0 pt</div>
                         <div class="pdf-ed-hud-badge">
-                            <span>🔒</span> Word-Mode In-Place Vector Replacement
+                            <span>✨</span> Photoshop Scanned Paper Suite & Word-Mode Hybrid
                         </div>
                     </div>
                 </div>
@@ -1906,9 +1988,25 @@ const ToolRenderers = {
         const textLayer = container.querySelector('#pdf-ed-text-layer');
         const drawCanvas = container.querySelector('#pdf-ed-draw-canvas');
         const annoLayer = container.querySelector('#pdf-ed-anno-layer');
+        const cloneReticle = container.querySelector('#pdf-ed-clone-reticle');
+        const loupeEl = container.querySelector('#pdf-ed-loupe');
+        const scannedBanner = container.querySelector('#pdf-ed-scanned-banner');
         const hudDims = container.querySelector('#pdf-ed-hud-dims');
         const hudCoords = container.querySelector('#pdf-ed-hud-coords');
         const imgInput = container.querySelector('#pdf-ed-img-input');
+
+        // Scanned banner quick action buttons
+        container.querySelector('#banner-btn-patch').onclick = () => {
+            const btn = toolsRibbon.querySelector('[data-tool="patch"]');
+            if (btn) btn.click();
+        };
+        container.querySelector('#banner-btn-date').onclick = () => {
+            const btn = toolsRibbon.querySelector('[data-tool="date-stamp"]');
+            if (btn) btn.click();
+        };
+        container.querySelector('#banner-btn-dismiss').onclick = () => {
+            scannedBanner.style.display = 'none';
+        };
 
         // Helpers
         function showStatus(msg, isError = false) {
@@ -1946,6 +2044,35 @@ const ToolRenderers = {
             return bytes;
         }
 
+        function sanitizeWinAnsiText(txt) {
+            if (!txt) return '';
+            return txt
+                .replace(/[\u2010\u2012\u2013\u2014\u2015\u2212]/g, '-')
+                .replace(/[\u2018\u2019\u201A\u201B]/g, "'")
+                .replace(/[\u201C\u201D\u201E\u201F]/g, '"')
+                .replace(/[\u00A0\u2002\u2003\u2009]/g, ' ')
+                .replace(/[\u2022\u2023]/g, '*')
+                .replace(/[^\x00-\xFF]/g, '?');
+        }
+
+        function getFormattedDate(fmt, dateObj = new Date()) {
+            if (isNaN(dateObj.getTime())) dateObj = new Date();
+            const y = dateObj.getFullYear();
+            const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const d = String(dateObj.getDate()).padStart(2, '0');
+            const monthNamesShort = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const monthNamesFull = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            
+            if (fmt === 'DD/MM/YYYY') return `${d}/${m}/${y}`;
+            if (fmt === 'MM/DD/YYYY') return `${m}/${d}/${y}`;
+            if (fmt === 'YYYY-MM-DD') return `${y}-${m}-${d}`;
+            if (fmt === 'DD.MM.YYYY') return `${d}.${m}.${y}`;
+            if (fmt === 'DD-MM-YYYY') return `${d}-${m}-${y}`;
+            if (fmt === 'D MMMM YYYY') return `${dateObj.getDate()} ${monthNamesFull[dateObj.getMonth()]} ${y}`;
+            if (fmt === 'MMM D, YYYY') return `${monthNamesShort[dateObj.getMonth()]} ${dateObj.getDate()}, ${y}`;
+            return `${y}-${m}-${d}`;
+        }
+
         function getEventPdfPoint(e) {
             const rect = stage.getBoundingClientRect();
             const clientX = e.clientX !== undefined ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
@@ -1957,6 +2084,8 @@ const ToolRenderers = {
             return {
                 screenX,
                 screenY,
+                clientX,
+                clientY,
                 ptX: Math.max(0, Math.min(pageWidthPt, ptX)),
                 ptY: Math.max(0, Math.min(pageHeightPt, ptY))
             };
@@ -2024,7 +2153,7 @@ const ToolRenderers = {
                 const blankDoc = await PDFDocument.create();
                 blankDoc.addPage([595.28, 841.89]);
                 const bytes = await blankDoc.save();
-                await loadPdfBuffer(bytes.buffer, 'blank-document.pdf');
+                await loadPdfBuffer(bytes, 'blank-document.pdf');
                 hideStatus();
             } catch (err) {
                 showStatus('Failed to create blank document: ' + err.message, true);
@@ -2057,16 +2186,23 @@ const ToolRenderers = {
         }
 
         async function loadPdfBuffer(buffer, filename) {
-            currentPdfBuffer = buffer;
+            if (buffer instanceof Uint8Array) {
+                currentPdfBytes = new Uint8Array(buffer.slice(0));
+            } else if (buffer instanceof ArrayBuffer) {
+                currentPdfBytes = new Uint8Array(buffer.slice(0));
+            } else {
+                currentPdfBytes = new Uint8Array(buffer);
+            }
             originalFileName = filename || 'document.pdf';
             fileNameEl.textContent = originalFileName;
 
-            showStatus('Parsing PDF text streams and vector geometry...');
+            showStatus('Parsing PDF text streams and document layers...');
             try {
                 if (!window.pdfjsLib) {
                     throw new Error('PDF.js library not loaded yet. Please wait a moment and try again.');
                 }
-                const loadingTask = window.pdfjsLib.getDocument({ data: currentPdfBuffer });
+                // Pass an independent cloned slice so the PDF.js web worker cannot detach our stored buffer
+                const loadingTask = window.pdfjsLib.getDocument({ data: currentPdfBytes.slice(0) });
                 pdfDoc = await loadingTask.promise;
                 totalPages = pdfDoc.numPages;
                 currentPageNum = 1;
@@ -2121,11 +2257,11 @@ const ToolRenderers = {
                 pdfDoc.getPage(i).then(page => {
                     const unscaled = page.getViewport({ scale: 1.0 });
                     const scale = 140 / Math.max(unscaled.width, unscaled.height);
-                    const viewport = page.getViewport({ scale });
-                    thumbCanvas.width = viewport.width;
-                    thumbCanvas.height = viewport.height;
+                    const vp = page.getViewport({ scale });
+                    thumbCanvas.width = vp.width;
+                    thumbCanvas.height = vp.height;
                     const ctx = thumbCanvas.getContext('2d');
-                    page.render({ canvasContext: ctx, viewport });
+                    page.render({ canvasContext: ctx, viewport: vp });
                 });
             }
         }
@@ -2153,7 +2289,6 @@ const ToolRenderers = {
                 const ty = it.transform[5];
                 const fontSize = Math.max(8, Math.round(Math.hypot(it.transform[2], it.transform[3]) || it.height || 12));
                 const ptX = tx;
-                // ty is the baseline from bottom-left
                 const ptY = pHeightPt - ty - (fontSize * 0.88);
                 const ptW = Math.max(8, it.width || (str.length * fontSize * 0.55));
                 const ptH = Math.max(fontSize * 1.15, it.height || fontSize);
@@ -2229,7 +2364,7 @@ const ToolRenderers = {
             stage.style.height = displayHeight + 'px';
 
             // High-DPI supersampled PDF rendering for crispness
-            const dpr = 2; // 2x supersampling guarantees retina-sharp vector text
+            const dpr = 2; // 2x supersampling guarantees retina-sharp rendering
             const scaledViewport = page.getViewport({ scale: currentZoom * dpr, rotation: currentRotation });
 
             baseCanvas.width = scaledViewport.width;
@@ -2245,6 +2380,21 @@ const ToolRenderers = {
             if (!pageTextBlocks[pageNum]) {
                 const textContent = await page.getTextContent({ normalizeWhitespace: true });
                 pageTextBlocks[pageNum] = parsePdfTextContent(textContent, pageWidthPt, pageHeightPt);
+            }
+
+            // Scanned Document Auto-Detection
+            const blocks = pageTextBlocks[pageNum] || [];
+            if (blocks.length === 0) {
+                pageIsScanned[pageNum] = true;
+                scannedBanner.style.display = 'flex';
+                // If user is currently in Word Mode on a scanned page, switch to Paper Patch tool
+                if (activeTool === 'edit-text') {
+                    const patchBtn = toolsRibbon.querySelector('[data-tool="patch"]');
+                    if (patchBtn) patchBtn.click();
+                }
+            } else {
+                pageIsScanned[pageNum] = false;
+                scannedBanner.style.display = 'none';
             }
 
             // Setup Direct In-Place Text Layer
@@ -2263,6 +2413,15 @@ const ToolRenderers = {
             annoLayer.style.width = displayWidth + 'px';
             annoLayer.style.height = displayHeight + 'px';
             renderAnnotationItems();
+
+            // Update Reticle if clone source set
+            if (cloneSource) {
+                cloneReticle.style.left = (cloneSource.ptX * currentZoom) + 'px';
+                cloneReticle.style.top = (cloneSource.ptY * currentZoom) + 'px';
+                cloneReticle.style.display = 'block';
+            } else {
+                cloneReticle.style.display = 'none';
+            }
 
             // Update HUD
             hudDims.textContent = `Page ${pageNum}: ${Math.round(pageWidthPt)} x ${Math.round(pageHeightPt)} pt (${(pageWidthPt * 0.352778).toFixed(1)} x ${(pageHeightPt * 0.352778).toFixed(1)} mm)`;
@@ -2289,7 +2448,7 @@ const ToolRenderers = {
                 el.style.fontFamily = block.fontFamily === 'Courier' ? 'Courier, monospace' : (block.fontFamily === 'Times' ? 'Times New Roman, serif' : 'Helvetica, Arial, sans-serif');
                 el.style.color = block.color || '#000000';
 
-                // If edited, apply opaque white background to mask original PDF text!
+                // If edited, apply opaque white background to mask original PDF text
                 if (block.edited) {
                     el.style.background = '#ffffff';
                     el.style.minWidth = Math.round(Math.max(block.origPtW, block.ptW) * currentZoom) + 'px';
@@ -2299,7 +2458,6 @@ const ToolRenderers = {
                 el.textContent = block.str;
                 el.title = "Click to edit text directly with keyboard (Backspace / Type)";
 
-                // Clicking activates inline editing
                 el.onclick = (e) => {
                     if (activeTool !== 'edit-text' && activeTool !== 'select') return;
                     e.stopPropagation();
@@ -2323,7 +2481,6 @@ const ToolRenderers = {
             domEl.style.minWidth = Math.round(Math.max(block.origPtW, block.ptW) * currentZoom) + 'px';
             domEl.style.zIndex = '100';
 
-            // Focus & Select all text for quick backspacing
             domEl.focus();
             const range = document.createRange();
             range.selectNodeContents(domEl);
@@ -2331,7 +2488,7 @@ const ToolRenderers = {
             sel.removeAllRanges();
             sel.addRange(range);
 
-            showStatus(`Editing: "${block.origStr}" — Use Backspace / Keyboard to edit. Press Enter or click outside to finish.`, false);
+            showStatus(`Editing: "${block.origStr}" — Use Backspace / Keyboard to edit. Press Enter or click outside to save.`, false);
             updatePropertyRibbon();
 
             function finishEdit() {
@@ -2345,6 +2502,7 @@ const ToolRenderers = {
                     block.edited = true;
                     domEl.classList.add('is-edited');
                     block.ptW = Math.max(12, (block.origPtW / Math.max(1, block.origStr.length)) * Math.max(1, newStr.length));
+                    saveHistory(); // capture completed edit in history
                     showStatus(`✓ Updated text to: "${newStr}"`, false);
                     setTimeout(hideStatus, 3500);
                 } else if (newStr === block.origStr && !block.edited) {
@@ -2367,6 +2525,7 @@ const ToolRenderers = {
             };
         }
 
+        // Replay drawing and clone-stamp strokes on draw canvas
         function renderDrawCanvasStrokes() {
             const dpr = 2;
             const dCtx = drawCanvas.getContext('2d');
@@ -2374,24 +2533,175 @@ const ToolRenderers = {
             const strokes = pageDrawings[currentPageNum] || [];
 
             strokes.forEach(stroke => {
-                if (!stroke.points || stroke.points.length < 2) return;
-                dCtx.save();
-                dCtx.scale(currentZoom * dpr, currentZoom * dpr);
-                dCtx.strokeStyle = stroke.color;
-                dCtx.lineWidth = stroke.width;
-                dCtx.lineCap = 'round';
-                dCtx.lineJoin = 'round';
-                dCtx.globalAlpha = stroke.opacity ?? 1.0;
-                dCtx.beginPath();
-                dCtx.moveTo(stroke.points[0].ptX, stroke.points[0].ptY);
-                for (let i = 1; i < stroke.points.length; i++) {
-                    dCtx.lineTo(stroke.points[i].ptX, stroke.points[i].ptY);
+                if (stroke.type === 'clone-stamp') {
+                    if (stroke.points && stroke.points.length > 0) {
+                        const brushSize = stroke.brushSize || 18;
+                        const feather = stroke.feather ?? 50;
+                        const opacity = stroke.opacity ?? 1.0;
+                        for (const p of stroke.points) {
+                            drawCloneStampPointOnCtx(dCtx, p.ptX, p.ptY, p.sx, p.sy, brushSize, feather, opacity, currentZoom * dpr);
+                        }
+                    }
+                } else if (stroke.type === 'draw' || stroke.type === 'highlight') {
+                    if (!stroke.points || stroke.points.length < 2) return;
+                    dCtx.save();
+                    dCtx.scale(currentZoom * dpr, currentZoom * dpr);
+                    dCtx.strokeStyle = stroke.color;
+                    dCtx.lineWidth = stroke.width;
+                    dCtx.lineCap = 'round';
+                    dCtx.lineJoin = 'round';
+                    dCtx.globalAlpha = stroke.opacity ?? (stroke.type === 'draw' ? 1.0 : 0.45);
+                    dCtx.beginPath();
+                    dCtx.moveTo(stroke.points[0].ptX, stroke.points[0].ptY);
+                    for (let i = 1; i < stroke.points.length; i++) {
+                        dCtx.lineTo(stroke.points[i].ptX, stroke.points[i].ptY);
+                    }
+                    dCtx.stroke();
+                    dCtx.restore();
                 }
-                dCtx.stroke();
-                dCtx.restore();
             });
         }
 
+        // Helper to draw a single feathered clone-stamp stamp from baseCanvas
+        function drawCloneStampPointOnCtx(targetCtx, x, y, sx, sy, size, feather, opacity, scale) {
+            const rPx = Math.max(2, size * scale);
+            const destX = x * scale;
+            const destY = y * scale;
+            const srcX = sx * scale;
+            const srcY = sy * scale;
+
+            const stampW = Math.round(rPx * 2);
+            const stampH = Math.round(rPx * 2);
+
+            const sCanvas = document.createElement('canvas');
+            sCanvas.width = stampW;
+            sCanvas.height = stampH;
+            const sCtx = sCanvas.getContext('2d');
+
+            // Copy source pixels from baseCanvas
+            sCtx.drawImage(
+                baseCanvas,
+                srcX - rPx, srcY - rPx, stampW, stampH,
+                0, 0, stampW, stampH
+            );
+
+            // Apply soft radial gradient mask
+            sCtx.globalCompositeOperation = 'destination-in';
+            const innerR = Math.max(0, rPx * (1 - (feather / 100)));
+            const grad = sCtx.createRadialGradient(rPx, rPx, innerR, rPx, rPx, rPx);
+            grad.addColorStop(0, 'rgba(0,0,0,1)');
+            grad.addColorStop(1, 'rgba(0,0,0,0)');
+            sCtx.fillStyle = grad;
+            sCtx.fillRect(0, 0, stampW, stampH);
+
+            // Draw to target context
+            targetCtx.save();
+            targetCtx.globalAlpha = opacity;
+            targetCtx.drawImage(sCanvas, destX - rPx, destY - rPx);
+            targetCtx.restore();
+        }
+
+        // Helper to capture a feathered, paper-grained patch from baseCanvas
+        function createPaperPatchDataUrl(x, y, w, h, featherPt, noisePercent) {
+            const dpr = 2;
+            const sx = Math.max(0, Math.round(x * currentZoom * dpr));
+            const sy = Math.max(0, Math.round(y * currentZoom * dpr));
+            const sw = Math.max(4, Math.round(w * currentZoom * dpr));
+            const sh = Math.max(4, Math.round(h * currentZoom * dpr));
+
+            const c = document.createElement('canvas');
+            c.width = sw;
+            c.height = sh;
+            const pCtx = c.getContext('2d');
+
+            // Extract exact pixels from baseCanvas
+            pCtx.drawImage(baseCanvas, sx, sy, sw, sh, 0, 0, sw, sh);
+
+            // Feather edges if featherPt > 0
+            if (featherPt > 0) {
+                const fPx = Math.max(2, Math.min(Math.min(sw, sh) * 0.45, featherPt * currentZoom * dpr));
+                pCtx.save();
+                pCtx.globalCompositeOperation = 'destination-in';
+
+                // Horizontal gradient mask
+                const hGrad = pCtx.createLinearGradient(0, 0, sw, 0);
+                hGrad.addColorStop(0, 'rgba(0,0,0,0)');
+                hGrad.addColorStop(Math.min(0.45, fPx / sw), 'rgba(0,0,0,1)');
+                hGrad.addColorStop(Math.max(0.55, 1 - (fPx / sw)), 'rgba(0,0,0,1)');
+                hGrad.addColorStop(1, 'rgba(0,0,0,0)');
+                pCtx.fillStyle = hGrad;
+                pCtx.fillRect(0, 0, sw, sh);
+
+                // Vertical gradient mask
+                const vGrad = pCtx.createLinearGradient(0, 0, 0, sh);
+                vGrad.addColorStop(0, 'rgba(0,0,0,0)');
+                vGrad.addColorStop(Math.min(0.45, fPx / sh), 'rgba(0,0,0,1)');
+                vGrad.addColorStop(Math.max(0.55, 1 - (fPx / sh)), 'rgba(0,0,0,1)');
+                vGrad.addColorStop(1, 'rgba(0,0,0,0)');
+                pCtx.fillStyle = vGrad;
+                pCtx.fillRect(0, 0, sw, sh);
+                pCtx.restore();
+            }
+
+            // Synthesize subtle monochrome grain noise if noisePercent > 0
+            if (noisePercent > 0) {
+                try {
+                    const imgData = pCtx.getImageData(0, 0, sw, sh);
+                    const data = imgData.data;
+                    const noiseFactor = (noisePercent / 100) * 35;
+                    for (let i = 0; i < data.length; i += 4) {
+                        if (data[i + 3] > 10) {
+                            const grain = (Math.random() - 0.5) * noiseFactor;
+                            data[i] = Math.max(0, Math.min(255, data[i] + grain));
+                            data[i + 1] = Math.max(0, Math.min(255, data[i + 1] + grain));
+                            data[i + 2] = Math.max(0, Math.min(255, data[i + 2] + grain));
+                        }
+                    }
+                    pCtx.putImageData(imgData, 0, 0);
+                } catch (e) {}
+            }
+
+            return c.toDataURL('image/png');
+        }
+
+        // Eyedropper Loupe updater
+        function updateEyedropperLoupe(clientX, clientY, ptX, ptY) {
+            if (!loupeEl) return;
+            const dpr = 2;
+            const sampleX = Math.round(ptX * currentZoom * dpr);
+            const sampleY = Math.round(ptY * currentZoom * dpr);
+
+            loupeEl.style.display = 'block';
+            loupeEl.style.left = clientX + 'px';
+            loupeEl.style.top = clientY + 'px';
+
+            const lCanvas = loupeEl.querySelector('.pdf-ed-loupe-canvas');
+            if (lCanvas) {
+                const lCtx = lCanvas.getContext('2d');
+                lCtx.imageSmoothingEnabled = false;
+                lCtx.clearRect(0, 0, lCanvas.width, lCanvas.height);
+
+                const r = 6;
+                lCtx.drawImage(
+                    baseCanvas,
+                    sampleX - r, sampleY - r, r * 2 + 1, r * 2 + 1,
+                    0, 0, lCanvas.width, lCanvas.height
+                );
+            }
+
+            try {
+                const bCtx = baseCanvas.getContext('2d');
+                const pix = bCtx.getImageData(sampleX, sampleY, 1, 1).data;
+                const hex = `#${((1 << 24) + (pix[0] << 16) + (pix[1] << 8) + pix[2]).toString(16).slice(1).toUpperCase()}`;
+                const info = loupeEl.querySelector('.pdf-ed-loupe-info');
+                if (info) info.textContent = hex;
+                return hex;
+            } catch (e) {
+                return '#000000';
+            }
+        }
+
+        // Render Annotation Items Layer
         function renderAnnotationItems() {
             annoLayer.innerHTML = '';
             const items = pageAnnotations[currentPageNum] || [];
@@ -2411,9 +2721,23 @@ const ToolRenderers = {
                 el.style.width = width + 'px';
                 el.style.height = height + 'px';
 
-                if (item.type === 'whiteout') {
-                    el.style.background = '#ffffff';
+                if (item.type === 'patch') {
+                    // Paper Patch: feathered texture element
+                    el.style.opacity = item.opacity ?? 1.0;
+                    const patchImg = document.createElement('img');
+                    patchImg.src = item.dataUrl;
+                    patchImg.style.cssText = 'width:100%; height:100%; object-fit:fill; display:block; pointer-events:none; border-radius:2px;';
+                    el.appendChild(patchImg);
+                } else if (item.type === 'whiteout') {
+                    const bgColor = item.fill || '#ffffff';
+                    el.style.background = bgColor;
                     el.style.border = 'none';
+                    if (item.feather > 0) {
+                        const featherPx = Math.round(item.feather * currentZoom);
+                        el.style.boxShadow = `0 0 ${featherPx}px ${Math.round(featherPx * 0.5)}px ${bgColor}`;
+                    } else {
+                        el.style.boxShadow = 'none';
+                    }
                 } else if (item.type === 'redact') {
                     el.style.background = '#000000';
                     el.style.border = 'none';
@@ -2436,14 +2760,29 @@ const ToolRenderers = {
                         </svg>
                     `;
                 } else if (item.type === 'text') {
-                    el.style.color = item.color || '#000000';
-                    el.style.fontFamily = item.fontFamily === 'Courier' ? 'Courier, monospace' : (item.fontFamily === 'Times' ? 'Times New Roman, serif' : 'Helvetica, Arial, sans-serif');
-                    el.style.fontSize = Math.round((item.fontSize || 14) * currentZoom) + 'px';
+                    el.style.color = item.color || '#1f2429';
+                    el.style.fontFamily = item.fontFamily === 'Courier' ? 'Courier, monospace' : (item.fontFamily === 'Times' ? 'Times New Roman, serif' : (item.fontFamily === 'Georgia' ? 'Georgia, serif' : (item.fontFamily === 'Consolas' ? 'Consolas, monospace' : 'Helvetica, Arial, sans-serif')));
+                    el.style.fontSize = Math.round((item.fontSize || 13) * currentZoom) + 'px';
                     el.style.fontWeight = item.bold ? '700' : '400';
                     el.style.fontStyle = item.italic ? 'italic' : 'normal';
                     el.style.background = item.bgColor && item.bgColor !== 'transparent' ? item.bgColor : 'transparent';
-                    el.style.padding = '2px 4px';
+                    el.style.padding = '1px 3px';
                     el.textContent = item.text || '';
+
+                    // Photoshop Scanned Document Optical Effects
+                    if (item.letterSpacing) {
+                        el.style.letterSpacing = (item.letterSpacing * currentZoom) + 'px';
+                    }
+                    if (item.blur && item.blur > 0) {
+                        el.style.filter = `blur(${(item.blur * currentZoom * 0.4).toFixed(1)}px)`;
+                    }
+                    if (item.rotation) {
+                        el.style.transform = `rotate(${item.rotation}deg)`;
+                    }
+                    if (item.blendMode === 'multiply') {
+                        el.style.mixBlendMode = 'multiply';
+                    }
+                    el.style.opacity = item.opacity ?? 0.96;
                 } else if (item.type === 'image' || item.type === 'signature' || item.type === 'stamp') {
                     const img = document.createElement('img');
                     img.src = item.dataUrl;
@@ -2501,8 +2840,8 @@ const ToolRenderers = {
             saveHistory();
             const clone = JSON.parse(JSON.stringify(it));
             clone.id = 'anno_' + Date.now();
-            clone.ptX = Math.min(pageWidthPt - clone.ptW, clone.ptX + 15);
-            clone.ptY = Math.min(pageHeightPt - clone.ptH, clone.ptY + 15);
+            clone.ptX = Math.min(pageWidthPt - clone.ptW, clone.ptX + 12);
+            clone.ptY = Math.min(pageHeightPt - clone.ptH, clone.ptY + 12);
             (pageAnnotations[currentPageNum] = pageAnnotations[currentPageNum] || []).push(clone);
             selectItem(clone.id);
         }
@@ -2513,7 +2852,7 @@ const ToolRenderers = {
             propsRibbon.innerHTML = '';
 
             if (activeTextBlock) {
-                // Currently editing an existing PDF text block
+                // Currently editing an existing PDF text block (Word Mode)
                 propsRibbon.innerHTML = `
                     <div class="pdf-ed-prop-item">
                         <span class="pdf-ed-prop-label">Font</span>
@@ -2552,57 +2891,185 @@ const ToolRenderers = {
 
             if (sel) {
                 // Properties for Selected User Annotation
-                if (sel.type === 'text') {
+                if (sel.type === 'patch') {
+                    propsRibbon.innerHTML = `
+                        <div class="pdf-ed-prop-item">
+                            <span class="pdf-ed-prop-badge">🩹 PAPER PATCH</span>
+                            <span style="font-size:0.75rem; color:var(--text-dim);">${Math.round(sel.ptW)} × ${Math.round(sel.ptH)} pt</span>
+                        </div>
+                        <div class="pdf-ed-prop-item pdf-ed-slider-wrap">
+                            <span class="pdf-ed-prop-label">Feather</span>
+                            <input type="range" id="patch-feather" class="pdf-ed-range" min="0" max="10" step="1" value="${sel.feather ?? 3}">
+                            <span class="pdf-ed-slider-val" id="patch-feather-val">${sel.feather ?? 3}px</span>
+                        </div>
+                        <div class="pdf-ed-prop-item pdf-ed-slider-wrap">
+                            <span class="pdf-ed-prop-label">Grain</span>
+                            <input type="range" id="patch-noise" class="pdf-ed-range" min="0" max="20" step="2" value="${sel.noise ?? 4}">
+                            <span class="pdf-ed-slider-val" id="patch-noise-val">${sel.noise ?? 4}%</span>
+                        </div>
+                        <div class="pdf-ed-prop-item pdf-ed-slider-wrap">
+                            <span class="pdf-ed-prop-label">Opacity</span>
+                            <input type="range" id="patch-opacity" class="pdf-ed-range" min="50" max="100" step="5" value="${Math.round((sel.opacity ?? 1.0) * 100)}">
+                            <span class="pdf-ed-slider-val" id="patch-opacity-val">${Math.round((sel.opacity ?? 1.0) * 100)}%</span>
+                        </div>
+                        <div class="pdf-ed-prop-item" style="margin-left:auto;">
+                            <button type="button" class="pdf-ed-btn-mini" id="prop-dup" title="Duplicate Patch">📋 Duplicate</button>
+                            <button type="button" class="pdf-ed-btn-mini" id="prop-del" style="color:var(--tag-pdf);" title="Delete Patch">🗑️ Delete</button>
+                        </div>
+                    `;
+
+                    propsRibbon.querySelector('#patch-feather').oninput = (e) => {
+                        const val = parseInt(e.target.value, 10);
+                        propsRibbon.querySelector('#patch-feather-val').textContent = val + 'px';
+                        sel.feather = val;
+                        // Regenerate patch dataUrl with new feathering
+                        sel.dataUrl = createPaperPatchDataUrl(sel.origPtX || sel.ptX, sel.origPtY || sel.ptY, sel.ptW, sel.ptH, sel.feather, sel.noise);
+                        renderAnnotationItems();
+                    };
+                    propsRibbon.querySelector('#patch-noise').oninput = (e) => {
+                        const val = parseInt(e.target.value, 10);
+                        propsRibbon.querySelector('#patch-noise-val').textContent = val + '%';
+                        sel.noise = val;
+                        sel.dataUrl = createPaperPatchDataUrl(sel.origPtX || sel.ptX, sel.origPtY || sel.ptY, sel.ptW, sel.ptH, sel.feather, sel.noise);
+                        renderAnnotationItems();
+                    };
+                    propsRibbon.querySelector('#patch-opacity').oninput = (e) => {
+                        const val = parseInt(e.target.value, 10) / 100;
+                        propsRibbon.querySelector('#patch-opacity-val').textContent = Math.round(val * 100) + '%';
+                        sel.opacity = val;
+                        renderAnnotationItems();
+                    };
+                    propsRibbon.querySelector('#prop-dup').onclick = duplicateSelectedItem;
+                    propsRibbon.querySelector('#prop-del').onclick = deleteSelectedItem;
+
+                } else if (sel.type === 'text') {
                     propsRibbon.innerHTML = `
                         <div class="pdf-ed-prop-item">
                             <span class="pdf-ed-prop-label">Font</span>
                             <select id="prop-font" class="pdf-ed-select-mini">
-                                <option value="Helvetica" ${sel.fontFamily === 'Helvetica' ? 'selected' : ''}>Helvetica</option>
+                                <option value="Helvetica" ${sel.fontFamily === 'Helvetica' ? 'selected' : ''}>Helvetica / Arial</option>
                                 <option value="Times" ${sel.fontFamily === 'Times' ? 'selected' : ''}>Times Roman</option>
-                                <option value="Courier" ${sel.fontFamily === 'Courier' ? 'selected' : ''}>Courier</option>
+                                <option value="Courier" ${sel.fontFamily === 'Courier' ? 'selected' : ''}>Courier (Typewriter)</option>
+                                <option value="Georgia" ${sel.fontFamily === 'Georgia' ? 'selected' : ''}>Georgia</option>
+                                <option value="Consolas" ${sel.fontFamily === 'Consolas' ? 'selected' : ''}>Consolas (Clean Mono)</option>
                             </select>
                         </div>
                         <div class="pdf-ed-prop-item">
                             <span class="pdf-ed-prop-label">Size</span>
                             <select id="prop-size" class="pdf-ed-select-mini">
-                                ${[10, 12, 14, 16, 18, 20, 24, 28, 32, 40, 48, 64].map(s => `<option value="${s}" ${sel.fontSize === s ? 'selected' : ''}>${s} pt</option>`).join('')}
+                                ${[8, 9, 10, 11, 12, 13, 14, 15, 16, 18, 20, 24, 28, 32, 40].map(s => `<option value="${s}" ${sel.fontSize === s ? 'selected' : ''}>${s} pt</option>`).join('')}
                             </select>
                         </div>
                         <div class="pdf-ed-prop-item">
-                            <span class="pdf-ed-prop-label">Color</span>
-                            <input type="color" id="prop-color" value="${sel.color || '#000000'}" style="width:24px; height:24px; padding:0; border:none; background:none; cursor:pointer;">
+                            <span class="pdf-ed-prop-label">Ink</span>
+                            <input type="color" id="prop-color" value="${sel.color || '#1f2429'}" style="width:22px; height:22px; padding:0; border:none; background:none; cursor:pointer;" title="Pick Ink Color">
+                            <button type="button" class="pdf-ed-btn-mini" id="prop-pick-ink" title="Sample ink color from document with eyedropper">💉</button>
                         </div>
-                        <div class="pdf-ed-prop-item">
-                            <span class="pdf-ed-prop-label">Fill</span>
-                            <select id="prop-bg" class="pdf-ed-select-mini">
-                                <option value="transparent" ${sel.bgColor === 'transparent' ? 'selected' : ''}>None (Transparent)</option>
-                                <option value="#ffffff" ${sel.bgColor === '#ffffff' ? 'selected' : ''}>Whiteout Box</option>
-                                <option value="#fff159" ${sel.bgColor === '#fff159' ? 'selected' : ''}>Highlight Yellow</option>
-                            </select>
+                        <div class="pdf-ed-prop-item pdf-ed-slider-wrap" title="Optical Scan Softness / Blur (matches scanner optical focus)">
+                            <span class="pdf-ed-prop-label">Softness</span>
+                            <input type="range" id="prop-blur" class="pdf-ed-range" min="0" max="2.0" step="0.1" value="${sel.blur ?? 0.6}" style="width:60px;">
+                            <span class="pdf-ed-slider-val" id="prop-blur-val">${(sel.blur ?? 0.6).toFixed(1)}px</span>
+                        </div>
+                        <div class="pdf-ed-prop-item pdf-ed-slider-wrap" title="Micro-Tilt / Angle (aligns with scanned paper slant)">
+                            <span class="pdf-ed-prop-label">Tilt</span>
+                            <input type="range" id="prop-rot" class="pdf-ed-range" min="-4.0" max="4.0" step="0.1" value="${sel.rotation ?? 0.0}" style="width:60px;">
+                            <span class="pdf-ed-slider-val" id="prop-rot-val">${(sel.rotation ?? 0.0).toFixed(1)}°</span>
+                        </div>
+                        <div class="pdf-ed-prop-item pdf-ed-slider-wrap" title="Letter Tracking / Spacing">
+                            <span class="pdf-ed-prop-label">Spacing</span>
+                            <input type="range" id="prop-spacing" class="pdf-ed-range" min="-1.5" max="6.0" step="0.5" value="${sel.letterSpacing ?? 0.5}" style="width:50px;">
+                            <span class="pdf-ed-slider-val" id="prop-spacing-val">${sel.letterSpacing ?? 0.5}px</span>
                         </div>
                         <div class="pdf-ed-prop-item">
                             <button type="button" class="pdf-ed-btn-mini ${sel.bold ? 'active' : ''}" id="prop-bold" title="Toggle Bold"><b>B</b></button>
                             <button type="button" class="pdf-ed-btn-mini ${sel.italic ? 'active' : ''}" id="prop-italic" title="Toggle Italic"><i>I</i></button>
                         </div>
                         <div class="pdf-ed-prop-item" style="margin-left:auto;">
-                            <button type="button" class="pdf-ed-btn-mini" id="prop-dup" title="Duplicate">📋 Duplicate</button>
-                            <button type="button" class="pdf-ed-btn-mini" id="prop-del" style="color:var(--tag-pdf);" title="Delete">🗑️ Delete</button>
+                            <button type="button" class="pdf-ed-btn-mini" id="prop-dup" title="Duplicate">📋</button>
+                            <button type="button" class="pdf-ed-btn-mini" id="prop-del" style="color:var(--tag-pdf);" title="Delete">🗑️</button>
                         </div>
                     `;
 
                     propsRibbon.querySelector('#prop-font').onchange = (e) => { saveHistory(); sel.fontFamily = e.target.value; renderAnnotationItems(); };
                     propsRibbon.querySelector('#prop-size').onchange = (e) => { saveHistory(); sel.fontSize = parseInt(e.target.value, 10); renderAnnotationItems(); };
-                    propsRibbon.querySelector('#prop-color').onchange = (e) => { saveHistory(); sel.color = e.target.value; renderAnnotationItems(); };
-                    propsRibbon.querySelector('#prop-bg').onchange = (e) => { saveHistory(); sel.bgColor = e.target.value; renderAnnotationItems(); };
+                    propsRibbon.querySelector('#prop-color').onchange = (e) => { saveHistory(); sel.color = e.target.value; textProps.color = e.target.value; renderAnnotationItems(); };
+                    propsRibbon.querySelector('#prop-pick-ink').onclick = () => {
+                        eyedropperTarget = 'ink';
+                        const edBtn = toolsRibbon.querySelector('[data-tool="eyedropper"]');
+                        if (edBtn) edBtn.click();
+                    };
+                    propsRibbon.querySelector('#prop-blur').oninput = (e) => {
+                        const val = parseFloat(e.target.value);
+                        propsRibbon.querySelector('#prop-blur-val').textContent = val.toFixed(1) + 'px';
+                        sel.blur = val;
+                        textProps.blur = val;
+                        renderAnnotationItems();
+                    };
+                    propsRibbon.querySelector('#prop-rot').oninput = (e) => {
+                        const val = parseFloat(e.target.value);
+                        propsRibbon.querySelector('#prop-rot-val').textContent = val.toFixed(1) + '°';
+                        sel.rotation = val;
+                        textProps.rotation = val;
+                        renderAnnotationItems();
+                    };
+                    propsRibbon.querySelector('#prop-spacing').oninput = (e) => {
+                        const val = parseFloat(e.target.value);
+                        propsRibbon.querySelector('#prop-spacing-val').textContent = val + 'px';
+                        sel.letterSpacing = val;
+                        textProps.letterSpacing = val;
+                        renderAnnotationItems();
+                    };
                     propsRibbon.querySelector('#prop-bold').onclick = () => { saveHistory(); sel.bold = !sel.bold; renderAnnotationItems(); updatePropertyRibbon(); };
                     propsRibbon.querySelector('#prop-italic').onclick = () => { saveHistory(); sel.italic = !sel.italic; renderAnnotationItems(); updatePropertyRibbon(); };
                     propsRibbon.querySelector('#prop-dup').onclick = duplicateSelectedItem;
                     propsRibbon.querySelector('#prop-del').onclick = deleteSelectedItem;
-                } else if (sel.type === 'whiteout' || sel.type === 'redact') {
+
+                } else if (sel.type === 'whiteout') {
                     propsRibbon.innerHTML = `
                         <div class="pdf-ed-prop-item">
-                            <span class="pdf-ed-prop-label">${sel.type === 'whiteout' ? 'Whiteout Eraser' : 'Black Redaction'}</span>
-                            <span style="font-size:0.75rem; color:var(--text-dim);">Coordinates: X: ${Math.round(sel.ptX)}, Y: ${Math.round(sel.ptY)}, W: ${Math.round(sel.ptW)}, H: ${Math.round(sel.ptH)} pt</span>
+                            <span class="pdf-ed-prop-badge">⬜ WHITEOUT / MATCH</span>
+                        </div>
+                        <div class="pdf-ed-prop-item">
+                            <span class="pdf-ed-prop-label">Paper Color</span>
+                            <input type="color" id="prop-wo-color" value="${sel.fill || sampledPaperColor || '#ffffff'}" style="width:22px; height:22px; padding:0; border:none; background:none; cursor:pointer;" title="Match Paper Background Tone">
+                            <button type="button" class="pdf-ed-btn-mini" id="prop-pick-paper" title="Sample paper color from document with eyedropper">💉 Sample</button>
+                        </div>
+                        <div class="pdf-ed-prop-item pdf-ed-slider-wrap">
+                            <span class="pdf-ed-prop-label">Feather Edge</span>
+                            <input type="range" id="prop-wo-feather" class="pdf-ed-range" min="0" max="8" step="1" value="${sel.feather ?? 0}" style="width:60px;">
+                            <span class="pdf-ed-slider-val" id="prop-wo-feather-val">${sel.feather ?? 0}px</span>
+                        </div>
+                        <div class="pdf-ed-prop-item" style="margin-left:auto;">
+                            <button type="button" class="pdf-ed-btn-mini" id="prop-dup">📋 Duplicate</button>
+                            <button type="button" class="pdf-ed-btn-mini" id="prop-del" style="color:var(--tag-pdf);">🗑️ Delete</button>
+                        </div>
+                    `;
+
+                    propsRibbon.querySelector('#prop-wo-color').onchange = (e) => {
+                        saveHistory();
+                        sel.fill = e.target.value;
+                        sampledPaperColor = e.target.value;
+                        renderAnnotationItems();
+                    };
+                    propsRibbon.querySelector('#prop-pick-paper').onclick = () => {
+                        eyedropperTarget = 'paper';
+                        const edBtn = toolsRibbon.querySelector('[data-tool="eyedropper"]');
+                        if (edBtn) edBtn.click();
+                    };
+                    propsRibbon.querySelector('#prop-wo-feather').oninput = (e) => {
+                        const val = parseInt(e.target.value, 10);
+                        propsRibbon.querySelector('#prop-wo-feather-val').textContent = val + 'px';
+                        sel.feather = val;
+                        renderAnnotationItems();
+                    };
+                    propsRibbon.querySelector('#prop-dup').onclick = duplicateSelectedItem;
+                    propsRibbon.querySelector('#prop-del').onclick = deleteSelectedItem;
+
+                } else if (sel.type === 'redact') {
+                    propsRibbon.innerHTML = `
+                        <div class="pdf-ed-prop-item">
+                            <span class="pdf-ed-prop-label">Black Redaction</span>
+                            <span style="font-size:0.75rem; color:var(--text-dim);">${Math.round(sel.ptW)} × ${Math.round(sel.ptH)} pt</span>
                         </div>
                         <div class="pdf-ed-prop-item" style="margin-left:auto;">
                             <button type="button" class="pdf-ed-btn-mini" id="prop-dup">📋 Duplicate</button>
@@ -2611,11 +3078,12 @@ const ToolRenderers = {
                     `;
                     propsRibbon.querySelector('#prop-dup').onclick = duplicateSelectedItem;
                     propsRibbon.querySelector('#prop-del').onclick = deleteSelectedItem;
+
                 } else if (sel.type === 'rect' || sel.type === 'circle' || sel.type === 'line' || sel.type === 'arrow') {
                     propsRibbon.innerHTML = `
                         <div class="pdf-ed-prop-item">
-                            <span class="pdf-ed-prop-label">Border Color</span>
-                            <input type="color" id="prop-stroke" value="${sel.stroke || '#000000'}" style="width:24px; height:24px; padding:0; border:none; background:none; cursor:pointer;">
+                            <span class="pdf-ed-prop-label">Border</span>
+                            <input type="color" id="prop-stroke" value="${sel.stroke || '#000000'}" style="width:22px; height:22px; padding:0; border:none; background:none; cursor:pointer;">
                         </div>
                         <div class="pdf-ed-prop-item">
                             <span class="pdf-ed-prop-label">Width</span>
@@ -2647,12 +3115,13 @@ const ToolRenderers = {
                     }
                     propsRibbon.querySelector('#prop-dup').onclick = duplicateSelectedItem;
                     propsRibbon.querySelector('#prop-del').onclick = deleteSelectedItem;
+
                 } else {
                     // Image / Signature / Stamp
                     propsRibbon.innerHTML = `
                         <div class="pdf-ed-prop-item">
                             <span class="pdf-ed-prop-label">${sel.type.toUpperCase()}</span>
-                            <span style="font-size:0.75rem; color:var(--text-dim);">${Math.round(sel.ptW)} x ${Math.round(sel.ptH)} pt</span>
+                            <span style="font-size:0.75rem; color:var(--text-dim);">${Math.round(sel.ptW)} × ${Math.round(sel.ptH)} pt</span>
                         </div>
                         <div class="pdf-ed-prop-item" style="margin-left:auto;">
                             <button type="button" class="pdf-ed-btn-mini" id="prop-dup">📋 Duplicate</button>
@@ -2664,7 +3133,160 @@ const ToolRenderers = {
                 }
             } else {
                 // Properties for Active Tool
-                if (activeTool === 'edit-text') {
+                if (activeTool === 'patch') {
+                    propsRibbon.innerHTML = `
+                        <div class="pdf-ed-prop-item">
+                            <span class="pdf-ed-prop-badge">🩹 PAPER PATCH MODE</span>
+                            <span style="font-size:0.78rem; color:var(--accent); font-weight:600;">Drag a box over clean paper nearby to capture texture, then drag it over the old date!</span>
+                        </div>
+                        <div class="pdf-ed-prop-item pdf-ed-slider-wrap">
+                            <span class="pdf-ed-prop-label">Feather</span>
+                            <input type="range" id="def-patch-feather" class="pdf-ed-range" min="0" max="10" step="1" value="${patchProps.feather}">
+                            <span class="pdf-ed-slider-val" id="def-patch-feather-val">${patchProps.feather}px</span>
+                        </div>
+                        <div class="pdf-ed-prop-item pdf-ed-slider-wrap">
+                            <span class="pdf-ed-prop-label">Grain</span>
+                            <input type="range" id="def-patch-noise" class="pdf-ed-range" min="0" max="20" step="2" value="${patchProps.noise}">
+                            <span class="pdf-ed-slider-val" id="def-patch-noise-val">${patchProps.noise}%</span>
+                        </div>
+                    `;
+                    propsRibbon.querySelector('#def-patch-feather').oninput = (e) => {
+                        patchProps.feather = parseInt(e.target.value, 10);
+                        propsRibbon.querySelector('#def-patch-feather-val').textContent = patchProps.feather + 'px';
+                    };
+                    propsRibbon.querySelector('#def-patch-noise').oninput = (e) => {
+                        patchProps.noise = parseInt(e.target.value, 10);
+                        propsRibbon.querySelector('#def-patch-noise-val').textContent = patchProps.noise + '%';
+                    };
+
+                } else if (activeTool === 'clone-stamp') {
+                    propsRibbon.innerHTML = `
+                        <div class="pdf-ed-prop-item">
+                            <span class="pdf-ed-prop-badge">🖌️ CLONE STAMP</span>
+                            <button type="button" class="pdf-ed-btn-mini ${isSettingCloneSource ? 'active' : ''}" id="btn-set-clone-source">🎯 ${cloneSource ? 'Re-sample Source' : 'Set Sample Point'}</button>
+                            <span style="font-size:0.75rem; color:${cloneSource ? 'var(--accent)' : 'var(--text-dim)'};">
+                                ${cloneSource ? `Source set (X: ${Math.round(cloneSource.ptX)}, Y: ${Math.round(cloneSource.ptY)}) • Brush over date to clone!` : 'Alt+Click clean paper to pick texture'}
+                            </span>
+                        </div>
+                        <div class="pdf-ed-prop-item pdf-ed-slider-wrap">
+                            <span class="pdf-ed-prop-label">Size</span>
+                            <input type="range" id="cs-size" class="pdf-ed-range" min="6" max="50" step="2" value="${cloneStampProps.brushSize}">
+                            <span class="pdf-ed-slider-val" id="cs-size-val">${cloneStampProps.brushSize}px</span>
+                        </div>
+                        <div class="pdf-ed-prop-item pdf-ed-slider-wrap">
+                            <span class="pdf-ed-prop-label">Feather</span>
+                            <input type="range" id="cs-feather" class="pdf-ed-range" min="0" max="100" step="10" value="${cloneStampProps.feather}">
+                            <span class="pdf-ed-slider-val" id="cs-feather-val">${cloneStampProps.feather}%</span>
+                        </div>
+                        <div class="pdf-ed-prop-item">
+                            <button type="button" class="pdf-ed-btn-mini" id="cs-reset" title="Clear Sample Point">🔄 Reset</button>
+                        </div>
+                    `;
+
+                    propsRibbon.querySelector('#btn-set-clone-source').onclick = () => {
+                        isSettingCloneSource = true;
+                        showStatus('🎯 Click on any clean portion of paper to set the texture sample point.', false);
+                        updatePropertyRibbon();
+                    };
+                    propsRibbon.querySelector('#cs-size').oninput = (e) => {
+                        cloneStampProps.brushSize = parseInt(e.target.value, 10);
+                        propsRibbon.querySelector('#cs-size-val').textContent = cloneStampProps.brushSize + 'px';
+                    };
+                    propsRibbon.querySelector('#cs-feather').oninput = (e) => {
+                        cloneStampProps.feather = parseInt(e.target.value, 10);
+                        propsRibbon.querySelector('#cs-feather-val').textContent = cloneStampProps.feather + '%';
+                    };
+                    propsRibbon.querySelector('#cs-reset').onclick = () => {
+                        cloneSource = null;
+                        cloneReticle.style.display = 'none';
+                        updatePropertyRibbon();
+                        showStatus('Sample point cleared. Alt+Click on clean paper to pick new sample.', false);
+                    };
+
+                } else if (activeTool === 'eyedropper') {
+                    propsRibbon.innerHTML = `
+                        <div class="pdf-ed-prop-item">
+                            <span class="pdf-ed-prop-badge">💉 EYEDROPPER ACTIVE</span>
+                            <span style="font-size:0.78rem; color:var(--text-main);">Click anywhere on the scanned page to sample color.</span>
+                        </div>
+                        <div class="pdf-ed-prop-item">
+                            <span class="pdf-ed-prop-label">Target:</span>
+                            <button type="button" class="pdf-ed-btn-mini ${eyedropperTarget === 'paper' ? 'active' : ''}" id="ed-target-paper">📄 Paper Background</button>
+                            <button type="button" class="pdf-ed-btn-mini ${eyedropperTarget === 'ink' ? 'active' : ''}" id="ed-target-ink">✒️ Text Ink</button>
+                        </div>
+                    `;
+                    propsRibbon.querySelector('#ed-target-paper').onclick = () => { eyedropperTarget = 'paper'; updatePropertyRibbon(); };
+                    propsRibbon.querySelector('#ed-target-ink').onclick = () => { eyedropperTarget = 'ink'; updatePropertyRibbon(); };
+
+                } else if (activeTool === 'date-stamp') {
+                    propsRibbon.innerHTML = `
+                        <div class="pdf-ed-prop-item">
+                            <span class="pdf-ed-prop-badge">📅 DATE TOOL</span>
+                            <select id="dt-format" class="pdf-ed-select-mini" title="Date Format Preset">
+                                <option value="YYYY-MM-DD" ${dateProps.format === 'YYYY-MM-DD' ? 'selected' : ''}>YYYY-MM-DD (${getFormattedDate('YYYY-MM-DD', new Date(dateProps.dateVal))})</option>
+                                <option value="DD/MM/YYYY" ${dateProps.format === 'DD/MM/YYYY' ? 'selected' : ''}>DD/MM/YYYY (${getFormattedDate('DD/MM/YYYY', new Date(dateProps.dateVal))})</option>
+                                <option value="MM/DD/YYYY" ${dateProps.format === 'MM/DD/YYYY' ? 'selected' : ''}>MM/DD/YYYY (${getFormattedDate('MM/DD/YYYY', new Date(dateProps.dateVal))})</option>
+                                <option value="DD.MM.YYYY" ${dateProps.format === 'DD.MM.YYYY' ? 'selected' : ''}>DD.MM.YYYY (${getFormattedDate('DD.MM.YYYY', new Date(dateProps.dateVal))})</option>
+                                <option value="DD-MM-YYYY" ${dateProps.format === 'DD-MM-YYYY' ? 'selected' : ''}>DD-MM-YYYY (${getFormattedDate('DD-MM-YYYY', new Date(dateProps.dateVal))})</option>
+                                <option value="D MMMM YYYY" ${dateProps.format === 'D MMMM YYYY' ? 'selected' : ''}>D MMMM YYYY</option>
+                                <option value="MMM D, YYYY" ${dateProps.format === 'MMM D, YYYY' ? 'selected' : ''}>MMM D, YYYY</option>
+                            </select>
+                            <input type="date" id="dt-picker" value="${dateProps.dateVal}" class="pdf-ed-select-mini" style="padding:0.2rem 0.4rem;">
+                        </div>
+                        <div class="pdf-ed-prop-item">
+                            <span class="pdf-ed-prop-label">Font</span>
+                            <select id="dt-font" class="pdf-ed-select-mini">
+                                <option value="Helvetica" ${textProps.fontFamily === 'Helvetica' ? 'selected' : ''}>Helvetica / Arial</option>
+                                <option value="Times" ${textProps.fontFamily === 'Times' ? 'selected' : ''}>Times Roman</option>
+                                <option value="Courier" ${textProps.fontFamily === 'Courier' ? 'selected' : ''}>Courier (Typewriter)</option>
+                                <option value="Georgia" ${textProps.fontFamily === 'Georgia' ? 'selected' : ''}>Georgia</option>
+                                <option value="Consolas" ${textProps.fontFamily === 'Consolas' ? 'selected' : ''}>Consolas</option>
+                            </select>
+                        </div>
+                        <div class="pdf-ed-prop-item">
+                            <span class="pdf-ed-prop-label">Size</span>
+                            <select id="dt-size" class="pdf-ed-select-mini">
+                                ${[9, 10, 11, 12, 13, 14, 15, 16, 18, 20, 24].map(s => `<option value="${s}" ${textProps.fontSize === s ? 'selected' : ''}>${s} pt</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="pdf-ed-prop-item">
+                            <span class="pdf-ed-prop-label">Ink</span>
+                            <input type="color" id="dt-color" value="${textProps.color}" style="width:22px; height:22px; padding:0; border:none; background:none; cursor:pointer;" title="Ink Color">
+                            <button type="button" class="pdf-ed-btn-mini" id="dt-pick-ink" title="Sample ink color from document">💉</button>
+                        </div>
+                        <div class="pdf-ed-prop-item pdf-ed-slider-wrap" title="Optical Scan Softness / Blur">
+                            <span class="pdf-ed-prop-label">Softness</span>
+                            <input type="range" id="dt-blur" class="pdf-ed-range" min="0" max="2.0" step="0.1" value="${textProps.blur}" style="width:50px;">
+                            <span class="pdf-ed-slider-val" id="dt-blur-val">${textProps.blur.toFixed(1)}px</span>
+                        </div>
+                        <div class="pdf-ed-prop-item pdf-ed-slider-wrap" title="Micro-Tilt / Angle">
+                            <span class="pdf-ed-prop-label">Tilt</span>
+                            <input type="range" id="dt-rot" class="pdf-ed-range" min="-4.0" max="4.0" step="0.1" value="${textProps.rotation}" style="width:50px;">
+                            <span class="pdf-ed-slider-val" id="dt-rot-val">${textProps.rotation.toFixed(1)}°</span>
+                        </div>
+                        <span style="font-size:0.75rem; color:var(--accent); margin-left:0.5rem;">Click document to stamp date!</span>
+                    `;
+
+                    propsRibbon.querySelector('#dt-format').onchange = (e) => { dateProps.format = e.target.value; };
+                    propsRibbon.querySelector('#dt-picker').onchange = (e) => { dateProps.dateVal = e.target.value; updatePropertyRibbon(); };
+                    propsRibbon.querySelector('#dt-font').onchange = (e) => { textProps.fontFamily = e.target.value; };
+                    propsRibbon.querySelector('#dt-size').onchange = (e) => { textProps.fontSize = parseInt(e.target.value, 10); };
+                    propsRibbon.querySelector('#dt-color').onchange = (e) => { textProps.color = e.target.value; };
+                    propsRibbon.querySelector('#dt-pick-ink').onclick = () => {
+                        eyedropperTarget = 'ink';
+                        const edBtn = toolsRibbon.querySelector('[data-tool="eyedropper"]');
+                        if (edBtn) edBtn.click();
+                    };
+                    propsRibbon.querySelector('#dt-blur').oninput = (e) => {
+                        textProps.blur = parseFloat(e.target.value);
+                        propsRibbon.querySelector('#dt-blur-val').textContent = textProps.blur.toFixed(1) + 'px';
+                    };
+                    propsRibbon.querySelector('#dt-rot').oninput = (e) => {
+                        textProps.rotation = parseFloat(e.target.value);
+                        propsRibbon.querySelector('#dt-rot-val').textContent = textProps.rotation.toFixed(1) + '°';
+                    };
+
+                } else if (activeTool === 'edit-text') {
                     propsRibbon.innerHTML = `
                         <span style="color:var(--accent); font-weight:600; font-size:0.78rem;">
                             📝 Word Mode Active: Click directly on any existing date or text in the document. Press Backspace to erase, type new text, and hit Enter to save.
@@ -2673,7 +3295,7 @@ const ToolRenderers = {
                 } else if (activeTool === 'select') {
                     propsRibbon.innerHTML = `
                         <span style="color:var(--text-muted); font-size:0.78rem;">
-                            👆 Select Mode: Click and drag user-added elements (signatures, stamps, shapes) to reposition or resize.
+                            👆 Select Mode: Click and drag elements to move or resize. <b>Tip:</b> Use arrow keys (↑ ↓ ← →) to micro-nudge dates with 0.5pt precision!
                         </span>
                     `;
                 } else if (activeTool === 'text') {
@@ -2681,36 +3303,84 @@ const ToolRenderers = {
                         <div class="pdf-ed-prop-item">
                             <span class="pdf-ed-prop-label">Font</span>
                             <select id="def-font" class="pdf-ed-select-mini">
-                                <option value="Helvetica" ${textProps.fontFamily === 'Helvetica' ? 'selected' : ''}>Helvetica</option>
+                                <option value="Helvetica" ${textProps.fontFamily === 'Helvetica' ? 'selected' : ''}>Helvetica / Arial</option>
                                 <option value="Times" ${textProps.fontFamily === 'Times' ? 'selected' : ''}>Times Roman</option>
-                                <option value="Courier" ${textProps.fontFamily === 'Courier' ? 'selected' : ''}>Courier</option>
+                                <option value="Courier" ${textProps.fontFamily === 'Courier' ? 'selected' : ''}>Courier (Typewriter)</option>
+                                <option value="Georgia" ${textProps.fontFamily === 'Georgia' ? 'selected' : ''}>Georgia</option>
+                                <option value="Consolas" ${textProps.fontFamily === 'Consolas' ? 'selected' : ''}>Consolas</option>
                             </select>
                         </div>
                         <div class="pdf-ed-prop-item">
                             <span class="pdf-ed-prop-label">Size</span>
                             <select id="def-size" class="pdf-ed-select-mini">
-                                ${[10, 12, 14, 16, 18, 20, 24, 28, 32, 40, 48].map(s => `<option value="${s}" ${textProps.fontSize === s ? 'selected' : ''}>${s} pt</option>`).join('')}
+                                ${[9, 10, 11, 12, 13, 14, 16, 18, 20, 24, 28, 32].map(s => `<option value="${s}" ${textProps.fontSize === s ? 'selected' : ''}>${s} pt</option>`).join('')}
                             </select>
                         </div>
                         <div class="pdf-ed-prop-item">
                             <span class="pdf-ed-prop-label">Color</span>
-                            <input type="color" id="def-color" value="${textProps.color}" style="width:24px; height:24px; padding:0; border:none; background:none; cursor:pointer;">
+                            <input type="color" id="def-color" value="${textProps.color}" style="width:22px; height:22px; padding:0; border:none; background:none; cursor:pointer;">
+                            <button type="button" class="pdf-ed-btn-mini" id="def-pick-color" title="Sample color with eyedropper">💉</button>
                         </div>
-                        <span style="color:var(--text-dim); font-size:0.75rem; margin-left:0.5rem;">Click anywhere on the PDF page to add new text box</span>
+                        <div class="pdf-ed-prop-item pdf-ed-slider-wrap" title="Optical Scan Softness / Blur">
+                            <span class="pdf-ed-prop-label">Softness</span>
+                            <input type="range" id="def-blur" class="pdf-ed-range" min="0" max="2.0" step="0.1" value="${textProps.blur}" style="width:50px;">
+                            <span class="pdf-ed-slider-val" id="def-blur-val">${textProps.blur.toFixed(1)}px</span>
+                        </div>
+                        <div class="pdf-ed-prop-item pdf-ed-slider-wrap" title="Micro-Tilt / Angle">
+                            <span class="pdf-ed-prop-label">Tilt</span>
+                            <input type="range" id="def-rot" class="pdf-ed-range" min="-4.0" max="4.0" step="0.1" value="${textProps.rotation}" style="width:50px;">
+                            <span class="pdf-ed-slider-val" id="def-rot-val">${textProps.rotation.toFixed(1)}°</span>
+                        </div>
+                        <span style="color:var(--text-dim); font-size:0.75rem; margin-left:0.5rem;">Click anywhere to add text box</span>
                     `;
                     propsRibbon.querySelector('#def-font').onchange = (e) => textProps.fontFamily = e.target.value;
                     propsRibbon.querySelector('#def-size').onchange = (e) => textProps.fontSize = parseInt(e.target.value, 10);
                     propsRibbon.querySelector('#def-color').onchange = (e) => textProps.color = e.target.value;
+                    propsRibbon.querySelector('#def-pick-color').onclick = () => {
+                        eyedropperTarget = 'ink';
+                        const edBtn = toolsRibbon.querySelector('[data-tool="eyedropper"]');
+                        if (edBtn) edBtn.click();
+                    };
+                    propsRibbon.querySelector('#def-blur').oninput = (e) => {
+                        textProps.blur = parseFloat(e.target.value);
+                        propsRibbon.querySelector('#def-blur-val').textContent = textProps.blur.toFixed(1) + 'px';
+                    };
+                    propsRibbon.querySelector('#def-rot').oninput = (e) => {
+                        textProps.rotation = parseFloat(e.target.value);
+                        propsRibbon.querySelector('#def-rot-val').textContent = textProps.rotation.toFixed(1) + '°';
+                    };
+
                 } else if (activeTool === 'whiteout') {
                     propsRibbon.innerHTML = `
-                        <span style="color:var(--accent); font-weight:600; font-size:0.78rem;">
-                            ⬜ Whiteout Mode: Click & drag over any unwanted PDF text or numbers to permanently erase/cover them.
-                        </span>
+                        <div class="pdf-ed-prop-item">
+                            <span class="pdf-ed-prop-badge">⬜ WHITEOUT / MATCH</span>
+                        </div>
+                        <div class="pdf-ed-prop-item">
+                            <span class="pdf-ed-prop-label">Paper Color</span>
+                            <input type="color" id="def-wo-color" value="${sampledPaperColor || '#ffffff'}" style="width:22px; height:22px; padding:0; border:none; background:none; cursor:pointer;">
+                            <button type="button" class="pdf-ed-btn-mini" id="def-wo-pick" title="Sample paper color with eyedropper">💉 Sample Paper</button>
+                        </div>
+                        <div class="pdf-ed-prop-item pdf-ed-slider-wrap">
+                            <span class="pdf-ed-prop-label">Feather Edge</span>
+                            <input type="range" id="def-wo-feather" class="pdf-ed-range" min="0" max="8" step="1" value="0" style="width:60px;">
+                            <span class="pdf-ed-slider-val" id="def-wo-feather-val">0px</span>
+                        </div>
+                        <span style="color:var(--accent); font-weight:600; font-size:0.75rem; margin-left:0.5rem;">Click & drag to erase unwanted text with matched paper tone</span>
                     `;
+                    propsRibbon.querySelector('#def-wo-color').onchange = (e) => sampledPaperColor = e.target.value;
+                    propsRibbon.querySelector('#def-wo-pick').onclick = () => {
+                        eyedropperTarget = 'paper';
+                        const edBtn = toolsRibbon.querySelector('[data-tool="eyedropper"]');
+                        if (edBtn) edBtn.click();
+                    };
+                    propsRibbon.querySelector('#def-wo-feather').oninput = (e) => {
+                        propsRibbon.querySelector('#def-wo-feather-val').textContent = e.target.value + 'px';
+                    };
+
                 } else if (activeTool === 'redact') {
                     propsRibbon.innerHTML = `
                         <span style="color:var(--tag-pdf); font-weight:600; font-size:0.78rem;">
-                            ⬛ Redact Mode: Click & drag a black redaction block over sensitive confidential content.
+                            ⬛ Redact Mode: Click & drag a black redaction block over confidential content.
                         </span>
                     `;
                 } else if (activeTool === 'draw') {
@@ -2742,10 +3412,11 @@ const ToolRenderers = {
                         updatePropertyRibbon();
                     };
                     propsRibbon.querySelector('#pen-width').onchange = (e) => penProps.width = parseInt(e.target.value, 10);
+
                 } else if (activeTool === 'highlight') {
                     propsRibbon.innerHTML = `
                         <div class="pdf-ed-prop-item">
-                            <span class="pdf-ed-prop-label">Highlighter Color</span>
+                            <span class="pdf-ed-prop-label">Highlighter</span>
                             <div class="pdf-ed-color-swatches">
                                 ${['#fff159', '#00e676', '#00e5ff', '#ff4081', '#ff9100'].map(c => `
                                     <div class="pdf-ed-swatch ${highlightProps.color === c ? 'active' : ''}" data-color="${c}" style="background:${c};"></div>
@@ -2766,10 +3437,11 @@ const ToolRenderers = {
                         };
                     });
                     propsRibbon.querySelector('#hi-width').onchange = (e) => highlightProps.width = parseInt(e.target.value, 10);
+
                 } else if (activeTool === 'shape') {
                     propsRibbon.innerHTML = `
                         <div class="pdf-ed-prop-item">
-                            <span class="pdf-ed-prop-label">Shape Type</span>
+                            <span class="pdf-ed-prop-label">Shape</span>
                             <select id="shape-type" class="pdf-ed-select-mini">
                                 <option value="rect" ${shapeSubtype === 'rect' ? 'selected' : ''}>Rectangle</option>
                                 <option value="circle" ${shapeSubtype === 'circle' ? 'selected' : ''}>Circle</option>
@@ -2779,7 +3451,7 @@ const ToolRenderers = {
                         </div>
                         <div class="pdf-ed-prop-item">
                             <span class="pdf-ed-prop-label">Border</span>
-                            <input type="color" id="shape-stroke" value="${shapeProps.stroke}" style="width:24px; height:24px; padding:0; border:none; background:none; cursor:pointer;">
+                            <input type="color" id="shape-stroke" value="${shapeProps.stroke}" style="width:22px; height:22px; padding:0; border:none; background:none; cursor:pointer;">
                         </div>
                         <div class="pdf-ed-prop-item">
                             <span class="pdf-ed-prop-label">Width</span>
@@ -2812,6 +3484,7 @@ const ToolRenderers = {
                     return;
                 }
 
+                previousTool = activeTool;
                 toolsRibbon.querySelectorAll('.pdf-ed-tool-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 activeTool = tool;
@@ -2822,15 +3495,26 @@ const ToolRenderers = {
                 if (activeTool === 'edit-text') {
                     stage.style.cursor = 'default';
                     textLayer.style.pointerEvents = 'auto';
+                    loupeEl.style.display = 'none';
                 } else if (activeTool === 'select') {
                     stage.style.cursor = 'default';
                     textLayer.style.pointerEvents = 'none';
-                } else if (activeTool === 'text') {
+                    loupeEl.style.display = 'none';
+                } else if (activeTool === 'text' || activeTool === 'date-stamp') {
                     stage.style.cursor = 'text';
                     textLayer.style.pointerEvents = 'none';
+                    loupeEl.style.display = 'none';
+                } else if (activeTool === 'eyedropper') {
+                    stage.style.cursor = 'crosshair';
+                    textLayer.style.pointerEvents = 'none';
+                } else if (activeTool === 'clone-stamp') {
+                    stage.style.cursor = 'crosshair';
+                    textLayer.style.pointerEvents = 'none';
+                    loupeEl.style.display = 'none';
                 } else {
                     stage.style.cursor = 'crosshair';
                     textLayer.style.pointerEvents = 'none';
+                    loupeEl.style.display = 'none';
                 }
             };
         });
@@ -2839,6 +3523,11 @@ const ToolRenderers = {
         stage.addEventListener('mousemove', (e) => {
             const pt = getEventPdfPoint(e);
             hudCoords.textContent = `Cursor: X: ${pt.ptX.toFixed(1)} pt, Y: ${pt.ptY.toFixed(1)} pt`;
+
+            // Eyedropper Live Magnifier
+            if (activeTool === 'eyedropper') {
+                updateEyedropperLoupe(e.clientX, e.clientY, pt.ptX, pt.ptY);
+            }
 
             if (!isInteracting) return;
 
@@ -2870,6 +3559,48 @@ const ToolRenderers = {
                     sel.ptH = newH;
                 }
                 renderAnnotationItems();
+            } else if (interactionMode === 'create-patch') {
+                // Interactive selection box preview on drawCanvas
+                const dCtx = drawCanvas.getContext('2d');
+                renderDrawCanvasStrokes();
+                const dpr = 2;
+                dCtx.save();
+                dCtx.scale(currentZoom * dpr, currentZoom * dpr);
+                dCtx.strokeStyle = '#00e599';
+                dCtx.lineWidth = 1.5;
+                dCtx.setLineDash([4, 4]);
+                const px = Math.min(startPtX, pt.ptX);
+                const py = Math.min(startPtY, pt.ptY);
+                const pw = Math.abs(pt.ptX - startPtX);
+                const ph = Math.abs(pt.ptY - startPtY);
+                dCtx.strokeRect(px, py, pw, ph);
+                dCtx.fillStyle = 'rgba(0, 229, 153, 0.12)';
+                dCtx.fillRect(px, py, pw, ph);
+                dCtx.restore();
+            } else if (interactionMode === 'clone-stamp') {
+                if (activeCloneStroke && cloneSource) {
+                    const dpr = 2;
+                    const dCtx = drawCanvas.getContext('2d');
+                    const lastPt = activeCloneStroke.points[activeCloneStroke.points.length - 1];
+                    const dist = Math.hypot(pt.ptX - lastPt.ptX, pt.ptY - lastPt.ptY);
+                    const steps = Math.max(1, Math.floor(dist / 3));
+
+                    for (let s = 1; s <= steps; s++) {
+                        const interpX = lastPt.ptX + (pt.ptX - lastPt.ptX) * (s / steps);
+                        const interpY = lastPt.ptY + (pt.ptY - lastPt.ptY) * (s / steps);
+                        const dx = interpX - activeStrokeCloneStart.ptX;
+                        const dy = interpY - activeStrokeCloneStart.ptY;
+                        const sX = cloneSource.ptX + dx;
+                        const sY = cloneSource.ptY + dy;
+
+                        activeCloneStroke.points.push({ ptX: interpX, ptY: interpY, sx: sX, sy: sY });
+                        drawCloneStampPointOnCtx(dCtx, interpX, interpY, sX, sY, cloneStampProps.brushSize, cloneStampProps.feather, cloneStampProps.opacity, currentZoom * dpr);
+
+                        // Move visual reticle to show source sample point in real-time
+                        cloneReticle.style.left = (sX * currentZoom) + 'px';
+                        cloneReticle.style.top = (sY * currentZoom) + 'px';
+                    }
+                }
             } else if (interactionMode === 'draw') {
                 if (activeStroke) {
                     activeStroke.points.push(pt);
@@ -2879,6 +3610,117 @@ const ToolRenderers = {
         });
 
         stage.addEventListener('mousedown', (e) => {
+            const pt = getEventPdfPoint(e);
+
+            // Eyedropper Color Picking
+            if (activeTool === 'eyedropper') {
+                const hex = updateEyedropperLoupe(e.clientX, e.clientY, pt.ptX, pt.ptY);
+                if (hex) {
+                    if (eyedropperTarget === 'paper') {
+                        sampledPaperColor = hex;
+                        const sel = getSelectedItem();
+                        if (sel && sel.type === 'whiteout') {
+                            sel.fill = hex;
+                            renderAnnotationItems();
+                        }
+                        showStatus(`✓ Sampled paper background color: ${hex}`, false);
+                    } else {
+                        sampledInkColor = hex;
+                        textProps.color = hex;
+                        const sel = getSelectedItem();
+                        if (sel && sel.type === 'text') {
+                            sel.color = hex;
+                            renderAnnotationItems();
+                        }
+                        showStatus(`✓ Sampled text ink color: ${hex}`, false);
+                    }
+                }
+                loupeEl.style.display = 'none';
+                // Switch back to previous tool
+                const returnTool = previousTool === 'eyedropper' ? 'select' : previousTool;
+                const toolBtn = toolsRibbon.querySelector(`[data-tool="${returnTool}"]`);
+                if (toolBtn) toolBtn.click();
+                return;
+            }
+
+            // Clone Stamp Sample Point Selection
+            if (activeTool === 'clone-stamp') {
+                if (e.altKey || isSettingCloneSource) {
+                    cloneSource = { ptX: pt.ptX, ptY: pt.ptY };
+                    isSettingCloneSource = false;
+                    cloneReticle.style.left = (cloneSource.ptX * currentZoom) + 'px';
+                    cloneReticle.style.top = (cloneSource.ptY * currentZoom) + 'px';
+                    cloneReticle.style.display = 'block';
+                    showStatus(`✓ Source point set at X: ${Math.round(cloneSource.ptX)}, Y: ${Math.round(cloneSource.ptY)} pt. Now paint over the date to clone paper texture!`, false);
+                    updatePropertyRibbon();
+                    return;
+                }
+
+                if (!cloneSource) {
+                    showStatus('🎯 Please Alt+Click on clean paper first to pick a texture sample point.', true);
+                    return;
+                }
+
+                saveHistory();
+                isInteracting = true;
+                interactionMode = 'clone-stamp';
+                activeStrokeCloneStart = { ptX: pt.ptX, ptY: pt.ptY };
+                activeCloneStroke = {
+                    type: 'clone-stamp',
+                    points: [{ ptX: pt.ptX, ptY: pt.ptY, sx: cloneSource.ptX, sy: cloneSource.ptY }],
+                    brushSize: cloneStampProps.brushSize,
+                    feather: cloneStampProps.feather,
+                    opacity: cloneStampProps.opacity
+                };
+                (pageDrawings[currentPageNum] = pageDrawings[currentPageNum] || []).push(activeCloneStroke);
+
+                const dpr = 2;
+                const dCtx = drawCanvas.getContext('2d');
+                drawCloneStampPointOnCtx(dCtx, pt.ptX, pt.ptY, cloneSource.ptX, cloneSource.ptY, cloneStampProps.brushSize, cloneStampProps.feather, cloneStampProps.opacity, currentZoom * dpr);
+                return;
+            }
+
+            // Paper Patch Selection Drag
+            if (activeTool === 'patch') {
+                isInteracting = true;
+                interactionMode = 'create-patch';
+                startPtX = pt.ptX;
+                startPtY = pt.ptY;
+                return;
+            }
+
+            // Date Tool Stamping
+            if (activeTool === 'date-stamp') {
+                saveHistory();
+                const formattedDate = getFormattedDate(dateProps.format, new Date(dateProps.dateVal));
+                const newDate = {
+                    id: 'date_' + Date.now(),
+                    type: 'text',
+                    isDate: true,
+                    ptX: pt.ptX,
+                    ptY: pt.ptY,
+                    ptW: Math.max(70, Math.round(formattedDate.length * textProps.fontSize * 0.65)),
+                    ptH: Math.round(textProps.fontSize * 1.3),
+                    text: formattedDate,
+                    fontFamily: textProps.fontFamily,
+                    fontSize: textProps.fontSize,
+                    color: textProps.color,
+                    bgColor: textProps.bgColor,
+                    bold: textProps.bold,
+                    italic: textProps.italic,
+                    blur: textProps.blur,
+                    rotation: textProps.rotation,
+                    letterSpacing: textProps.letterSpacing,
+                    blendMode: textProps.blendMode,
+                    opacity: textProps.opacity
+                };
+                (pageAnnotations[currentPageNum] = pageAnnotations[currentPageNum] || []).push(newDate);
+                selectItem(newDate.id);
+                toolsRibbon.querySelector('[data-tool="select"]').click();
+                showStatus(`✓ Stamped date: "${formattedDate}". Use keyboard arrow keys (↑ ↓ ← →) to micro-nudge into position.`, false);
+                return;
+            }
+
             // Check if clicked on a resize handle
             const handleEl = e.target.closest('.pdf-anno-hdl');
             if (handleEl) {
@@ -2920,13 +3762,12 @@ const ToolRenderers = {
                 deselectItem();
             } else if (activeTool === 'text') {
                 saveHistory();
-                const pt = getEventPdfPoint(e);
                 const newText = {
                     id: 'text_' + Date.now(),
                     type: 'text',
                     ptX: pt.ptX,
                     ptY: pt.ptY,
-                    ptW: 180,
+                    ptW: 160,
                     ptH: 26,
                     text: 'New text',
                     fontFamily: textProps.fontFamily,
@@ -2934,7 +3775,12 @@ const ToolRenderers = {
                     color: textProps.color,
                     bgColor: textProps.bgColor,
                     bold: textProps.bold,
-                    italic: textProps.italic
+                    italic: textProps.italic,
+                    blur: textProps.blur,
+                    rotation: textProps.rotation,
+                    letterSpacing: textProps.letterSpacing,
+                    blendMode: textProps.blendMode,
+                    opacity: textProps.opacity
                 };
                 (pageAnnotations[currentPageNum] = pageAnnotations[currentPageNum] || []).push(newText);
                 selectItem(newText.id);
@@ -2943,14 +3789,12 @@ const ToolRenderers = {
                 saveHistory();
                 isInteracting = true;
                 interactionMode = 'create-box';
-                const pt = getEventPdfPoint(e);
                 startPtX = pt.ptX;
                 startPtY = pt.ptY;
             } else if (activeTool === 'draw' || activeTool === 'highlight') {
                 saveHistory();
                 isInteracting = true;
                 interactionMode = 'draw';
-                const pt = getEventPdfPoint(e);
                 activeStroke = {
                     type: activeTool,
                     points: [pt],
@@ -2965,7 +3809,39 @@ const ToolRenderers = {
         window.addEventListener('mouseup', (e) => {
             if (!isInteracting) return;
 
-            if (interactionMode === 'create-box') {
+            if (interactionMode === 'create-patch') {
+                const pt = getEventPdfPoint(e);
+                const x = Math.min(startPtX, pt.ptX);
+                const y = Math.min(startPtY, pt.ptY);
+                const w = Math.abs(pt.ptX - startPtX);
+                const h = Math.abs(pt.ptY - startPtY);
+
+                if (w >= 8 && h >= 6) {
+                    saveHistory();
+                    const patchData = createPaperPatchDataUrl(x, y, w, h, patchProps.feather, patchProps.noise);
+                    const newPatch = {
+                        id: 'patch_' + Date.now(),
+                        type: 'patch',
+                        ptX: x, ptY: y, ptW: w, ptH: h,
+                        origPtX: x, origPtY: y,
+                        dataUrl: patchData,
+                        feather: patchProps.feather,
+                        noise: patchProps.noise,
+                        opacity: patchProps.opacity
+                    };
+                    (pageAnnotations[currentPageNum] = pageAnnotations[currentPageNum] || []).push(newPatch);
+                    selectItem(newPatch.id);
+                    toolsRibbon.querySelector('[data-tool="select"]').click();
+                    showStatus('✓ Paper patch captured! Drag and position it directly over the old date.', false);
+                }
+                renderDrawCanvasStrokes(); // remove temporary drag preview
+            } else if (interactionMode === 'clone-stamp') {
+                // Position reticle back to source point
+                if (cloneSource) {
+                    cloneReticle.style.left = (cloneSource.ptX * currentZoom) + 'px';
+                    cloneReticle.style.top = (cloneSource.ptY * currentZoom) + 'px';
+                }
+            } else if (interactionMode === 'create-box') {
                 const pt = getEventPdfPoint(e);
                 const x = Math.min(startPtX, pt.ptX);
                 const y = Math.min(startPtY, pt.ptY);
@@ -2978,7 +3854,10 @@ const ToolRenderers = {
                         id: 'whiteout_' + Date.now(),
                         type: 'whiteout',
                         ptX: x, ptY: y, ptW: w, ptH: h,
-                        fill: '#ffffff', opacity: 1.0
+                        fill: sampledPaperColor || '#ffffff',
+                        feather: 0,
+                        noise: 0,
+                        opacity: 1.0
                     };
                 } else if (activeTool === 'redact') {
                     newItem = {
@@ -3009,6 +3888,7 @@ const ToolRenderers = {
             isInteracting = false;
             interactionMode = null;
             activeStroke = null;
+            activeCloneStroke = null;
         });
 
         // Double Click to Edit Text In-Place on user annotations
@@ -3023,15 +3903,30 @@ const ToolRenderers = {
             if (newText !== null && newText !== originalText) {
                 saveHistory();
                 sel.text = newText;
+                sel.ptW = Math.max(sel.ptW, newText.length * sel.fontSize * 0.65);
                 renderAnnotationItems();
             }
         });
 
-        // Keyboard Shortcuts
+        // Keyboard Shortcuts & Precision Nudging
         window.addEventListener('keydown', (e) => {
             if (!wsBox || wsBox.style.display === 'none') return;
-            // Ignore if active in input/textarea/contenteditable
-            if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName) || document.activeElement.getAttribute('contenteditable') === 'true') return;
+            if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName) || document.activeElement.getAttribute('contenteditable') === 'true') return;
+
+            const sel = getSelectedItem();
+
+            // Arrow keys micro-nudging (0.5pt default, 5pt with Shift)
+            if (sel && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                e.preventDefault();
+                saveHistory();
+                const step = e.shiftKey ? 5 : 0.5;
+                if (e.key === 'ArrowUp') sel.ptY = Math.max(0, sel.ptY - step);
+                if (e.key === 'ArrowDown') sel.ptY = Math.min(pageHeightPt - (sel.ptH || 10), sel.ptY + step);
+                if (e.key === 'ArrowLeft') sel.ptX = Math.max(0, sel.ptX - step);
+                if (e.key === 'ArrowRight') sel.ptX = Math.min(pageWidthPt - (sel.ptW || 10), sel.ptX + step);
+                renderAnnotationItems();
+                return;
+            }
 
             if (e.key === 'Delete' || e.key === 'Backspace') {
                 if (selectedId) {
@@ -3045,6 +3940,18 @@ const ToolRenderers = {
             } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
                 e.preventDefault();
                 redo();
+            } else if (e.key.toLowerCase() === 's' && !e.ctrlKey && !e.metaKey) {
+                const btn = toolsRibbon.querySelector('[data-tool="clone-stamp"]');
+                if (btn) btn.click();
+            } else if (e.key.toLowerCase() === 'j' && !e.ctrlKey && !e.metaKey) {
+                const btn = toolsRibbon.querySelector('[data-tool="patch"]');
+                if (btn) btn.click();
+            } else if (e.key.toLowerCase() === 'i' && !e.ctrlKey && !e.metaKey) {
+                const btn = toolsRibbon.querySelector('[data-tool="eyedropper"]');
+                if (btn) btn.click();
+            } else if (e.key.toLowerCase() === 'v' && !e.ctrlKey && !e.metaKey) {
+                const btn = toolsRibbon.querySelector('[data-tool="select"]');
+                if (btn) btn.click();
             }
         });
 
@@ -3082,16 +3989,16 @@ const ToolRenderers = {
         };
 
         zoomInBtn.onclick = () => {
-            if (currentZoom < 2.5) {
-                currentZoom = Math.min(2.5, +(currentZoom + 0.15).toFixed(2));
+            if (currentZoom < 4.0) {
+                currentZoom = Math.min(4.0, +(currentZoom + 0.25).toFixed(2));
                 zoomTxt.textContent = `${Math.round(currentZoom * 100)}%`;
                 renderPage(currentPageNum);
             }
         };
 
         zoomOutBtn.onclick = () => {
-            if (currentZoom > 0.4) {
-                currentZoom = Math.max(0.4, +(currentZoom - 0.15).toFixed(2));
+            if (currentZoom > 0.3) {
+                currentZoom = Math.max(0.3, +(currentZoom - 0.25).toFixed(2));
                 zoomTxt.textContent = `${Math.round(currentZoom * 100)}%`;
                 renderPage(currentPageNum);
             }
@@ -3127,7 +4034,7 @@ const ToolRenderers = {
 
         newBtn.onclick = () => {
             if (confirm('Discard changes and open another PDF document?')) {
-                currentPdfBuffer = null;
+                currentPdfBytes = null;
                 pdfDoc = null;
                 wsBox.style.display = 'none';
                 dzBox.style.display = 'block';
@@ -3451,15 +4358,226 @@ const ToolRenderers = {
             });
         }
 
-        // Lossless Vector PDF Export Engine
+        // Render an annotation item to an offscreen high-DPI export canvas
+        async function renderAnnotationToExportContext(ctx, item, scale) {
+            ctx.save();
+            const x = item.ptX * scale;
+            const y = item.ptY * scale;
+            const w = item.ptW * scale;
+            const h = item.ptH * scale;
+
+            if (item.type === 'patch') {
+                if (item.dataUrl) {
+                    ctx.globalAlpha = item.opacity ?? 1.0;
+                    const img = await loadImgPromise(item.dataUrl);
+                    if (img) ctx.drawImage(img, x, y, w, h);
+                }
+            } else if (item.type === 'whiteout') {
+                const fillCol = item.fill || '#ffffff';
+                ctx.fillStyle = fillCol;
+                ctx.globalAlpha = item.opacity ?? 1.0;
+                if (item.feather > 0) {
+                    const fPx = item.feather * scale * 0.5;
+                    ctx.shadowColor = fillCol;
+                    ctx.shadowBlur = fPx * 2;
+                }
+                ctx.fillRect(x, y, w, h);
+            } else if (item.type === 'redact') {
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(x, y, w, h);
+            } else if (item.type === 'text') {
+                ctx.translate(x, y);
+                if (item.rotation) {
+                    ctx.rotate((item.rotation * Math.PI) / 180);
+                }
+                if (item.blendMode === 'multiply') {
+                    ctx.globalCompositeOperation = 'multiply';
+                }
+                ctx.globalAlpha = item.opacity ?? 0.96;
+                if (item.blur && item.blur > 0) {
+                    ctx.filter = `blur(${(item.blur * scale * 0.4).toFixed(1)}px)`;
+                }
+                if (item.bgColor && item.bgColor !== 'transparent') {
+                    ctx.fillStyle = item.bgColor;
+                    ctx.fillRect(-2, -2, w + 4, h + 4);
+                }
+                ctx.fillStyle = item.color || '#1f2429';
+                const fontName = item.fontFamily === 'Times' ? 'Times New Roman, serif' : (item.fontFamily === 'Courier' ? 'Courier New, monospace' : (item.fontFamily === 'Georgia' ? 'Georgia, serif' : (item.fontFamily === 'Consolas' ? 'Consolas, monospace' : 'Helvetica, Arial, sans-serif')));
+                const weight = item.bold ? '700' : '400';
+                const style = item.italic ? 'italic' : 'normal';
+                const fontSizePx = Math.round((item.fontSize || 13) * scale);
+                ctx.font = `${style} ${weight} ${fontSizePx}px ${fontName}`;
+                if (item.letterSpacing) {
+                    ctx.letterSpacing = `${item.letterSpacing * scale}px`;
+                }
+                ctx.textBaseline = 'top';
+                const lines = (item.text || '').split('\n');
+                const lineHeight = fontSizePx * 1.25;
+                for (let l = 0; l < lines.length; l++) {
+                    ctx.fillText(lines[l], 0, l * lineHeight);
+                }
+            } else if (item.type === 'rect' || item.type === 'circle') {
+                ctx.strokeStyle = item.stroke || '#000000';
+                ctx.lineWidth = (item.strokeWidth || 2) * scale;
+                if (item.fill && item.fill !== 'transparent') {
+                    ctx.fillStyle = item.fill;
+                    if (item.type === 'circle') {
+                        ctx.beginPath();
+                        ctx.arc(x + w / 2, y + h / 2, Math.min(w, h) / 2, 0, Math.PI * 2);
+                        ctx.fill();
+                    } else {
+                        ctx.fillRect(x, y, w, h);
+                    }
+                }
+                if (item.strokeWidth > 0) {
+                    if (item.type === 'circle') {
+                        ctx.beginPath();
+                        ctx.arc(x + w / 2, y + h / 2, Math.min(w, h) / 2, 0, Math.PI * 2);
+                        ctx.stroke();
+                    } else {
+                        ctx.strokeRect(x, y, w, h);
+                    }
+                }
+            } else if (item.type === 'line' || item.type === 'arrow') {
+                ctx.strokeStyle = item.stroke || '#000000';
+                ctx.lineWidth = (item.strokeWidth || 2) * scale;
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(x + w, y + h);
+                ctx.stroke();
+            } else if (item.type === 'image' || item.type === 'signature' || item.type === 'stamp') {
+                if (item.dataUrl) {
+                    const img = await loadImgPromise(item.dataUrl);
+                    if (img) {
+                        ctx.globalAlpha = item.opacity ?? 1.0;
+                        ctx.drawImage(img, x, y, w, h);
+                    }
+                }
+            }
+            ctx.restore();
+        }
+
+        // Export vector annotation to pdf-lib page
+        function exportVectorAnnotation(page, item, pHeight, pWidth, embeddedFonts) {
+            const { rgb } = window.PDFLib;
+            if (item.type === 'whiteout' || item.type === 'redact' || item.type === 'rect') {
+                const x = item.ptX;
+                const y = pHeight - item.ptY - item.ptH;
+                const w = Math.max(1, item.ptW);
+                const h = Math.max(1, item.ptH);
+                const fillHex = item.fill || (item.type === 'whiteout' ? (sampledPaperColor || '#ffffff') : '#000000');
+                const fColor = hexToRgb(fillHex);
+                const rectOpts = {
+                    x, y, width: w, height: h,
+                    color: rgb(fColor.r, fColor.g, fColor.b),
+                    opacity: item.opacity ?? 1.0
+                };
+                if (item.stroke && item.strokeWidth > 0) {
+                    const sColor = hexToRgb(item.stroke);
+                    rectOpts.borderColor = rgb(sColor.r, sColor.g, sColor.b);
+                    rectOpts.borderWidth = item.strokeWidth;
+                }
+                page.drawRectangle(rectOpts);
+            } else if (item.type === 'circle') {
+                const radius = Math.min(item.ptW, item.ptH) / 2;
+                const centerX = item.ptX + radius;
+                const centerY = pHeight - item.ptY - radius;
+                const fillHex = item.fill && item.fill !== 'transparent' ? item.fill : null;
+                const circleOpts = {
+                    x: centerX, y: centerY, size: radius, opacity: item.opacity ?? 1.0
+                };
+                if (fillHex) {
+                    const fColor = hexToRgb(fillHex);
+                    circleOpts.color = rgb(fColor.r, fColor.g, fColor.b);
+                }
+                if (item.stroke && item.strokeWidth > 0) {
+                    const sColor = hexToRgb(item.stroke);
+                    circleOpts.borderColor = rgb(sColor.r, sColor.g, sColor.b);
+                    circleOpts.borderWidth = item.strokeWidth;
+                }
+                try {
+                    page.drawCircle(circleOpts);
+                } catch (e) {
+                    page.drawRectangle({
+                        x: item.ptX, y: pHeight - item.ptY - item.ptH,
+                        width: item.ptW, height: item.ptH,
+                        color: fillHex ? rgb(hexToRgb(fillHex).r, hexToRgb(fillHex).g, hexToRgb(fillHex).b) : undefined
+                    });
+                }
+            } else if (item.type === 'line' || item.type === 'arrow') {
+                const startX = item.ptX;
+                const startY = pHeight - item.ptY;
+                const endX = item.ptX + item.ptW;
+                const endY = pHeight - (item.ptY + item.ptH);
+                const sColor = hexToRgb(item.stroke || '#000000');
+                page.drawLine({
+                    start: { x: startX, y: startY },
+                    end: { x: endX, y: endY },
+                    thickness: item.strokeWidth || 2,
+                    color: rgb(sColor.r, sColor.g, sColor.b),
+                    opacity: item.opacity ?? 1.0
+                });
+            } else if (item.type === 'text') {
+                let fontKey = item.fontFamily || 'Helvetica';
+                if (item.bold && item.italic) fontKey = fontKey === 'Times' ? 'Times-BoldItalic' : (fontKey === 'Courier' ? 'Courier-BoldOblique' : 'Helvetica-BoldOblique');
+                else if (item.bold) fontKey = fontKey === 'Times' ? 'Times-Bold' : (fontKey === 'Courier' ? 'Courier-Bold' : 'Helvetica-Bold');
+                else if (item.italic) fontKey = fontKey === 'Times' ? 'Times-Italic' : (fontKey === 'Courier' ? 'Courier-Oblique' : 'Helvetica-Oblique');
+
+                const selectedFont = embeddedFonts[fontKey] || embeddedFonts['Helvetica'];
+                const fontSize = item.fontSize || 13;
+                const cleanText = sanitizeWinAnsiText(item.text || '');
+                const lines = cleanText.split('\n');
+                const lineHeight = fontSize * 1.25;
+
+                if (item.bgColor && item.bgColor !== 'transparent') {
+                    const bg = hexToRgb(item.bgColor);
+                    page.drawRectangle({
+                        x: item.ptX - 2,
+                        y: pHeight - item.ptY - (lines.length * lineHeight) - 2,
+                        width: Math.max(item.ptW, 20) + 4,
+                        height: (lines.length * lineHeight) + 4,
+                        color: rgb(bg.r, bg.g, bg.b),
+                        opacity: 1.0
+                    });
+                }
+
+                const textColor = hexToRgb(item.color || '#1f2429');
+                for (let l = 0; l < lines.length; l++) {
+                    const line = lines[l];
+                    const lineY = pHeight - item.ptY - (fontSize * 0.85) - (l * lineHeight);
+                    page.drawText(line, {
+                        x: item.ptX,
+                        y: lineY,
+                        size: fontSize,
+                        font: selectedFont,
+                        color: rgb(textColor.r, textColor.g, textColor.b),
+                        maxWidth: Math.max(item.ptW, pWidth - item.ptX)
+                    });
+                }
+            }
+        }
+
+        // Image loading helper for export canvas
+        function loadImgPromise(src) {
+            return new Promise((resolve) => {
+                if (!src) return resolve(null);
+                const im = new Image();
+                im.onload = () => resolve(im);
+                im.onerror = () => resolve(null);
+                im.src = src;
+            });
+        }
+
+        // Lossless Vector & 300 DPI High-Definition Hybrid PDF Export Engine
         exportBtn.onclick = async () => {
-            if (!currentPdfBuffer) return;
-            showStatus('Assembling precision vector PDF with Word-style text replacements...');
+            if (!currentPdfBytes || !currentPdfBytes.byteLength) return;
+            showStatus('Assembling document with Photoshop-grade precision & seamless paper textures...');
             try {
                 const { PDFDocument, rgb, degrees, StandardFonts } = window.PDFLib;
-                const pdfLibDoc = await PDFDocument.load(currentPdfBuffer);
+                // Pass an independent clone to PDFDocument.load so it never gets detached
+                const pdfLibDoc = await PDFDocument.load(currentPdfBytes.slice(0), { ignoreEncryption: true });
 
-                // Embed Standard Fonts
+                // Embed standard fonts for vector drawing
                 const embeddedFonts = {
                     'Helvetica': await pdfLibDoc.embedFont(StandardFonts.Helvetica),
                     'Helvetica-Bold': await pdfLibDoc.embedFont(StandardFonts.HelveticaBold),
@@ -3478,224 +4596,151 @@ const ToolRenderers = {
                     const page = pages[pIdx];
                     const { width: pWidth, height: pHeight } = page.getSize();
 
-                    // Apply custom rotation if updated
-                    if (pageRotations[pageNum]) {
-                        const curRot = page.getRotation().angle || 0;
-                        page.setRotation(degrees((curRot + pageRotations[pageNum]) % 360));
-                    }
-
-                    // 1. Process Word-Mode Edited Text Blocks (In-Place Date & Text Replacement)
-                    const textBlocks = pageTextBlocks[pageNum] || [];
-                    const editedBlocks = textBlocks.filter(b => b.edited && b.str !== b.origStr);
-
-                    for (const b of editedBlocks) {
-                        // Mask the original text area permanently with white rectangle
-                        const maskX = b.ptX - 1;
-                        const maskY = pHeight - b.ptY - b.origPtH - 1;
-                        const maskW = Math.max(b.origPtW, b.ptW) + 3;
-                        const maskH = b.origPtH + 3;
-
-                        page.drawRectangle({
-                            x: maskX,
-                            y: maskY,
-                            width: maskW,
-                            height: maskH,
-                            color: rgb(1, 1, 1),
-                            opacity: 1.0
-                        });
-
-                        // Draw the replacement text in place
-                        if (b.str.trim()) {
-                            const fontKey = b.fontFamily || 'Helvetica';
-                            const font = embeddedFonts[fontKey] || embeddedFonts['Helvetica'];
-                            const fontSize = b.fontSize || 12;
-                            const textColor = hexToRgb(b.color || '#000000');
-
-                            page.drawText(b.str, {
-                                x: b.ptX,
-                                y: pHeight - b.ptY - (fontSize * 0.85),
-                                size: fontSize,
-                                font: font,
-                                color: rgb(textColor.r, textColor.g, textColor.b)
-                            });
-                        }
-                    }
-
-                    // 2. Export Freehand Drawings (Pen & Highlighter)
                     const drawings = pageDrawings[pageNum] || [];
-                    if (drawings.length > 0) {
-                        const dpr = 2; // high-res canvas
-                        const dCanvas = document.createElement('canvas');
-                        dCanvas.width = Math.round(pWidth * dpr);
-                        dCanvas.height = Math.round(pHeight * dpr);
-                        const dCtx = dCanvas.getContext('2d');
-                        dCtx.scale(dpr, dpr);
+                    const items = pageAnnotations[pageNum] || [];
+                    const textBlocks = pageTextBlocks[pageNum] || [];
+                    const hasEditedBlocks = textBlocks.some(b => b.edited && b.str !== b.origStr);
 
-                        for (const stroke of drawings) {
-                            if (!stroke.points || stroke.points.length < 2) continue;
-                            dCtx.save();
-                            dCtx.strokeStyle = stroke.color;
-                            dCtx.lineWidth = stroke.width;
-                            dCtx.lineCap = 'round';
-                            dCtx.lineJoin = 'round';
-                            dCtx.globalAlpha = stroke.opacity ?? 1.0;
-                            dCtx.beginPath();
-                            dCtx.moveTo(stroke.points[0].ptX, stroke.points[0].ptY);
-                            for (let i = 1; i < stroke.points.length; i++) {
-                                dCtx.lineTo(stroke.points[i].ptX, stroke.points[i].ptY);
+                    // Check if page contains raster edits (paper patches, clone stamp, scan softness, micro-tilt, or edits on scanned pages)
+                    const hasRasterEdits = drawings.length > 0 ||
+                        items.some(it => it.type === 'patch' || (it.type === 'whiteout' && it.feather > 0) || (it.type === 'text' && (it.blur > 0 || it.rotation !== 0 || it.letterSpacing !== 0 || it.blendMode === 'multiply'))) ||
+                        (pageIsScanned[pageNum] && (items.length > 0 || hasEditedBlocks));
+
+                    if (hasRasterEdits) {
+                        // PHOTOSHOP HYBRID EXPORT:
+                        // Render complete composite page at 300 DPI high resolution
+                        showStatus(`Rendering seamless 300 DPI photo-realistic page ${pageNum}...`);
+                        const pdfjsPage = await pdfDoc.getPage(pageNum);
+                        const rot = pageRotations[pageNum] || 0;
+                        const exportDpr = 2.5; // ~200-300 DPI equivalent
+                        const exportViewport = pdfjsPage.getViewport({ scale: exportDpr, rotation: rot });
+
+                        const expCanvas = document.createElement('canvas');
+                        expCanvas.width = exportViewport.width;
+                        expCanvas.height = exportViewport.height;
+                        const expCtx = expCanvas.getContext('2d');
+
+                        // 1. Draw PDF base page
+                        await pdfjsPage.render({ canvasContext: expCtx, viewport: exportViewport }).promise;
+
+                        // 2. Draw all freehand and clone-stamp strokes
+                        if (drawings.length > 0) {
+                            for (const stroke of drawings) {
+                                if (stroke.type === 'clone-stamp') {
+                                    if (stroke.points && stroke.points.length > 0) {
+                                        for (const p of stroke.points) {
+                                            drawCloneStampPointOnCtx(expCtx, p.ptX, p.ptY, p.sx, p.sy, stroke.brushSize || 18, stroke.feather ?? 50, stroke.opacity ?? 1.0, exportDpr);
+                                        }
+                                    }
+                                } else if (stroke.type === 'draw' || stroke.type === 'highlight') {
+                                    if (!stroke.points || stroke.points.length < 2) continue;
+                                    expCtx.save();
+                                    expCtx.strokeStyle = stroke.color;
+                                    expCtx.lineWidth = stroke.width * exportDpr;
+                                    expCtx.lineCap = 'round';
+                                    expCtx.lineJoin = 'round';
+                                    expCtx.globalAlpha = stroke.opacity ?? (stroke.type === 'draw' ? 1.0 : 0.45);
+                                    expCtx.beginPath();
+                                    expCtx.moveTo(stroke.points[0].ptX * exportDpr, stroke.points[0].ptY * exportDpr);
+                                    for (let i = 1; i < stroke.points.length; i++) {
+                                        expCtx.lineTo(stroke.points[i].ptX * exportDpr, stroke.points[i].ptY * exportDpr);
+                                    }
+                                    expCtx.stroke();
+                                    expCtx.restore();
+                                }
                             }
-                            dCtx.stroke();
-                            dCtx.restore();
                         }
 
-                        const dataUrl = dCanvas.toDataURL('image/png');
-                        const pngBytes = dataUriToUint8(dataUrl);
-                        const embeddedDrawing = await pdfLibDoc.embedPng(pngBytes);
-                        page.drawImage(embeddedDrawing, {
+                        // 3. Draw Word Mode text edits (if any)
+                        for (const b of textBlocks.filter(b => b.edited && b.str !== b.origStr)) {
+                            const bx = b.ptX * exportDpr;
+                            const by = b.ptY * exportDpr;
+                            const bw = Math.max(b.origPtW, b.ptW) * exportDpr;
+                            const bh = b.ptH * exportDpr;
+                            expCtx.fillStyle = '#ffffff';
+                            expCtx.fillRect(bx - 1, by - 1, bw + 2, bh + 2);
+                            expCtx.fillStyle = b.color || '#000000';
+                            expCtx.font = `${Math.round(b.fontSize * exportDpr)}px ${b.fontFamily === 'Times' ? 'Times New Roman' : (b.fontFamily === 'Courier' ? 'Courier' : 'Helvetica, Arial, sans-serif')}`;
+                            expCtx.textBaseline = 'top';
+                            expCtx.fillText(b.str, bx, by);
+                        }
+
+                        // 4. Draw all annotations onto the composite canvas
+                        for (const item of items) {
+                            await renderAnnotationToExportContext(expCtx, item, exportDpr);
+                        }
+
+                        // Convert composite canvas to high-quality JPG
+                        const dataUrl = expCanvas.toDataURL('image/jpeg', 0.94);
+                        const imgBytes = dataUriToUint8(dataUrl);
+                        const embeddedImg = await pdfLibDoc.embedJpg(imgBytes);
+
+                        const outW = exportViewport.width / exportDpr;
+                        const outH = exportViewport.height / exportDpr;
+                        page.setSize(outW, outH);
+                        page.setRotation(degrees(0));
+
+                        page.drawImage(embeddedImg, {
                             x: 0,
                             y: 0,
-                            width: pWidth,
-                            height: pHeight
+                            width: outW,
+                            height: outH
                         });
-                    }
+                    } else {
+                        // Clean vector document export
+                        if (pageRotations[pageNum]) {
+                            const curRot = page.getRotation().angle || 0;
+                            page.setRotation(degrees((curRot + pageRotations[pageNum]) % 360));
+                        }
 
-                    // 3. Export Vector Annotations
-                    const items = pageAnnotations[pageNum] || [];
-                    for (const item of items) {
-                        if (item.type === 'whiteout' || item.type === 'redact' || item.type === 'rect') {
-                            const x = item.ptX;
-                            const y = pHeight - item.ptY - item.ptH;
-                            const w = Math.max(1, item.ptW);
-                            const h = Math.max(1, item.ptH);
+                        // In-place text replacements (Word Mode)
+                        for (const b of textBlocks.filter(b => b.edited && b.str !== b.origStr)) {
+                            const maskX = b.ptX - 1;
+                            const maskY = pHeight - b.ptY - b.origPtH - 1;
+                            const maskW = Math.max(b.origPtW, b.ptW) + 3;
+                            const maskH = b.origPtH + 3;
 
-                            const fillHex = item.fill || (item.type === 'whiteout' ? '#ffffff' : '#000000');
-                            const fColor = hexToRgb(fillHex);
-                            const rectOpts = {
-                                x: x,
-                                y: y,
-                                width: w,
-                                height: h,
-                                color: rgb(fColor.r, fColor.g, fColor.b),
-                                opacity: item.opacity ?? 1.0
-                            };
-                            if (item.stroke && item.strokeWidth > 0) {
-                                const sColor = hexToRgb(item.stroke);
-                                rectOpts.borderColor = rgb(sColor.r, sColor.g, sColor.b);
-                                rectOpts.borderWidth = item.strokeWidth;
-                            }
-                            page.drawRectangle(rectOpts);
-                        } else if (item.type === 'circle') {
-                            const radius = Math.min(item.ptW, item.ptH) / 2;
-                            const centerX = item.ptX + radius;
-                            const centerY = pHeight - item.ptY - radius;
-                            const fillHex = item.fill && item.fill !== 'transparent' ? item.fill : null;
-                            const circleOpts = {
-                                x: centerX,
-                                y: centerY,
-                                size: radius,
-                                opacity: item.opacity ?? 1.0
-                            };
-                            if (fillHex) {
-                                const fColor = hexToRgb(fillHex);
-                                circleOpts.color = rgb(fColor.r, fColor.g, fColor.b);
-                            }
-                            if (item.stroke && item.strokeWidth > 0) {
-                                const sColor = hexToRgb(item.stroke);
-                                circleOpts.borderColor = rgb(sColor.r, sColor.g, sColor.b);
-                                circleOpts.borderWidth = item.strokeWidth;
-                            }
-                            try {
-                                page.drawCircle(circleOpts);
-                            } catch (e) {
-                                page.drawRectangle({
-                                    x: item.ptX, y: pHeight - item.ptY - item.ptH,
-                                    width: item.ptW, height: item.ptH,
-                                    color: fillHex ? rgb(fColor.r, fColor.g, fColor.b) : undefined
-                                });
-                            }
-                        } else if (item.type === 'line' || item.type === 'arrow') {
-                            const startX = item.ptX;
-                            const startY = pHeight - item.ptY;
-                            const endX = item.ptX + item.ptW;
-                            const endY = pHeight - (item.ptY + item.ptH);
-                            const sColor = hexToRgb(item.stroke || '#000000');
-                            page.drawLine({
-                                start: { x: startX, y: startY },
-                                end: { x: endX, y: endY },
-                                thickness: item.strokeWidth || 2,
-                                color: rgb(sColor.r, sColor.g, sColor.b),
-                                opacity: item.opacity ?? 1.0
+                            page.drawRectangle({
+                                x: maskX, y: maskY, width: maskW, height: maskH,
+                                color: rgb(1, 1, 1), opacity: 1.0
                             });
-                            if (item.type === 'arrow') {
-                                const angle = Math.atan2(endY - startY, endX - startX);
-                                const headLen = Math.max(8, (item.strokeWidth || 2) * 3.5);
-                                page.drawLine({
-                                    start: { x: endX, y: endY },
-                                    end: { x: endX - headLen * Math.cos(angle - Math.PI / 6), y: endY - headLen * Math.sin(angle - Math.PI / 6) },
-                                    thickness: item.strokeWidth || 2,
-                                    color: rgb(sColor.r, sColor.g, sColor.b)
-                                });
-                                page.drawLine({
-                                    start: { x: endX, y: endY },
-                                    end: { x: endX - headLen * Math.cos(angle + Math.PI / 6), y: endY - headLen * Math.sin(angle + Math.PI / 6) },
-                                    thickness: item.strokeWidth || 2,
-                                    color: rgb(sColor.r, sColor.g, sColor.b)
-                                });
-                            }
-                        } else if (item.type === 'text') {
-                            let fontKey = item.fontFamily || 'Helvetica';
-                            if (item.bold && item.italic) fontKey = fontKey === 'Times' ? 'Times-BoldItalic' : (fontKey === 'Courier' ? 'Courier-BoldOblique' : 'Helvetica-BoldOblique');
-                            else if (item.bold) fontKey = fontKey === 'Times' ? 'Times-Bold' : (fontKey === 'Courier' ? 'Courier-Bold' : 'Helvetica-Bold');
-                            else if (item.italic) fontKey = fontKey === 'Times' ? 'Times-Italic' : (fontKey === 'Courier' ? 'Courier-Oblique' : 'Helvetica-Oblique');
 
-                            const selectedFont = embeddedFonts[fontKey] || embeddedFonts['Helvetica'];
-                            const fontSize = item.fontSize || 14;
-                            const lines = (item.text || '').split('\n');
-                            const lineHeight = fontSize * 1.25;
+                            if (b.str.trim()) {
+                                const fontKey = b.fontFamily || 'Helvetica';
+                                const font = embeddedFonts[fontKey] || embeddedFonts['Helvetica'];
+                                const fontSize = b.fontSize || 12;
+                                const textColor = hexToRgb(b.color || '#000000');
 
-                            if (item.bgColor && item.bgColor !== 'transparent') {
-                                const bg = hexToRgb(item.bgColor);
-                                page.drawRectangle({
-                                    x: item.ptX - 2,
-                                    y: pHeight - item.ptY - (lines.length * lineHeight) - 2,
-                                    width: Math.max(item.ptW, 20) + 4,
-                                    height: (lines.length * lineHeight) + 4,
-                                    color: rgb(bg.r, bg.g, bg.b),
-                                    opacity: 1.0
-                                });
-                            }
-
-                            const textColor = hexToRgb(item.color || '#000000');
-                            for (let l = 0; l < lines.length; l++) {
-                                const line = lines[l];
-                                const lineY = pHeight - item.ptY - (fontSize * 0.82) - (l * lineHeight);
-                                page.drawText(line, {
-                                    x: item.ptX,
-                                    y: lineY,
+                                page.drawText(sanitizeWinAnsiText(b.str), {
+                                    x: b.ptX,
+                                    y: pHeight - b.ptY - (fontSize * 0.85),
                                     size: fontSize,
-                                    font: selectedFont,
-                                    color: rgb(textColor.r, textColor.g, textColor.b),
-                                    maxWidth: Math.max(item.ptW, pWidth - item.ptX)
+                                    font: font,
+                                    color: rgb(textColor.r, textColor.g, textColor.b)
                                 });
                             }
-                        } else if (item.type === 'image' || item.type === 'signature' || item.type === 'stamp') {
-                            if (item.dataUrl) {
-                                const imgBytes = dataUriToUint8(item.dataUrl);
-                                let embeddedImg;
-                                if (item.dataUrl.startsWith('data:image/jpeg') || item.dataUrl.startsWith('data:image/jpg')) {
-                                    embeddedImg = await pdfLibDoc.embedJpg(imgBytes);
-                                } else {
-                                    embeddedImg = await pdfLibDoc.embedPng(imgBytes);
+                        }
+
+                        // Vector annotations
+                        for (const item of items) {
+                            if (item.type === 'image' || item.type === 'signature' || item.type === 'stamp') {
+                                if (item.dataUrl) {
+                                    const imgBytes = dataUriToUint8(item.dataUrl);
+                                    let embeddedImg;
+                                    if (item.dataUrl.startsWith('data:image/jpeg') || item.dataUrl.startsWith('data:image/jpg')) {
+                                        embeddedImg = await pdfLibDoc.embedJpg(imgBytes);
+                                    } else {
+                                        embeddedImg = await pdfLibDoc.embedPng(imgBytes);
+                                    }
+                                    const x = item.ptX;
+                                    const y = pHeight - item.ptY - item.ptH;
+                                    page.drawImage(embeddedImg, {
+                                        x: x, y: y, width: item.ptW, height: item.ptH,
+                                        opacity: item.opacity ?? 1.0
+                                    });
                                 }
-                                const x = item.ptX;
-                                const y = pHeight - item.ptY - item.ptH;
-                                page.drawImage(embeddedImg, {
-                                    x: x,
-                                    y: y,
-                                    width: item.ptW,
-                                    height: item.ptH,
-                                    opacity: item.opacity ?? 1.0
-                                });
+                            } else {
+                                exportVectorAnnotation(page, item, pHeight, pWidth, embeddedFonts);
                             }
                         }
                     }
@@ -3704,7 +4749,7 @@ const ToolRenderers = {
                 const modifiedBytes = await pdfLibDoc.save();
                 const blob = new Blob([modifiedBytes], { type: 'application/pdf' });
                 Utils.downloadBlob(blob, `${originalFileName.replace(/\.pdf$/i, '')}-edited.pdf`);
-                showStatus('✓ Precision vector PDF exported with text updates!', false);
+                showStatus('✓ Perfect document exported with seamless date & paper textures!', false);
                 setTimeout(hideStatus, 5000);
             } catch (err) {
                 console.error('PDF export failed:', err);
