@@ -66,13 +66,13 @@ TOOLS = [
     {
         "id": "pdf-split",
         "slug": "pdf-split",
-        "title": "PDF Splitter & Page Extractor",
+        "title": "PDF Splitter & Single Page Extractor",
         "category": "pdf",
         "badge": "Precision",
         "icon": "✂️",
-        "short_desc": "Extract specific page ranges (e.g. 1-5, 8, 11-14) or split large PDF files into separate targeted files.",
-        "detailed_desc": "Easily separate large PDF documents into smaller parts. Enter custom page ranges or select individual pages to extract into a clean new PDF.",
-        "keywords": ["pdf split", "extract pdf pages", "separate pdf", "cut pdf", "split pdf pages"],
+        "short_desc": "Split PDF into individual single-page files (1, 1, 1) or extract custom ranges. Download all single PDFs as a ZIP or 1-by-1.",
+        "detailed_desc": "Split any PDF document into standalone 1-page PDF files in a single click or extract specific page ranges. Download all single pages as a convenient ZIP archive, save each PDF individually, or download specific single pages on demand.",
+        "keywords": ["pdf split", "split pdf into single pages", "extract pdf pages", "separate pdf", "cut pdf", "split pdf pages"],
         "client_powered": True
     },
     {

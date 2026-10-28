@@ -1079,96 +1079,475 @@ const ToolRenderers = {
         };
     },
 
-    // 4. PDF Splitter & Page Extractor
+    // 4. PDF Splitter & Single-Page Extractor (Split 1 PDF into single 1, 1, 1... files)
     'pdf-split': (container) => {
         let pdfBytes = null;
         let totalPages = 0;
+        let cleanBaseName = 'document';
+        let selectedPages = new Set();
+        let pdfjsDoc = null;
+
+        // Dynamic JSZip loader helper
+        const getZipInstance = async () => {
+            if (window.JSZip) return new window.JSZip();
+            if (!window._jszipLoading) {
+                window._jszipLoading = new Promise((resolve, reject) => {
+                    const s = document.createElement('script');
+                    s.src = '/static/tools/js/vendor/jszip.min.js?v=3.10.1';
+                    s.onload = () => resolve(window.JSZip);
+                    s.onerror = (e) => reject(new Error('Failed to load JSZip library: ' + e.message));
+                    document.head.appendChild(s);
+                });
+            }
+            const JSZipCls = await window._jszipLoading;
+            return new JSZipCls();
+        };
 
         container.innerHTML = `
             <div id="dz-split"></div>
             <div id="split-ws" style="display: none; margin-top: 1.5rem;">
-                <div class="controls-panel">
-                    <div class="control-group">
-                        <label>Total Pages Found</label>
-                        <div style="font-size: 1.1rem; font-weight: 700; color: var(--accent);" id="split-pages-count">0</div>
+                <!-- Main Controls Panel -->
+                <div class="controls-panel" style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end; justify-content: space-between;">
+                    <div class="control-group" style="min-width: 140px;">
+                        <label>Document Pages</label>
+                        <div style="font-size: 1.15rem; font-weight: 700; color: var(--accent);" id="split-pages-count">0 Pages</div>
                     </div>
-                    <div class="control-group" style="flex: 1;">
-                        <label>Enter Page Range(s) to Extract</label>
+                    <div class="control-group" style="min-width: 260px; flex: 1;">
+                        <label>Splitting Mode</label>
+                        <select id="split-mode-select">
+                            <option value="all-single">⚡ Split All Pages into Single PDFs (1, 1, 1...)</option>
+                            <option value="range-single">✂️ Split Custom Range into Single PDFs (1, 1, 1...)</option>
+                            <option value="range-merge">📑 Extract & Merge Selected into 1 PDF</option>
+                        </select>
+                    </div>
+                    <div class="control-group" id="split-range-input-group" style="min-width: 200px; flex: 1; display: none;">
+                        <label>Enter Page Range(s)</label>
                         <input type="text" id="split-ranges" placeholder="e.g. 1-3, 5, 7-10">
                     </div>
-                    <div class="control-group" style="align-self: flex-end;">
-                        <button class="btn-primary" id="btn-split-download">✂️ Extract Pages & Download</button>
+                    <div class="control-group" style="display: flex; gap: 0.6rem; align-items: flex-end; flex-wrap: wrap;">
+                        <button class="btn-primary" id="btn-split-zip" title="Package and download all split single-page PDFs as a ZIP archive">
+                            📦 Download All as ZIP (Single 1-Page PDFs)
+                        </button>
+                        <button class="btn-secondary" id="btn-split-sequential" title="Download all individual 1-page PDF files directly to your device">
+                            ⚡ Download All Files (1 by 1)
+                        </button>
+                        <button class="btn-secondary" id="btn-split-reset" title="Choose another PDF">
+                            🔄 New File
+                        </button>
                     </div>
                 </div>
+
+                <!-- Page Selection & Batch Actions Bar -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.75rem; padding: 0.6rem 0.9rem; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-dim); border-radius: var(--radius-sm);">
+                    <div style="font-size: 0.9rem; color: var(--text-main);">
+                        <strong>Target Pages:</strong> <span id="split-selected-summary" style="color: var(--accent); font-weight: 700;">All Pages</span>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <button type="button" class="action-mini-btn" id="btn-select-all" title="Select all pages">Select All</button>
+                        <button type="button" class="action-mini-btn" id="btn-deselect-all" title="Deselect all pages">Deselect All</button>
+                    </div>
+                </div>
+
+                <!-- Visual Page Grid -->
+                <div id="split-pages-grid" class="files-preview-list"></div>
             </div>
-            <div id="split-status" style="margin-top: 1rem; color: var(--accent); font-weight: 600;"></div>
+            <div id="split-status" style="margin-top: 1rem; color: var(--accent); font-weight: 600; min-height: 24px;"></div>
         `;
 
         const dz = container.querySelector('#dz-split');
         const ws = container.querySelector('#split-ws');
         const pagesCountEl = container.querySelector('#split-pages-count');
+        const modeSelect = container.querySelector('#split-mode-select');
+        const rangeGroup = container.querySelector('#split-range-input-group');
+        const rangeInput = container.querySelector('#split-ranges');
+        const btnZip = container.querySelector('#btn-split-zip');
+        const btnSeq = container.querySelector('#btn-split-sequential');
+        const btnReset = container.querySelector('#btn-split-reset');
+        const btnSelectAll = container.querySelector('#btn-select-all');
+        const btnDeselectAll = container.querySelector('#btn-deselect-all');
+        const selectedSummary = container.querySelector('#split-selected-summary');
+        const grid = container.querySelector('#split-pages-grid');
         const statusBox = container.querySelector('#split-status');
 
+        // Helper to update range input string from selected Set
+        const updateRangeInputFromSelection = () => {
+            const sorted = Array.from(selectedPages).sort((a, b) => a - b).map(p => p + 1);
+            if (!sorted.length) {
+                rangeInput.value = '';
+                return;
+            }
+            const ranges = [];
+            let start = sorted[0];
+            let end = sorted[0];
+            for (let i = 1; i < sorted.length; i++) {
+                if (sorted[i] === end + 1) {
+                    end = sorted[i];
+                } else {
+                    ranges.push(start === end ? `${start}` : `${start}-${end}`);
+                    start = end = sorted[i];
+                }
+            }
+            ranges.push(start === end ? `${start}` : `${start}-${end}`);
+            rangeInput.value = ranges.join(', ');
+        };
+
+        // Helper to parse range input string into Set of 0-based indices
+        const parseRangeInput = (str) => {
+            const pages = new Set();
+            if (!str) return pages;
+            const parts = str.split(',');
+            for (const part of parts) {
+                const trimmed = part.trim();
+                if (trimmed.includes('-')) {
+                    const [s, e] = trimmed.split('-').map(Number);
+                    if (!isNaN(s) && !isNaN(e)) {
+                        for (let p = Math.max(1, s); p <= Math.min(totalPages, e); p++) {
+                            pages.add(p - 1);
+                        }
+                    }
+                } else {
+                    const num = Number(trimmed);
+                    if (!isNaN(num) && num >= 1 && num <= totalPages) {
+                        pages.add(num - 1);
+                    }
+                }
+            }
+            return pages;
+        };
+
+        // Update UI state based on mode and selection
+        const syncUIState = () => {
+            const mode = modeSelect.value;
+            if (mode === 'all-single') {
+                rangeGroup.style.display = 'none';
+                btnSeq.style.display = 'inline-flex';
+                selectedPages.clear();
+                for (let i = 0; i < totalPages; i++) selectedPages.add(i);
+                btnZip.textContent = `📦 Download All as ZIP (${totalPages} Single PDFs)`;
+                btnSeq.textContent = `⚡ Download All Files (1 by 1)`;
+                selectedSummary.textContent = `All ${totalPages} Pages Selected (Single 1-Page PDFs)`;
+            } else if (mode === 'range-single') {
+                rangeGroup.style.display = 'block';
+                btnSeq.style.display = 'inline-flex';
+                const count = selectedPages.size;
+                btnZip.textContent = `📦 Download Selected as ZIP (${count} Single PDFs)`;
+                btnSeq.textContent = `⚡ Download Selected Files (1 by 1)`;
+                selectedSummary.textContent = `${count} of ${totalPages} Pages Selected (Single 1-Page PDFs)`;
+            } else if (mode === 'range-merge') {
+                rangeGroup.style.display = 'block';
+                btnSeq.style.display = 'none';
+                const count = selectedPages.size;
+                btnZip.textContent = `📑 Extract & Merge into 1 PDF (${count} Pages)`;
+                selectedSummary.textContent = `${count} Pages Selected to Merge into 1 File`;
+            }
+
+            // Sync visual cards
+            const cards = grid.querySelectorAll('.split-page-card');
+            cards.forEach(card => {
+                const pageIdx = parseInt(card.dataset.pageIndex, 10);
+                const isChecked = selectedPages.has(pageIdx);
+                const cb = card.querySelector('.split-card-checkbox');
+                if (cb) cb.checked = isChecked;
+                if (isChecked) {
+                    card.classList.add('selected');
+                } else {
+                    card.classList.remove('selected');
+                }
+            });
+        };
+
+        modeSelect.onchange = () => {
+            if (modeSelect.value === 'range-single' || modeSelect.value === 'range-merge') {
+                if (!rangeInput.value) {
+                    updateRangeInputFromSelection();
+                } else {
+                    selectedPages = parseRangeInput(rangeInput.value);
+                }
+            }
+            syncUIState();
+        };
+
+        rangeInput.oninput = () => {
+            selectedPages = parseRangeInput(rangeInput.value);
+            syncUIState();
+        };
+
+        btnSelectAll.onclick = () => {
+            for (let i = 0; i < totalPages; i++) selectedPages.add(i);
+            if (modeSelect.value !== 'all-single') updateRangeInputFromSelection();
+            syncUIState();
+        };
+
+        btnDeselectAll.onclick = () => {
+            selectedPages.clear();
+            if (modeSelect.value !== 'all-single') updateRangeInputFromSelection();
+            syncUIState();
+        };
+
+        btnReset.onclick = () => {
+            pdfBytes = null;
+            totalPages = 0;
+            selectedPages.clear();
+            grid.innerHTML = '';
+            statusBox.textContent = '';
+            ws.style.display = 'none';
+            dz.style.display = 'block';
+        };
+
+        // Render individual single-page PDF generator
+        const generateSinglePagePdf = async (sourceDoc, pageIndex) => {
+            const { PDFDocument } = window.PDFLib;
+            const singleDoc = await PDFDocument.create();
+            const [copiedPage] = await singleDoc.copyPages(sourceDoc, [pageIndex]);
+            singleDoc.addPage(copiedPage);
+            return await singleDoc.save();
+        };
+
+        // Dropzone initialization
         Utils.createDropzone(dz, 'application/pdf', false, async (files) => {
             if (!files.length) return;
+            statusBox.style.color = 'var(--accent)';
+            statusBox.textContent = 'Loading and analyzing PDF document...';
             try {
-                const rawBuf = await Utils.readFileAsArrayBuffer(files[0]);
+                const file = files[0];
+                cleanBaseName = (file.name || 'document.pdf').replace(/\.[^/.]+$/, '').trim().replace(/[^a-zA-Z0-9_-]/g, '_') || 'document';
+
+                const rawBuf = await Utils.readFileAsArrayBuffer(file);
                 pdfBytes = new Uint8Array(rawBuf.slice(0));
+
                 const { PDFDocument } = window.PDFLib;
-                const doc = await PDFDocument.load(pdfBytes.slice(0), { ignoreEncryption: true });
-                totalPages = doc.getPageCount();
+                const source = await PDFDocument.load(pdfBytes.slice(0), { ignoreEncryption: true });
+                totalPages = source.getPageCount();
+
+                if (totalPages < 1) {
+                    throw new Error('This PDF has 0 pages or could not be read.');
+                }
+
                 pagesCountEl.textContent = `${totalPages} Pages`;
-                container.querySelector('#split-ranges').value = `1-${Math.min(totalPages, 3)}`;
+                selectedPages.clear();
+                for (let i = 0; i < totalPages; i++) selectedPages.add(i);
+                updateRangeInputFromSelection();
+
                 dz.style.display = 'none';
                 ws.style.display = 'block';
+                syncUIState();
+
+                // Render page cards grid
+                grid.innerHTML = '';
+                statusBox.textContent = `Rendering previews for ${totalPages} pages...`;
+
+                pdfjsDoc = await window.pdfjsLib.getDocument({ data: pdfBytes.slice(0) }).promise;
+
+                for (let i = 0; i < totalPages; i++) {
+                    const pageNum = i + 1;
+                    const card = document.createElement('div');
+                    card.className = 'file-preview-card split-page-card selected';
+                    card.dataset.pageIndex = i;
+
+                    card.innerHTML = `
+                        <div class="split-card-header">
+                            <span style="font-weight: 700; color: var(--text-main);">Page ${pageNum}</span>
+                            <input type="checkbox" class="split-card-checkbox" checked title="Include Page ${pageNum}">
+                        </div>
+                        <div class="split-thumb-wrap" style="width: 100%; height: 130px; display: flex; align-items: center; justify-content: center; background: #020617; border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 0.5rem; position: relative;">
+                            <div class="split-loading-spinner" style="font-size: 0.75rem; color: var(--text-dim);">Rendering...</div>
+                            <img class="file-thumbnail" style="display: none; width: 100%; height: 100%; object-fit: contain; margin: 0;" alt="Page ${pageNum}">
+                        </div>
+                        <button type="button" class="split-card-dl-btn" data-page-index="${i}">
+                            ⬇️ Download Page ${pageNum}
+                        </button>
+                    `;
+
+                    // Checkbox toggle
+                    const cb = card.querySelector('.split-card-checkbox');
+                    cb.onchange = (e) => {
+                        e.stopPropagation();
+                        if (cb.checked) {
+                            selectedPages.add(i);
+                        } else {
+                            selectedPages.delete(i);
+                        }
+                        if (modeSelect.value !== 'all-single') updateRangeInputFromSelection();
+                        syncUIState();
+                    };
+
+                    // Card click toggles checkbox
+                    card.onclick = (e) => {
+                        if (e.target.closest('button') || e.target.closest('input')) return;
+                        cb.checked = !cb.checked;
+                        cb.dispatchEvent(new Event('change'));
+                    };
+
+                    // Individual Single-Page Download Button
+                    const dlBtn = card.querySelector('.split-card-dl-btn');
+                    dlBtn.onclick = async (e) => {
+                        e.stopPropagation();
+                        dlBtn.disabled = true;
+                        const origText = dlBtn.innerHTML;
+                        dlBtn.innerHTML = '⏳ Saving...';
+                        try {
+                            const { PDFDocument } = window.PDFLib;
+                            const srcDoc = await PDFDocument.load(pdfBytes.slice(0), { ignoreEncryption: true });
+                            const singleBytes = await generateSinglePagePdf(srcDoc, i);
+                            const singleFileName = `${cleanBaseName}_page_${pageNum}.pdf`;
+                            Utils.downloadBlob(new Blob([singleBytes], { type: 'application/pdf' }), singleFileName);
+                            dlBtn.innerHTML = '✓ Saved!';
+                            statusBox.style.color = 'var(--accent)';
+                            statusBox.textContent = `✓ Downloaded single page: ${singleFileName}`;
+                            setTimeout(() => {
+                                dlBtn.disabled = false;
+                                dlBtn.innerHTML = origText;
+                            }, 1800);
+                        } catch (err) {
+                            console.error(err);
+                            dlBtn.disabled = false;
+                            dlBtn.innerHTML = origText;
+                            statusBox.style.color = '#ef4444';
+                            statusBox.textContent = `Error exporting Page ${pageNum}: ` + err.message;
+                        }
+                    };
+
+                    grid.appendChild(card);
+
+                    // Asynchronously render thumbnail in background
+                    (async () => {
+                        try {
+                            const page = await pdfjsDoc.getPage(pageNum);
+                            const viewport = page.getViewport({ scale: 0.35 });
+                            const canvas = document.createElement('canvas');
+                            canvas.width = viewport.width;
+                            canvas.height = viewport.height;
+                            const ctx = canvas.getContext('2d');
+                            await page.render({ canvasContext: ctx, viewport }).promise;
+
+                            const thumbImg = card.querySelector('.file-thumbnail');
+                            const spinner = card.querySelector('.split-loading-spinner');
+                            thumbImg.src = canvas.toDataURL('image/jpeg', 0.85);
+                            thumbImg.style.display = 'block';
+                            if (spinner) spinner.style.display = 'none';
+                        } catch (thumbErr) {
+                            console.warn(`Thumbnail failed for page ${pageNum}:`, thumbErr);
+                        }
+                    })();
+                }
+
+                statusBox.textContent = `✓ Document ready! ${totalPages} pages loaded. Split into single 1-page PDFs below.`;
             } catch (e) {
+                console.error(e);
+                statusBox.style.color = '#ef4444';
                 statusBox.textContent = 'Error loading PDF: ' + e.message;
             }
         });
 
-        container.querySelector('#btn-split-download').onclick = async () => {
-            const rangeStr = container.querySelector('#split-ranges').value.trim();
-            if (!rangeStr || !pdfBytes) return;
+        // 1. Download as ZIP (or Merged PDF if merge mode)
+        btnZip.onclick = async () => {
+            if (!pdfBytes) return;
+            const targetIndices = Array.from(selectedPages).sort((a, b) => a - b);
+            if (!targetIndices.length) {
+                statusBox.style.color = '#ef4444';
+                statusBox.textContent = '⚠️ Please select at least 1 page to split.';
+                return;
+            }
 
-            statusBox.textContent = 'Extracting pages...';
+            const mode = modeSelect.value;
+            btnZip.disabled = true;
+            btnSeq.disabled = true;
+            statusBox.style.color = 'var(--accent)';
+
             try {
-                const pagesToExtract = new Set();
-                const parts = rangeStr.split(',');
+                const { PDFDocument } = window.PDFLib;
+                const source = await PDFDocument.load(pdfBytes.slice(0), { ignoreEncryption: true });
 
-                for (const part of parts) {
-                    const trimmed = part.trim();
-                    if (trimmed.includes('-')) {
-                        const [start, end] = trimmed.split('-').map(Number);
-                        if (!isNaN(start) && !isNaN(end)) {
-                            for (let i = Math.max(1, start); i <= Math.min(totalPages, end); i++) {
-                                pagesToExtract.add(i - 1);
-                            }
-                        }
-                    } else {
-                        const num = Number(trimmed);
-                        if (!isNaN(num) && num >= 1 && num <= totalPages) {
-                            pagesToExtract.add(num - 1);
-                        }
-                    }
-                }
-
-                if (!pagesToExtract.size) {
-                    statusBox.textContent = 'No valid pages found in range.';
+                // Mode: Merge into 1 PDF
+                if (mode === 'range-merge') {
+                    statusBox.textContent = `Extracting and merging ${targetIndices.length} pages...`;
+                    const mergedDoc = await PDFDocument.create();
+                    const copied = await mergedDoc.copyPages(source, targetIndices);
+                    copied.forEach(p => mergedDoc.addPage(p));
+                    const outBytes = await mergedDoc.save();
+                    const mergedName = `${cleanBaseName}_extracted_${Date.now()}.pdf`;
+                    Utils.downloadBlob(new Blob([outBytes], { type: 'application/pdf' }), mergedName);
+                    statusBox.textContent = `✓ Successfully extracted and merged ${targetIndices.length} page(s) into ${mergedName}!`;
                     return;
                 }
 
+                // Modes: 'all-single' or 'range-single' -> ZIP Archive containing single 1-page PDFs (1, 1, 1...)
+                statusBox.textContent = 'Initializing ZIP archive...';
+                const zip = await getZipInstance();
+
+                for (let i = 0; i < targetIndices.length; i++) {
+                    const pageIdx = targetIndices[i];
+                    const pageNum = pageIdx + 1;
+                    statusBox.textContent = `Splitting single PDF for Page ${pageNum} (${i + 1}/${targetIndices.length})...`;
+                    const singleDoc = await PDFDocument.create();
+                    const [page] = await singleDoc.copyPages(source, [pageIdx]);
+                    singleDoc.addPage(page);
+                    const singleBytes = await singleDoc.save();
+                    const filename = `${cleanBaseName}_page_${pageNum}.pdf`;
+                    zip.file(filename, singleBytes);
+                    await new Promise(r => setTimeout(r, 10));
+                }
+
+                statusBox.textContent = `Compressing ${targetIndices.length} single-page PDFs into ZIP archive...`;
+                const zipBlob = await zip.generateAsync({ type: 'blob' });
+                const zipName = `${cleanBaseName}_single_pages.zip`;
+                Utils.downloadBlob(zipBlob, zipName);
+                statusBox.textContent = `✓ Successfully split into ${targetIndices.length} single-page PDFs in ${zipName}!`;
+            } catch (err) {
+                console.error(err);
+                statusBox.style.color = '#ef4444';
+                statusBox.textContent = 'Split error: ' + err.message;
+            } finally {
+                btnZip.disabled = false;
+                btnSeq.disabled = false;
+            }
+        };
+
+        // 2. Download All Files Sequentially (1 by 1)
+        btnSeq.onclick = async () => {
+            if (!pdfBytes) return;
+            const targetIndices = Array.from(selectedPages).sort((a, b) => a - b);
+            if (!targetIndices.length) {
+                statusBox.style.color = '#ef4444';
+                statusBox.textContent = '⚠️ Please select at least 1 page to split.';
+                return;
+            }
+
+            btnZip.disabled = true;
+            btnSeq.disabled = true;
+            statusBox.style.color = 'var(--accent)';
+
+            try {
                 const { PDFDocument } = window.PDFLib;
                 const source = await PDFDocument.load(pdfBytes.slice(0), { ignoreEncryption: true });
-                const target = await PDFDocument.create();
 
-                const copiedPages = await target.copyPages(source, Array.from(pagesToExtract));
-                copiedPages.forEach(p => target.addPage(p));
+                for (let i = 0; i < targetIndices.length; i++) {
+                    const pageIdx = targetIndices[i];
+                    const pageNum = pageIdx + 1;
+                    const fileName = `${cleanBaseName}_page_${pageNum}.pdf`;
+                    statusBox.textContent = `Downloading single 1-page PDF ${i + 1} of ${targetIndices.length} (${fileName})...`;
 
-                const outBytes = await target.save();
-                Utils.downloadBlob(new Blob([outBytes], { type: 'application/pdf' }), `extracted_pages_${Date.now()}.pdf`);
-                statusBox.textContent = `✓ Extracted ${pagesToExtract.size} page(s) successfully!`;
+                    const singleDoc = await PDFDocument.create();
+                    const [page] = await singleDoc.copyPages(source, [pageIdx]);
+                    singleDoc.addPage(page);
+                    const singleBytes = await singleDoc.save();
+
+                    Utils.downloadBlob(new Blob([singleBytes], { type: 'application/pdf' }), fileName);
+
+                    // Add a 280ms interval so modern browsers queue individual file downloads without popup blockers
+                    if (i < targetIndices.length - 1) {
+                        await new Promise(r => setTimeout(r, 280));
+                    }
+                }
+
+                statusBox.textContent = `✓ Successfully downloaded all ${targetIndices.length} single-page PDFs (1 by 1)!`;
             } catch (err) {
-                statusBox.textContent = 'Split error: ' + err.message;
+                console.error(err);
+                statusBox.style.color = '#ef4444';
+                statusBox.textContent = 'Sequential download error: ' + err.message;
+            } finally {
+                btnZip.disabled = false;
+                btnSeq.disabled = false;
             }
         };
     },

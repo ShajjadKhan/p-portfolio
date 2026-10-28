@@ -3710,3 +3710,58 @@ ins.adsbygoogle:has(iframe) + .ad-fallback-card {
     font-weight: 700;
 }
 
+/* ==========================================================================
+   PDF Splitter & Single-Page Extractor Suite (1-by-1 & ZIP)
+   ========================================================================== */
+.split-page-card {
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s ease;
+}
+
+.split-page-card.selected {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 14px rgba(0, 229, 153, 0.22);
+}
+
+.split-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 0.5rem;
+    font-size: 0.84rem;
+}
+
+.split-card-checkbox {
+    width: 17px;
+    height: 17px;
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+
+.split-card-dl-btn {
+    width: 100%;
+    margin-top: 0.5rem;
+    padding: 0.42rem 0.5rem;
+    font-size: 0.78rem;
+    border-radius: var(--radius-sm);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: var(--text-main);
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.split-card-dl-btn:hover {
+    background: var(--accent);
+    color: #060913;
+    border-color: var(--accent);
+    box-shadow: 0 2px 10px var(--accent-glow);
+}
+
+
