@@ -32,7 +32,7 @@ app = Flask(
     template_folder='templates'
 )
 app.config['SECRET_KEY'] = os.environ.get('PORTFOLIO_SECRET_KEY', 'shajjadkhan_portfolio_secure_key_2026')
-app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max upload
+app.config['MAX_CONTENT_LENGTH'] = 500 * 1024 * 1024  # 500MB max upload for large PDF merging/processing
 
 # Register Modular Tools Platform at /tools
 app.register_blueprint(tools_bp, url_prefix='/tools')
@@ -325,7 +325,7 @@ def health():
         "domain": "www.shajjadkhan.com",
         "server_time": datetime.datetime.utcnow().isoformat() + "Z",
         "port": 9191,
-        "tools_suite": "50 utilities active",
+        "tools_suite": "49 utilities active",
         "tools_mounted_at": "/tools"
     })
 

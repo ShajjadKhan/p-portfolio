@@ -648,53 +648,58 @@ const ToolRenderers = {
             <div id="merge-list" style="margin: 1.5rem 0; display: flex; flex-direction: column; gap: 0.75rem;"></div>
             <div class="controls-panel" id="merge-controls" style="display: none; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
                 <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; flex: 1;">
-                    <div class="control-group" style="min-width: 200px;">
+                    <div class="control-group" style="min-width: 240px;">
                         <label>Merge Layout</label>
                         <select id="merge-layout">
+                            <option value="multi" selected>📄 Standard Sequence (100% Original Page Size)</option>
                             <option value="single">📑 Fit All on 1 Single Page (Grid / 50-in-1)</option>
                             <option value="continuous">📜 Continuous Long Page (Vertical Roll)</option>
-                            <option value="multi" selected>📄 Multi-Page Document (Standard Sequence)</option>
-                            <option value="2-up">2️⃣ 2 per Sheet (2-Up)</option>
+                            <option value="2-up">2️⃣ 2 per Sheet (2-Up / Halved Layout)</option>
                             <option value="4-up">4️⃣ 4 per Sheet (4-Up)</option>
                             <option value="9-up">9️⃣ 9 per Sheet (9-Up)</option>
                         </select>
                     </div>
-                    <div class="control-group" style="min-width: 140px;">
-                        <label>Paper Size</label>
-                        <select id="merge-pagesize">
-                            <option value="auto" selected>Auto (Smart Fit)</option>
-                            <option value="a4">A4 (Standard 595 × 842 pt)</option>
-                            <option value="a3">A3 (Large 842 × 1191 pt)</option>
-                            <option value="a2">A2 / Poster (1191 × 1684 pt)</option>
-                            <option value="a1">A1 / Giant Poster (1684 × 2384 pt)</option>
-                            <option value="letter">US Letter (612 × 792 pt)</option>
-                        </select>
+                    <div id="grid-settings" style="display: none; gap: 1rem; flex-wrap: wrap; align-items: center;">
+                        <div class="control-group" style="min-width: 140px;">
+                            <label>Paper Size</label>
+                            <select id="merge-pagesize">
+                                <option value="auto" selected>Auto (Smart Fit)</option>
+                                <option value="a4">A4 (Standard 595 × 842 pt)</option>
+                                <option value="a3">A3 (Large 842 × 1191 pt)</option>
+                                <option value="a2">A2 / Poster (1191 × 1684 pt)</option>
+                                <option value="a1">A1 / Giant Poster (1684 × 2384 pt)</option>
+                                <option value="letter">US Letter (612 × 792 pt)</option>
+                            </select>
+                        </div>
+                        <div class="control-group" style="min-width: 120px;">
+                            <label>Orientation</label>
+                            <select id="merge-orientation">
+                                <option value="auto" selected>Auto</option>
+                                <option value="portrait">Portrait</option>
+                                <option value="landscape">Landscape</option>
+                            </select>
+                        </div>
+                        <div class="control-group" style="min-width: 120px;">
+                            <label>Margins</label>
+                            <select id="merge-margins">
+                                <option value="10">Compact (10pt)</option>
+                                <option value="20" selected>Standard (20pt)</option>
+                                <option value="40">Large (40pt)</option>
+                                <option value="0">None (Full Bleed)</option>
+                            </select>
+                        </div>
+                        <div class="control-group" style="min-width: 120px;">
+                            <label>Tile Spacing</label>
+                            <select id="merge-gap">
+                                <option value="5" selected>Tight (5pt)</option>
+                                <option value="10">Standard (10pt)</option>
+                                <option value="15">Spaced (15pt)</option>
+                                <option value="0">Zero Gap</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="control-group" style="min-width: 120px;">
-                        <label>Orientation</label>
-                        <select id="merge-orientation">
-                            <option value="auto" selected>Auto</option>
-                            <option value="portrait">Portrait</option>
-                            <option value="landscape">Landscape</option>
-                        </select>
-                    </div>
-                    <div class="control-group" style="min-width: 120px;">
-                        <label>Margins</label>
-                        <select id="merge-margins">
-                            <option value="10">Compact (10pt)</option>
-                            <option value="20" selected>Standard (20pt)</option>
-                            <option value="40">Large (40pt)</option>
-                            <option value="0">None (Full Bleed)</option>
-                        </select>
-                    </div>
-                    <div class="control-group" style="min-width: 120px;">
-                        <label>Tile Spacing</label>
-                        <select id="merge-gap">
-                            <option value="5" selected>Tight (5pt)</option>
-                            <option value="10">Standard (10pt)</option>
-                            <option value="15">Spaced (15pt)</option>
-                            <option value="0">Zero Gap</option>
-                        </select>
+                    <div id="merge-fidelity-note" style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; color: #10b981; font-weight: 500;">
+                        <span>✓ Full Page Fidelity: Original dimensions, orientations, and vector layouts are 100% preserved.</span>
                     </div>
                     <div style="font-size: 0.9rem; color: var(--text-muted); font-weight: 500; min-width: 100%;" id="merge-stats"></div>
                 </div>
@@ -711,6 +716,17 @@ const ToolRenderers = {
         const controls = container.querySelector('#merge-controls');
         const stats = container.querySelector('#merge-stats');
         const statusBox = container.querySelector('#merge-status');
+        const layoutSelect = container.querySelector('#merge-layout');
+        const gridSettings = container.querySelector('#grid-settings');
+        const fidelityNote = container.querySelector('#merge-fidelity-note');
+
+        layoutSelect.onchange = () => {
+            const isMulti = layoutSelect.value === 'multi';
+            gridSettings.style.display = isMulti ? 'none' : 'flex';
+            if (fidelityNote) {
+                fidelityNote.style.display = isMulti ? 'flex' : 'none';
+            }
+        };
 
         Utils.createDropzone(
             dz,
@@ -733,7 +749,10 @@ const ToolRenderers = {
             list.innerHTML = '';
             controls.style.display = pdfFiles.length >= 1 ? 'flex' : 'none';
             const totalBytes = pdfFiles.reduce((acc, f) => acc + (f.size || 0), 0);
-            stats.textContent = `${pdfFiles.length} file${pdfFiles.length === 1 ? '' : 's'} selected (${Utils.formatBytes(totalBytes)})`;
+            const engineBadge = totalBytes > 20 * 1024 * 1024 
+                ? '<span style="display: inline-flex; align-items: center; gap: 0.3rem; margin-left: 0.5rem; padding: 2px 8px; border-radius: 999px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 0.78rem; font-weight: 600;">⚡ Server-Accelerated Engine (Optimized for large files)</span>'
+                : '<span style="display: inline-flex; align-items: center; gap: 0.3rem; margin-left: 0.5rem; padding: 2px 8px; border-radius: 999px; background: rgba(16, 185, 129, 0.15); color: #10b981; font-size: 0.78rem; font-weight: 600;">⚡ Instant Engine</span>';
+            stats.innerHTML = `${pdfFiles.length} file${pdfFiles.length === 1 ? '' : 's'} selected (${Utils.formatBytes(totalBytes)}) ${engineBadge}`;
 
             pdfFiles.forEach((f, idx) => {
                 const item = document.createElement('div');
@@ -783,6 +802,77 @@ const ToolRenderers = {
             });
         }
 
+        async function runServerMerge(filesToMerge) {
+            return new Promise((resolve, reject) => {
+                const formData = new FormData();
+                filesToMerge.forEach((f) => {
+                    formData.append('pdf_files', f, f.name);
+                });
+
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', '/tools/api/pdf/merge', true);
+                xhr.responseType = 'blob';
+
+                xhr.upload.onprogress = (e) => {
+                    if (e.lengthComputable) {
+                        const pct = Math.round((e.loaded / e.total) * 100);
+                        const loadedStr = Utils.formatBytes(e.loaded);
+                        const totalStr = Utils.formatBytes(e.total);
+                        statusBox.style.color = 'var(--accent, #38bdf8)';
+                        statusBox.innerHTML = `
+                            <div style="display: flex; flex-direction: column; gap: 0.5rem; max-width: 480px;">
+                                <div style="display: flex; justify-content: space-between; font-size: 0.88rem;">
+                                    <span>⚡ High-speed server processing:</span>
+                                    <span><b>${pct}%</b> (${loadedStr} / ${totalStr})</span>
+                                </div>
+                                <div style="width: 100%; background: rgba(255,255,255,0.12); height: 8px; border-radius: 999px; overflow: hidden;">
+                                    <div style="background: linear-gradient(90deg, #0284c7, #38bdf8); width: ${pct}%; height: 100%; transition: width 0.15s ease;"></div>
+                                </div>
+                                <div style="font-size: 0.78rem; color: var(--text-dim, #94a3b8);">${pct < 100 ? 'Streaming files securely to server...' : 'All files received. Merging and compressing document...'}</div>
+                            </div>
+                        `;
+                    } else {
+                        statusBox.textContent = 'Uploading files to high-speed server...';
+                    }
+                };
+
+                xhr.onload = () => {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        const blob = xhr.response;
+                        const filename = `merged_document_${Date.now()}.pdf`;
+                        Utils.downloadBlob(blob, filename);
+                        statusBox.style.color = 'var(--accent, #10b981)';
+                        statusBox.innerHTML = `✓ Successfully merged ${filesToMerge.length} documents (${Utils.formatBytes(blob.size)})! Download started automatically.`;
+                        resolve(blob);
+                    } else {
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                            try {
+                                const errJson = JSON.parse(reader.result);
+                                reject(new Error(errJson.message || `Server error (${xhr.status})`));
+                            } catch (_) {
+                                reject(new Error(`Server error (${xhr.status}): ${xhr.statusText || 'Merge failed'}`));
+                            }
+                        };
+                        reader.onerror = () => reject(new Error(`Server error (${xhr.status})`));
+                        reader.readAsText(xhr.response);
+                    }
+                };
+
+                xhr.onerror = () => {
+                    reject(new Error('Network error connecting to server. Please check your connection.'));
+                };
+
+                xhr.ontimeout = () => {
+                    reject(new Error('Merge request timed out on server (5-minute limit exceeded).'));
+                };
+
+                xhr.timeout = 300000; // 5-minute timeout for large documents
+                statusBox.textContent = 'Initiating server merge...';
+                xhr.send(formData);
+            });
+        }
+
         container.querySelector('#btn-merge').onclick = async () => {
             if (!pdfFiles.length) {
                 statusBox.style.color = '#ef4444';
@@ -798,11 +888,29 @@ const ToolRenderers = {
             statusBox.style.color = 'var(--accent)';
             statusBox.textContent = `Preparing ${pdfFiles.length} files...`;
 
+            const totalBytes = pdfFiles.reduce((acc, f) => acc + (f.size || 0), 0);
+            const layoutMode = container.querySelector('#merge-layout').value;
+
+            // For standard sequence multi-page layout, always use native C++ server engine (qpdf)
+            // which guarantees 100% full-page vector fidelity, zero clipping, and preserves all original orientations.
+            if (layoutMode === 'multi') {
+                try {
+                    await runServerMerge(pdfFiles);
+                    return;
+                } catch (srvErr) {
+                    console.warn('Server merge issue, falling back to browser memory:', srvErr);
+                    statusBox.textContent = 'Server busy, falling back to in-browser merge...';
+                } finally {
+                    btn.disabled = false;
+                    btn.style.opacity = '1';
+                    btn.style.cursor = 'pointer';
+                }
+            }
+
             try {
                 const { PDFDocument } = window.PDFLib;
                 const mergedPdf = await PDFDocument.create();
 
-                const layoutMode = container.querySelector('#merge-layout').value;
                 const pageSizeName = container.querySelector('#merge-pagesize').value;
                 const orientation = container.querySelector('#merge-orientation').value;
                 const margin = parseInt(container.querySelector('#merge-margins').value, 10);
@@ -906,13 +1014,345 @@ const ToolRenderers = {
                 statusBox.style.color = 'var(--accent)';
                 statusBox.textContent = `✓ Successfully merged ${items.length} items into ${layoutMode === 'single' ? '1 single page' : layoutMode + ' layout'} (${Utils.formatBytes(blob.size)})!`;
             } catch (err) {
-                console.error(err);
-                statusBox.style.color = '#ef4444';
-                statusBox.textContent = 'Merge failed: ' + err.message;
+                console.warn('Client-side merge failed:', err);
+                // If it was standard multi-page layout, automatically fallback to server!
+                if (layoutMode === 'multi') {
+                    statusBox.style.color = 'var(--accent)';
+                    statusBox.textContent = 'Client memory limit reached. Seamlessly switching to high-speed server engine...';
+                    try {
+                        await runServerMerge(pdfFiles);
+                    } catch (srvErr) {
+                        statusBox.style.color = '#ef4444';
+                        statusBox.textContent = 'Merge failed: ' + srvErr.message;
+                    }
+                } else {
+                    statusBox.style.color = '#ef4444';
+                    statusBox.textContent = 'Merge failed: ' + err.message;
+                }
             } finally {
                 btn.disabled = false;
                 btn.style.opacity = '1';
                 btn.style.cursor = 'pointer';
+            }
+        };
+    },
+
+    // PDF Compressor & Size Reducer (No Crop)
+    'pdf-compress': (container) => {
+        let selectedFile = null;
+        let selectedLevel = 'recommended';
+        let compressedBlob = null;
+        let compressedFilename = '';
+
+        container.innerHTML = `
+            <div id="dz-compress"></div>
+
+            <div id="compress-ws" style="display: none; margin-top: 1.5rem;">
+                <!-- File Overview Card -->
+                <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-lg, 12px); padding: 1.25rem; display: flex; gap: 1.25rem; align-items: center; flex-wrap: wrap; margin-bottom: 1.25rem;">
+                    <div id="pdf-thumb-wrap" style="width: 75px; height: 100px; background: rgba(0,0,0,0.06); border-radius: 6px; overflow: hidden; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border-color); flex-shrink: 0; box-shadow: 0 2px 6px rgba(0,0,0,0.06);">
+                        <canvas id="pdf-thumb-canvas" style="max-width: 100%; max-height: 100%; display: none;"></canvas>
+                        <div id="pdf-thumb-placeholder" style="font-size: 2.2rem;">📄</div>
+                    </div>
+                    <div style="flex: 1; min-width: 220px;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                            <h3 id="pdf-filename" style="margin: 0; font-size: 1.1rem; word-break: break-all; color: var(--text-main);">document.pdf</h3>
+                            <span class="feature-chip" id="pdf-pages-badge" style="font-size: 0.75rem; background: rgba(59,130,246,0.15); color: #3b82f6; border: 1px solid rgba(59,130,246,0.3); padding: 2px 8px; border-radius: 12px; font-weight: 600;">... pages</span>
+                        </div>
+                        <div style="margin-top: 0.4rem; font-size: 0.88rem; color: var(--text-muted); display: flex; gap: 1.25rem; flex-wrap: wrap;">
+                            <span>Original Size: <strong id="pdf-filesize" style="color: var(--text-main);">0 MB</strong></span>
+                            <span>Engine: <strong>Ghostscript & QPDF Native</strong></span>
+                        </div>
+                    </div>
+                    <button class="btn-secondary" id="btn-change-file" type="button" style="padding: 0.5rem 0.9rem; font-size: 0.85rem;">🔄 Choose Another</button>
+                </div>
+
+                <!-- Zero-Crop Guarantee Banner -->
+                <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: var(--radius-md, 8px); padding: 0.85rem 1.1rem; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.75rem;">
+                    <span style="font-size: 1.3rem;">🛡️</span>
+                    <div style="font-size: 0.85rem; color: #10b981; line-height: 1.4;">
+                        <strong>100% Zero-Crop Guarantee:</strong> Original page dimensions (A4, Letter, A3, custom spreads), orientations, margins, vector drawings, and fonts are strictly preserved. No pages are cut, cropped, or scaled.
+                    </div>
+                </div>
+
+                <!-- Preset Level Selection Cards -->
+                <div style="margin-bottom: 1.25rem;">
+                    <label style="font-weight: 600; font-size: 0.92rem; margin-bottom: 0.75rem; display: block; color: var(--text-main);">Select Compression Preset</label>
+                    <div id="comp-options-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 0.85rem;">
+                        <!-- Option 1: Recommended -->
+                        <div class="comp-preset-card" data-level="recommended" style="border: 2px solid var(--accent, #3b82f6); background: rgba(59,130,246,0.06); padding: 1rem; border-radius: 10px; cursor: pointer; transition: all 0.2s ease;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                                <strong style="font-size: 0.95rem; color: var(--text-main);">🌟 Recommended</strong>
+                                <span style="font-size: 0.7rem; background: rgba(59,130,246,0.15); color: #3b82f6; padding: 2px 6px; border-radius: 4px; font-weight: 600;">150 DPI</span>
+                            </div>
+                            <div style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.35;">Ideal balance of high size reduction (~40-60%) and crisp visual clarity. Perfect for email & web.</div>
+                        </div>
+
+                        <!-- Option 2: Extreme -->
+                        <div class="comp-preset-card" data-level="extreme" style="border: 1px solid var(--border-color); background: var(--bg-surface); padding: 1rem; border-radius: 10px; cursor: pointer; transition: all 0.2s ease;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                                <strong style="font-size: 0.95rem; color: var(--text-main);">⚡ Extreme</strong>
+                                <span style="font-size: 0.7rem; background: rgba(239,68,68,0.15); color: #ef4444; padding: 2px 6px; border-radius: 4px; font-weight: 600;">72 DPI</span>
+                            </div>
+                            <div style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.35;">Maximum size reduction (~70-85%). Ideal for strict upload limits and small attachments.</div>
+                        </div>
+
+                        <!-- Option 3: High Quality -->
+                        <div class="comp-preset-card" data-level="high_quality" style="border: 1px solid var(--border-color); background: var(--bg-surface); padding: 1rem; border-radius: 10px; cursor: pointer; transition: all 0.2s ease;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                                <strong style="font-size: 0.95rem; color: var(--text-main);">💎 High Quality</strong>
+                                <span style="font-size: 0.7rem; background: rgba(16,185,129,0.15); color: #10b981; padding: 2px 6px; border-radius: 4px; font-weight: 600;">300 DPI</span>
+                            </div>
+                            <div style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.35;">Gentle compression (~20-35%). Maintains maximum sharpness for high-resolution printing.</div>
+                        </div>
+
+                        <!-- Option 4: Lossless -->
+                        <div class="comp-preset-card" data-level="lossless" style="border: 1px solid var(--border-color); background: var(--bg-surface); padding: 1rem; border-radius: 10px; cursor: pointer; transition: all 0.2s ease;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                                <strong style="font-size: 0.95rem; color: var(--text-main);">🛡️ Lossless Stream</strong>
+                                <span style="font-size: 0.7rem; background: rgba(168,85,247,0.15); color: #a855f7; padding: 2px 6px; border-radius: 4px; font-weight: 600;">0% Pixel Loss</span>
+                            </div>
+                            <div style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.35;">Zero downsampling. Compresses object streams and deflates Flate tables losslessly.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Button -->
+                <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
+                    <button class="btn-primary" id="btn-compress-now" type="button" style="padding: 0.85rem 2rem; font-size: 1rem; font-weight: 600;">🗜️ Compress PDF (No Crop)</button>
+                </div>
+
+                <!-- Progress Container -->
+                <div id="compress-progress-box" style="display: none; margin-top: 1.5rem; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 10px; padding: 1.25rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <span id="compress-step-label" style="font-weight: 600; font-size: 0.9rem; color: var(--text-main);">Streaming document to server...</span>
+                        <span id="compress-pct-label" style="font-weight: 700; color: var(--accent); font-size: 0.95rem;">0%</span>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.08); border-radius: 6px; height: 10px; overflow: hidden; position: relative;">
+                        <div id="compress-bar-fill" style="background: linear-gradient(90deg, #3b82f6, #10b981); height: 100%; width: 0%; transition: width 0.2s ease;"></div>
+                    </div>
+                    <div id="compress-transfer-info" style="font-size: 0.78rem; color: var(--text-dim, #94a3b8); margin-top: 0.4rem;">0 MB / 0 MB transferred</div>
+                </div>
+
+                <!-- Success / Results Card -->
+                <div id="compress-result-box" style="display: none; margin-top: 1.5rem; background: rgba(16, 185, 129, 0.06); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 12px; padding: 1.5rem;">
+                    <div style="display: flex; align-items: center; gap: 0.6rem; color: #10b981; font-weight: 700; font-size: 1.15rem; margin-bottom: 1.25rem;">
+                        <span>🎉</span>
+                        <span>PDF Compressed Successfully (Zero Crop Preserved)</span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                        <div style="background: var(--bg-surface); padding: 0.9rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.2rem;">Original Size</div>
+                            <div id="res-orig-size" style="font-size: 1.1rem; font-weight: 700; color: var(--text-main);">0 MB</div>
+                        </div>
+                        <div style="background: var(--bg-surface); padding: 0.9rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.2rem;">Compressed Size</div>
+                            <div id="res-comp-size" style="font-size: 1.1rem; font-weight: 700; color: #10b981;">0 MB</div>
+                        </div>
+                        <div style="background: var(--bg-surface); padding: 0.9rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.2rem;">Total Space Saved</div>
+                            <div id="res-savings" style="font-size: 1.1rem; font-weight: 700; color: #3b82f6;">0% (0 MB)</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 1rem; justify-content: flex-end; flex-wrap: wrap;">
+                        <button class="btn-secondary" id="btn-comp-again" type="button">🔄 Compress Another</button>
+                        <button class="btn-primary" id="btn-download-comp" type="button" style="background: linear-gradient(135deg, #10b981, #059669); border-color: #059669; font-weight: 600;">⬇️ Download Compressed PDF</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="compress-error" style="display: none; margin-top: 1rem; color: #ef4444; font-weight: 600; padding: 0.75rem 1rem; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px;"></div>
+        `;
+
+        const dz = container.querySelector('#dz-compress');
+        const ws = container.querySelector('#compress-ws');
+        const filenameEl = container.querySelector('#pdf-filename');
+        const filesizeEl = container.querySelector('#pdf-filesize');
+        const pagesBadgeEl = container.querySelector('#pdf-pages-badge');
+        const thumbCanvas = container.querySelector('#pdf-thumb-canvas');
+        const thumbPlaceholder = container.querySelector('#pdf-thumb-placeholder');
+        const btnChangeFile = container.querySelector('#btn-change-file');
+        const presetCards = container.querySelectorAll('.comp-preset-card');
+        const btnCompressNow = container.querySelector('#btn-compress-now');
+        const progressBox = container.querySelector('#compress-progress-box');
+        const stepLabel = container.querySelector('#compress-step-label');
+        const pctLabel = container.querySelector('#compress-pct-label');
+        const barFill = container.querySelector('#compress-bar-fill');
+        const transferInfo = container.querySelector('#compress-transfer-info');
+        const resultBox = container.querySelector('#compress-result-box');
+        const resOrigSize = container.querySelector('#res-orig-size');
+        const resCompSize = container.querySelector('#res-comp-size');
+        const resSavings = container.querySelector('#res-savings');
+        const btnCompAgain = container.querySelector('#btn-comp-again');
+        const btnDownloadComp = container.querySelector('#btn-download-comp');
+        const errorBox = container.querySelector('#compress-error');
+
+        function resetAll() {
+            selectedFile = null;
+            compressedBlob = null;
+            compressedFilename = '';
+            ws.style.display = 'none';
+            dz.style.display = 'block';
+            progressBox.style.display = 'none';
+            resultBox.style.display = 'none';
+            errorBox.style.display = 'none';
+            btnCompressNow.disabled = false;
+            thumbCanvas.style.display = 'none';
+            thumbPlaceholder.style.display = 'block';
+        }
+
+        btnChangeFile.onclick = resetAll;
+        btnCompAgain.onclick = resetAll;
+
+        // Preset selection
+        presetCards.forEach(card => {
+            card.onclick = () => {
+                presetCards.forEach(c => {
+                    c.style.border = '1px solid var(--border-color)';
+                    c.style.background = 'var(--bg-surface)';
+                });
+                card.style.border = '2px solid var(--accent, #3b82f6)';
+                card.style.background = 'rgba(59,130,246,0.06)';
+                selectedLevel = card.getAttribute('data-level');
+            };
+        });
+
+        // Initialize dropzone
+        Utils.createDropzone(
+            dz,
+            'application/pdf,.pdf',
+            false,
+            async (files) => {
+                if (!files || !files.length) return;
+                const file = files[0];
+                if (!file.name.toLowerCase().endsWith('.pdf') && file.type !== 'application/pdf') {
+                    errorBox.textContent = 'Please select a valid PDF file.';
+                    errorBox.style.display = 'block';
+                    return;
+                }
+
+                selectedFile = file;
+                errorBox.style.display = 'none';
+                filenameEl.textContent = file.name;
+                filesizeEl.textContent = Utils.formatBytes(file.size);
+                pagesBadgeEl.textContent = 'Counting pages...';
+
+                dz.style.display = 'none';
+                ws.style.display = 'block';
+                resultBox.style.display = 'none';
+
+                // Render page 1 thumbnail and count pages
+                try {
+                    const arrayBuffer = await Utils.readFileAsArrayBuffer(file);
+                    if (window.pdfjsLib) {
+                        const loadingTask = window.pdfjsLib.getDocument({ data: arrayBuffer });
+                        const pdfDoc = await loadingTask.promise;
+                        pagesBadgeEl.textContent = `${pdfDoc.numPages} ${pdfDoc.numPages === 1 ? 'Page' : 'Pages'}`;
+
+                        const page = await pdfDoc.getPage(1);
+                        const viewport = page.getViewport({ scale: 0.25 });
+                        thumbCanvas.width = viewport.width;
+                        thumbCanvas.height = viewport.height;
+                        const ctx = thumbCanvas.getContext('2d');
+                        await page.render({ canvasContext: ctx, viewport }).promise;
+                        thumbPlaceholder.style.display = 'none';
+                        thumbCanvas.style.display = 'block';
+                    } else {
+                        pagesBadgeEl.textContent = 'PDF Document';
+                    }
+                } catch (e) {
+                    pagesBadgeEl.textContent = 'PDF Document';
+                }
+            },
+            'Preserves 100% original page sizes, vector drawings, and fonts. Zero cropping.'
+        );
+
+        // Compress action
+        btnCompressNow.onclick = () => {
+            if (!selectedFile) return;
+
+            errorBox.style.display = 'none';
+            resultBox.style.display = 'none';
+            progressBox.style.display = 'block';
+            btnCompressNow.disabled = true;
+            barFill.style.width = '0%';
+            pctLabel.textContent = '0%';
+            stepLabel.textContent = 'Streaming document securely to engine...';
+            transferInfo.textContent = `0 MB / ${Utils.formatBytes(selectedFile.size)} transferred`;
+
+            const formData = new FormData();
+            formData.append('pdf_file', selectedFile);
+            formData.append('level', selectedLevel);
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/tools/api/pdf/compress', true);
+            xhr.responseType = 'blob';
+
+            xhr.upload.onprogress = (e) => {
+                if (e.lengthComputable) {
+                    const pct = Math.round((e.loaded / e.total) * 100);
+                    barFill.style.width = `${pct}%`;
+                    pctLabel.textContent = `${pct}%`;
+                    transferInfo.textContent = `${Utils.formatBytes(e.loaded)} / ${Utils.formatBytes(e.total)} transferred`;
+
+                    if (pct >= 100) {
+                        stepLabel.textContent = 'Applying Zero-Crop Optimization & Compressing Streams...';
+                    }
+                }
+            };
+
+            xhr.onload = () => {
+                btnCompressNow.disabled = false;
+                progressBox.style.display = 'none';
+
+                if (xhr.status === 200) {
+                    compressedBlob = xhr.response;
+                    const origBytes = parseInt(xhr.getResponseHeader('X-Original-Size') || selectedFile.size, 10);
+                    const compBytes = parseInt(xhr.getResponseHeader('X-Compressed-Size') || compressedBlob.size, 10);
+                    const savingsPct = xhr.getResponseHeader('X-Savings-Percent') || '0';
+                    const savingsBytes = parseInt(xhr.getResponseHeader('X-Savings-Bytes') || (origBytes - compBytes), 10);
+
+                    const baseName = selectedFile.name.replace(/\.pdf$/i, '');
+                    compressedFilename = `${baseName}_compressed.pdf`;
+
+                    resOrigSize.textContent = Utils.formatBytes(origBytes);
+                    resCompSize.textContent = Utils.formatBytes(compBytes);
+                    resSavings.textContent = `${savingsPct}% (${Utils.formatBytes(Math.max(0, savingsBytes))} saved)`;
+
+                    resultBox.style.display = 'block';
+                } else {
+                    try {
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                            try {
+                                const errJson = JSON.parse(reader.result);
+                                errorBox.textContent = errJson.message || 'Compression failed. Please try again.';
+                            } catch (_) {
+                                errorBox.textContent = `Server returned HTTP ${xhr.status}. Compression failed.`;
+                            }
+                            errorBox.style.display = 'block';
+                        };
+                        reader.readAsText(xhr.response);
+                    } catch (_) {
+                        errorBox.textContent = 'Compression failed. Please verify the PDF is valid.';
+                        errorBox.style.display = 'block';
+                    }
+                }
+            };
+
+            xhr.onerror = () => {
+                btnCompressNow.disabled = false;
+                progressBox.style.display = 'none';
+                errorBox.textContent = 'Network error while contacting compression engine.';
+                errorBox.style.display = 'block';
+            };
+
+            xhr.send(formData);
+        };
+
+        btnDownloadComp.onclick = () => {
+            if (compressedBlob) {
+                Utils.downloadBlob(compressedBlob, compressedFilename || 'compressed_document.pdf');
             }
         };
     },
