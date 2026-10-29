@@ -22,11 +22,7 @@ Professional portfolio of **Shajjad Khan** — Founder and Systems Architect. Sh
    - High-throughput billing engine, dynamic bandwidth queue shaping via MikroTik RouterOS API, automated WhatsApp invoice reminders, and captive portal hotspot redirects.
    - Stack: Python, PHP, MySQL, MikroTik API, FreeRADIUS, CWMP TR-069.
 
-4. **GenieACS / TR-069 Fleet Device Management**
-   - Carrier-grade auto-configuration server (ACS) managing zero-touch provisioning and live monitoring for thousands of subscriber CPE routers and GPON ONUs.
-   - Stack: GenieACS, Node.js, MongoDB, TR-069 CWMP, Debian Linux.
-
-5. **Enterprise HR & Automated Payroll SaaS**
+4. **Enterprise HR & Automated Payroll SaaS**
    - Multi-branch human resource management system with biometric attendance synchronization, hierarchical leave workflows, and automated payroll pay slip generation.
    - Stack: Python, Django, PostgreSQL, TailwindCSS.
 

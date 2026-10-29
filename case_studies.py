@@ -98,29 +98,6 @@ CASE_STUDIES = [
         "featured": False
     },
     {
-        "slug": "genieacs",
-        "title": "GenieACS / TR-069 Carrier-Grade Fleet Device Auto-Configuration",
-        "short_title": "GenieACS TR-069 Fleet Management",
-        "category": "IoT & Carrier Hardware",
-        "status": "Production",
-        "year": "2025–2026",
-        "tagline": "Auto-Configuration Server orchestrating zero-touch provisioning, firmware upgrades, and live telemetry across thousands of CPE routers and GPON ONUs.",
-        "client_profile": "Carrier broadband networks and multi-site enterprise hotel networks.",
-        "role": "Network Systems Engineer",
-        "metrics": [
-            {"val": "Zero-Touch", "label": "CPE & ONU Provisioning"},
-            {"val": "CWMP", "label": "TR-069 Standard Protocol"},
-            {"val": "Automated", "label": "Staged Firmware Rollouts"},
-            {"val": "Live", "label": "Telemetry & Diagnostics"}
-        ],
-        "tech_stack": [
-            "GenieACS", "Node.js", "MongoDB", "TR-069 CWMP",
-            "Debian Linux", "Systemd", "Reverse Proxy"
-        ],
-        "live_url": None,
-        "featured": False
-    },
-    {
         "slug": "hr",
         "title": "Enterprise Multi-Branch HR & Biometric Automated Payroll System",
         "short_title": "Enterprise HR & Automated Payroll",
