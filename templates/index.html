@@ -587,11 +587,15 @@
                     <!-- Project 3: ISP Telecom & Radius Billing Engine -->
                     <div class="project-card">
                         <div class="project-visual-wrap">
-                            <img src="{{ url_for('static', filename='images/projects/isp-telecom-preview.svg') }}"
-                                 alt="ISP Telecom MikroTik RouterOS API and FreeRADIUS AAA architecture"
-                                 class="project-visual-img"
-                                 width="800" height="420"
-                                 loading="lazy" decoding="async">
+                            <picture>
+                                <source type="image/webp" srcset="{{ url_for('static', filename='images/projects/isp-telecom-preview.webp') }}">
+                                <img src="{{ url_for('static', filename='images/projects/isp-telecom-preview.png') }}"
+                                     alt="CyberNet OS Operations and Billing Command Center with MikroTik RouterOS automation"
+                                     class="project-visual-img"
+                                     style="object-position: top center;"
+                                     width="800" height="420"
+                                     loading="lazy" decoding="async">
+                            </picture>
                             <div class="project-visual-overlay">
                                 <span class="project-metric-pill"><svg class="bi-icon text-gold" aria-hidden="true" focusable="false"><use href="#bi-hdd-network-fill"></use></svg> RouterOS API 8728</span>
                             </div>
