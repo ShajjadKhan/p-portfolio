@@ -521,11 +521,15 @@
                     <!-- Project 2: FastTrack Tools Platform -->
                     <div class="project-card">
                         <div class="project-visual-wrap">
-                            <img src="{{ url_for('static', filename='images/projects/fasttrack-preview.svg') }}"
-                                 alt="FastTrack Tools client-side RAM sandbox and Web Workers pipeline"
-                                 class="project-visual-img"
-                                 width="800" height="420"
-                                 loading="lazy" decoding="async">
+                            <picture>
+                                <source type="image/webp" srcset="{{ url_for('static', filename='images/projects/fasttrack-preview.webp') }}">
+                                <img src="{{ url_for('static', filename='images/projects/fasttrack-preview.png') }}"
+                                     alt="FastTrack Tools live production dashboard with 50+ client-side utilities"
+                                     class="project-visual-img"
+                                     style="object-position: top center;"
+                                     width="800" height="420"
+                                     loading="lazy" decoding="async">
+                            </picture>
                             <div class="project-visual-overlay">
                                 <span class="project-metric-pill"><svg class="bi-icon text-emerald" aria-hidden="true" focusable="false"><use href="#bi-shield-check"></use></svg> 50+ In-Browser Tools</span>
                             </div>

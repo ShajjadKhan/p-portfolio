@@ -6,6 +6,20 @@
     <strong>FastTrack Tools</strong> was designed with an uncompromising architectural principle: <strong>100% Client-Side In-Memory Execution</strong>. Files never touch the network stack; computations run strictly in browser RAM via Web Workers, WebAssembly, and Canvas APIs.
 </p>
 
+<figure class="work-figure">
+    <picture>
+        <source type="image/webp" srcset="{{ url_for('static', filename='images/projects/fasttrack-preview-full.webp') }}">
+        <img src="{{ url_for('static', filename='images/projects/fasttrack-preview.png') }}"
+             alt="FastTrack Tools production dashboard with 50+ client-side utilities"
+             width="1600" height="860"
+             loading="lazy" decoding="async">
+    </picture>
+    <figcaption class="work-figure-caption">
+        <svg class="bi-icon text-emerald" aria-hidden="true" focusable="false"><use href="#bi-shield-check"></use></svg>
+        <span>Production View · FastTrack Tools dashboard featuring 50+ in-browser PDF, media, and development utilities.</span>
+    </figcaption>
+</figure>
+
 <h2>2. Flagship Utilities in the 50+ Suite</h2>
 <ul>
     <li><strong>High-Accuracy PDF Coordinate Editor:</strong> Sub-pixel coordinate text overlay, freehand vector highlighter, signature stamping, and lossless vector PDF export using PDF-Lib and PDF.js.</li>
@@ -19,3 +33,15 @@
 <p>
     Because tools process data locally, server resource costs remain near zero even with tens of thousands of active sessions. The platform is self-monetizing via non-intrusive Google AdSense, protected by granular Content Security Policies that isolate advertising scripts from the core tool computational engines.
 </p>
+
+<div class="work-callout work-callout-cyan">
+    <p>
+        <strong>Explore the Live Suite:</strong> Test over 50+ production-grade browser utilities running with 100% client-side privacy, zero server file uploads, and instant in-memory processing.
+    </p>
+    <p style="margin-top: 14px; margin-bottom: 0;">
+        <a href="/tools" target="_blank" rel="noopener" class="btn btn-cyan-sm">
+            <span>Launch FastTrack Tools Suite (50+) ↗</span>
+            <svg class="bi-icon" aria-hidden="true" focusable="false"><use href="#bi-tools"></use></svg>
+        </a>
+    </p>
+</div>
