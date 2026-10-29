@@ -31,7 +31,7 @@
     <circle cx="14" cy="13" r="4" fill="#10b981" />
     <text x="26" y="17" fill="#10b981" font-size="11" font-weight="700" letter-spacing="0.5">TAWREEDFLOW ARCHITECTURE</text>
     
-    <text x="590" y="18" fill="#7a8aa0" font-size="11" font-family="monospace">SOVEREIGN GCC TENANT &bull; ZATCA PHASE 2</text>
+    <text x="560" y="18" fill="#7a8aa0" font-size="11" font-family="monospace">SOVEREIGN GCC TENANT &bull; ZATCA PHASE 2 (IN DEV)</text>
   </g>
 
   <!-- Connecting Pipeline Bus Lines -->
@@ -123,14 +123,14 @@
   <!-- Arrow 4 to 5 -->
   <path d="M 695 200 L 725 200" fill="none" stroke="#34d399" stroke-width="2" />
 
-  <!-- Stage 5: ZATCA Phase 2 Clearance -->
+  <!-- Stage 5: ZATCA Phase 2 Clearance (In Development) -->
   <g transform="translate(720, 110)">
     <rect width="145" height="180" rx="10" fill="rgba(15, 23, 42, 0.85)" stroke="rgba(167, 139, 250, 0.35)" stroke-width="1.5" />
     <rect width="145" height="32" rx="10" fill="rgba(167, 139, 250, 0.15)" />
-    <text x="12" y="21" fill="#a78bfa" font-size="11" font-weight="700">5. ZATCA CLEAR</text>
+    <text x="12" y="21" fill="#a78bfa" font-size="11" font-weight="700">5. ZATCA (IN DEV)</text>
 
-    <text x="14" y="58" fill="#f1f5f9" font-size="11" font-weight="600">Sovereign Compliance</text>
-    <text x="14" y="74" fill="#94a3b8" font-size="9.5">FATOORA E-Invoicing</text>
+    <text x="14" y="58" fill="#f1f5f9" font-size="11" font-weight="600">Phase 2 In-Progress</text>
+    <text x="14" y="74" fill="#94a3b8" font-size="9.5">FATOORA Integration</text>
 
     <rect x="14" y="92" width="117" height="24" rx="4" fill="rgba(167, 139, 250, 0.1)" />
     <text x="22" y="108" fill="#c084fc" font-size="9" font-family="monospace">XML UBL 2.1 &bull; QR</text>
@@ -170,9 +170,9 @@
     <line x1="650" y1="18" x2="650" y2="68" stroke="rgba(255, 255, 255, 0.08)" stroke-width="1" />
 
     <g transform="translate(670, 20)">
-      <text x="0" y="18" fill="#a78bfa" font-size="18" font-weight="800">100% Phase 2</text>
-      <text x="0" y="38" fill="#7a8aa0" font-size="10" font-weight="600" text-transform="uppercase">ZATCA Clearance</text>
-      <text x="0" y="52" fill="#94a3b8" font-size="9.5">Automated signed XML</text>
+      <text x="0" y="18" fill="#a78bfa" font-size="18" font-weight="800">In Progress</text>
+      <text x="0" y="38" fill="#7a8aa0" font-size="10" font-weight="600" text-transform="uppercase">ZATCA Phase 2</text>
+      <text x="0" y="52" fill="#94a3b8" font-size="9.5">Active API Integration</text>
     </g>
   </g>
 </svg>

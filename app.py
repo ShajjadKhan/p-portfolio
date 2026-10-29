@@ -232,7 +232,7 @@ def arabic_home():
 
 @app.route('/ar/work/tawreedflow')
 def arabic_case_study_tawreedflow():
-    """Arabic case study: TawreedFlow hotel procurement and ZATCA Phase 2 automation."""
+    """Arabic case study: TawreedFlow hotel procurement and ZATCA Phase 2 readiness (in progress)."""
     return render_template(
         'ar/case_study_tawreedflow.html',
         year=datetime.datetime.now().year,
