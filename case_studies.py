@@ -96,29 +96,6 @@ CASE_STUDIES = [
         ],
         "live_url": None,
         "featured": False
-    },
-    {
-        "slug": "hr",
-        "title": "Enterprise Multi-Branch HR & Biometric Automated Payroll System",
-        "short_title": "Enterprise HR & Automated Payroll",
-        "category": "Enterprise Systems",
-        "status": "Production",
-        "year": "2025–2026",
-        "tagline": "Multi-location human resource platform integrating biometric hardware clocks, hierarchical leave approval chains, and automated payroll pay slips.",
-        "client_profile": "Multi-branch commercial corporations and regional hospitality groups.",
-        "role": "Backend Engineer & Architect",
-        "metrics": [
-            {"val": "Multi-Branch", "label": "Biometric Hardware Sync"},
-            {"val": "Automated", "label": "Monthly Payroll Generation"},
-            {"val": "Hierarchical", "label": "Leave Approval Workflows"},
-            {"val": "Instant", "label": "PDF Pay Slip Dispatch"}
-        ],
-        "tech_stack": [
-            "Python", "Django", "PostgreSQL", "TailwindCSS",
-            "ZKTeco API", "Celery", "Linux"
-        ],
-        "live_url": None,
-        "featured": False
     }
 ]
 
